@@ -81,10 +81,12 @@ export default function Upload() {
           
           {/* File Upload Area */}
           <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-              isDragging
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+            className={`border-2 rounded-lg p-12 text-center transition-colors ${
+              selectedFile
+                ? 'border-solid border-green-400 bg-green-50 dark:bg-green-950'
+                : isDragging
+                ? 'border-dashed border-blue-500 bg-blue-50 dark:bg-blue-950'
+                : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -108,11 +110,16 @@ export default function Upload() {
               </div>
               
               <div>
+                {selectedFile && (
+                  <p className="text-lg font-medium mb-2">
+                    {selectedFile.name}
+                  </p>
+                )}
                 <p className="text-lg font-medium mb-2">
-                  {selectedFile ? selectedFile.name : "Drop your file here"}
+                  Drop your file here
                 </p>
                 <p className="text-gray-600 dark:text-gray-300">
-                  or click to select a file
+                  or
                 </p>
               </div>
               
@@ -128,7 +135,7 @@ export default function Upload() {
                 htmlFor="fileInput"
                 className="inline-block px-6 py-3 bg-black/[.05] dark:bg-white/[.06] rounded-lg font-medium cursor-pointer hover:bg-black/[.08] dark:hover:bg-white/[.08] transition-colors"
               >
-                Choose File
+                Select File
               </label>
             </div>
           </div>
