@@ -58,8 +58,13 @@ export default function Analyse() {
         </div>
       </nav>
 
+      {/* Page Header */}
+      <div className="px-8 py-4">
+        <h1 className="text-3xl font-bold text-center">Analyse Your Data</h1>
+      </div>
+
       {/* Main Layout */}
-      <div className="flex min-h-[calc(100vh-120px)]">
+      <div className="flex min-h-[calc(100vh-180px)]">
         {/* Left Sidebar */}
         <div className="w-64 bg-black/[.05] dark:bg-white/[.06] border-r border-gray-200 dark:border-gray-700 flex flex-col">
           {/* Chat History */}
@@ -131,4 +136,4 @@ export default function Analyse() {
       </div>
     </div>
   );
-} 
+}
