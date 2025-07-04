@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_API_URL
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 export default async function handler(req, res) {
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -78,30 +78,36 @@ export default async function handler(req, res) {
 
     const filePath = path.join(folderPath, 'runAnalysis.js');
     const fileContent = `
-import { ActionGetResponse } from "@solana/actions";
-
-const ACTIONS_CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, Content-Encoding, Accept-Encoding",
-  "Content-Type": "application/json",
-};
-
 export default function handler(req, res) {
   if (req.method === 'OPTIONS') {
-    res.writeHead(200, ACTIONS_CORS_HEADERS);
+    res.writeHead(200, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Content-Encoding, Accept-Encoding",
+      "Content-Type": "application/json",
+    });
     res.end();
     return;
   }
 
   if (req.method === 'GET') {
     const payload = ${JSON.stringify(payload, null, 2)};
-    res.writeHead(200, ACTIONS_CORS_HEADERS);
+    res.writeHead(200, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, Content-Encoding, Accept-Encoding",
+      "Content-Type": "application/json",
+    });
     res.end(JSON.stringify(payload));
     return;
   }
 
-  res.writeHead(405, ACTIONS_CORS_HEADERS);
+  res.writeHead(405, {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, Content-Encoding, Accept-Encoding",
+    "Content-Type": "application/json",
+  });
   res.end(JSON.stringify({ error: 'Method Not Allowed' }));
 }
 `;

@@ -67,7 +67,7 @@ export default function Chat({ walletAddress }) {
         />
         <button
           type="submit"
-          disabled={loading || !walletAddress}
+          disabled={loading}
           style={{
             marginTop: '10px',
             padding: '10px 20px',
@@ -75,7 +75,7 @@ export default function Chat({ walletAddress }) {
             color: '#fff',
             border: 'none',
             borderRadius: '6px',
-            cursor: loading || !walletAddress ? 'not-allowed' : 'pointer',
+            cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >
           {loading ? 'Analyzing...' : 'Run Analysis'}
@@ -84,22 +84,59 @@ export default function Chat({ walletAddress }) {
 
       {actionApiUrl && (
         <div style={{ marginBottom: '20px', backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
-          <h3 style={{ marginBottom: '10px' }}>Generated API</h3>
+          <h3 style={{ marginBottom: '10px' }}>Analysis Ready</h3>
           <p style={{ wordBreak: 'break-all', fontSize: '14px' }}>{actionApiUrl}</p>
-          <button
-            onClick={copyToClipboard}
-            style={{
-              marginTop: '10px',
-              padding: '6px 12px',
-              backgroundColor: '#444',
-              color: '#ccc',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            {justCopied ? 'Copied!' : 'Copy Link'}
-          </button>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <button
+              onClick={copyToClipboard}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#444',
+                color: '#ccc',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              {justCopied ? 'Copied!' : 'Copy Link'}
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/runDataAnalysis', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                      dataset: 'User Dataset', 
+                      type: 'Analysis', 
+                      title: 'Data Analysis', 
+                      action: 'Perform comprehensive analysis',
+                      prompt: userInput 
+                    }),
+                  });
+                  
+                  if (!res.ok) throw new Error(`Error: ${res.status}`);
+                  const result = await res.json();
+                  setResponse(result.analysis || 'Analysis completed successfully.');
+                } catch (err) {
+                  console.error('Analysis Error:', err);
+                  setResponse('Failed to run analysis. Please try again.');
+                }
+              }}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#3366cc',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Run Analysis Now
+            </button>
+          </div>
         </div>
       )}
 
