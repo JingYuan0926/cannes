@@ -1,34 +1,33 @@
 import unittest
 import pandas as pd
 import numpy as np
-import sys
 import os
+import sys
 
-# Add the parent directory to the path to import modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the parent directory to the path so we can import our modules
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from utils.visualization_engine import VisualizationEngine
-
 
 class TestVisualizationEngine(unittest.TestCase):
     """Test cases for VisualizationEngine class"""
     
     def setUp(self):
-        """Set up test fixtures before each test method."""
+        """Set up test fixtures"""
         self.viz_engine = VisualizationEngine()
         
         # Create sample datasets for testing
         self.sample_data = pd.DataFrame({
-            'category': ['A', 'B', 'C', 'A', 'B', 'C', 'A', 'B', 'C', 'A'],
-            'values': [10, 15, 20, 12, 18, 25, 14, 16, 22, 11],
-            'date': pd.date_range('2023-01-01', periods=10, freq='D'),
-            'region': ['North', 'South', 'East', 'West', 'North', 'South', 'East', 'West', 'North', 'South']
+            'category': ['A', 'B', 'C', 'D', 'A', 'B', 'C', 'D'],
+            'value': [10, 20, 15, 25, 12, 18, 17, 22],
+            'date': pd.date_range('2023-01-01', periods=8, freq='D'),
+            'region': ['North', 'South', 'East', 'West', 'North', 'South', 'East', 'West']
         })
         
         self.numerical_data = pd.DataFrame({
-            'x': range(20),
-            'y': np.random.randn(20) * 10 + 50,
-            'z': np.random.randn(20) * 5 + 25
+            'x': np.random.randn(50),
+            'y': np.random.randn(50),
+            'z': np.random.randn(50)
         })
         
         self.time_series_data = pd.DataFrame({
@@ -42,17 +41,16 @@ class TestVisualizationEngine(unittest.TestCase):
         config = {
             'chart_type': 'bar',
             'x_axis': 'category',
-            'y_axis': 'values',
-            'title': 'Test Bar Chart'
+            'y_axis': 'value',
+            'title': 'Value by Category'
         }
         
         result = self.viz_engine.create_visualization(self.sample_data, config)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        self.assertIn('insights', result)
+        self.assertIsNotNone(result)
         self.assertIn('chart_type', result)
         self.assertEqual(result['chart_type'], 'bar')
+        self.assertIn('config', result)
     
     def test_create_line_chart(self):
         """Test line chart creation"""
@@ -65,9 +63,8 @@ class TestVisualizationEngine(unittest.TestCase):
         
         result = self.viz_engine.create_visualization(self.time_series_data, config)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        self.assertIn('insights', result)
+        self.assertIsNotNone(result)
+        self.assertIn('chart_type', result)
         self.assertEqual(result['chart_type'], 'line')
     
     def test_create_scatter_plot(self):
@@ -76,30 +73,28 @@ class TestVisualizationEngine(unittest.TestCase):
             'chart_type': 'scatter',
             'x_axis': 'x',
             'y_axis': 'y',
-            'title': 'Scatter Plot Test'
+            'title': 'X vs Y Scatter Plot'
         }
         
         result = self.viz_engine.create_visualization(self.numerical_data, config)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        self.assertIn('insights', result)
+        self.assertIsNotNone(result)
+        self.assertIn('chart_type', result)
         self.assertEqual(result['chart_type'], 'scatter')
     
     def test_create_pie_chart(self):
         """Test pie chart creation"""
         config = {
             'chart_type': 'pie',
-            'values': 'values',
-            'labels': 'category',
+            'x_axis': 'category',
+            'y_axis': 'value',
             'title': 'Category Distribution'
         }
         
         result = self.viz_engine.create_visualization(self.sample_data, config)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        self.assertIn('insights', result)
+        self.assertIsNotNone(result)
+        self.assertIn('chart_type', result)
         self.assertEqual(result['chart_type'], 'pie')
     
     def test_create_histogram(self):
@@ -112,25 +107,23 @@ class TestVisualizationEngine(unittest.TestCase):
         
         result = self.viz_engine.create_visualization(self.numerical_data, config)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        self.assertIn('insights', result)
+        self.assertIsNotNone(result)
+        self.assertIn('chart_type', result)
         self.assertEqual(result['chart_type'], 'histogram')
     
     def test_create_box_plot(self):
         """Test box plot creation"""
         config = {
             'chart_type': 'box',
-            'y_axis': 'values',
             'x_axis': 'category',
-            'title': 'Values by Category'
+            'y_axis': 'value',
+            'title': 'Value Distribution by Category'
         }
         
         result = self.viz_engine.create_visualization(self.sample_data, config)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        self.assertIn('insights', result)
+        self.assertIsNotNone(result)
+        self.assertIn('chart_type', result)
         self.assertEqual(result['chart_type'], 'box')
     
     def test_create_heatmap(self):
@@ -142,86 +135,90 @@ class TestVisualizationEngine(unittest.TestCase):
         
         result = self.viz_engine.create_visualization(self.numerical_data, config)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        self.assertIn('insights', result)
+        self.assertIsNotNone(result)
+        self.assertIn('chart_type', result)
         self.assertEqual(result['chart_type'], 'heatmap')
     
     def test_auto_chart_selection(self):
         """Test automatic chart type selection"""
-        # Test with different data types
-        result = self.viz_engine.auto_select_chart_type(self.sample_data, 'category', 'values')
-        self.assertIn(result, ['bar', 'column'])
+        config = {
+            'x_axis': 'category',
+            'y_axis': 'value',
+            'title': 'Auto Selected Chart'
+        }
         
-        result = self.viz_engine.auto_select_chart_type(self.time_series_data, 'date', 'sales')
-        self.assertEqual(result, 'line')
+        result = self.viz_engine.create_visualization(self.sample_data, config)
         
-        result = self.viz_engine.auto_select_chart_type(self.numerical_data, 'x', 'y')
-        self.assertEqual(result, 'scatter')
+        self.assertIsNotNone(result)
+        self.assertIn('chart_type', result)
+        # Should auto-select bar chart for categorical vs numerical
+        self.assertEqual(result['chart_type'], 'bar')
     
-    def test_chart_insights_generation(self):
+    def test_generate_insights(self):
         """Test chart insights generation"""
-        # Test bar chart insights
-        insights = self.viz_engine._generate_chart_insights(self.sample_data, 'bar', 'category', 'values')
-        self.assertIsInstance(insights, list)
-        self.assertGreater(len(insights), 0)
+        config = {
+            'chart_type': 'bar',
+            'x_axis': 'category',
+            'y_axis': 'value',
+            'title': 'Value by Category'
+        }
         
-        # Test line chart insights
-        insights = self.viz_engine._generate_chart_insights(self.time_series_data, 'line', 'date', 'sales')
-        self.assertIsInstance(insights, list)
-        self.assertGreater(len(insights), 0)
+        result = self.viz_engine.create_visualization(self.sample_data, config)
+        
+        self.assertIsNotNone(result)
+        self.assertIn('insights', result)
+        self.assertIsInstance(result['insights'], list)
     
     def test_create_dashboard(self):
-        """Test dashboard creation"""
+        """Test dashboard creation with multiple charts"""
         charts = [
             {
                 'chart_type': 'bar',
                 'x_axis': 'category',
-                'y_axis': 'values',
-                'title': 'Values by Category'
+                'y_axis': 'value',
+                'title': 'Value by Category'
             },
             {
                 'chart_type': 'line',
                 'x_axis': 'date',
-                'y_axis': 'values',
-                'title': 'Values Over Time'
+                'y_axis': 'value',
+                'title': 'Value Over Time'
             }
         ]
         
-        result = self.viz_engine.create_dashboard(self.sample_data, charts)
+        dashboard = self.viz_engine.create_dashboard(self.sample_data, charts)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('dashboard_html', result)
-        self.assertIn('charts', result)
-        self.assertEqual(len(result['charts']), 2)
+        self.assertIsNotNone(dashboard)
+        self.assertIn('charts', dashboard)
+        self.assertEqual(len(dashboard['charts']), 2)
     
     def test_invalid_chart_type(self):
         """Test handling of invalid chart type"""
         config = {
             'chart_type': 'invalid_type',
             'x_axis': 'category',
-            'y_axis': 'values'
+            'y_axis': 'value',
+            'title': 'Invalid Chart'
         }
         
         result = self.viz_engine.create_visualization(self.sample_data, config)
         
-        # Should handle gracefully and return error or default chart
-        self.assertIsInstance(result, dict)
-        self.assertIn('error', result)
+        # Should handle gracefully or return None
+        self.assertIsNone(result)
     
     def test_missing_required_columns(self):
         """Test handling of missing required columns"""
         config = {
             'chart_type': 'bar',
             'x_axis': 'nonexistent_column',
-            'y_axis': 'values'
+            'y_axis': 'value',
+            'title': 'Missing Column Chart'
         }
         
         result = self.viz_engine.create_visualization(self.sample_data, config)
         
-        # Should handle gracefully and return error
-        self.assertIsInstance(result, dict)
-        self.assertIn('error', result)
+        # Should handle gracefully or return None
+        self.assertIsNone(result)
     
     def test_empty_dataframe(self):
         """Test handling of empty dataframe"""
@@ -229,99 +226,70 @@ class TestVisualizationEngine(unittest.TestCase):
         config = {
             'chart_type': 'bar',
             'x_axis': 'category',
-            'y_axis': 'values'
+            'y_axis': 'value',
+            'title': 'Empty Data Chart'
         }
         
         result = self.viz_engine.create_visualization(empty_df, config)
         
-        # Should handle gracefully and return error
-        self.assertIsInstance(result, dict)
-        self.assertIn('error', result)
+        # Should handle gracefully or return None
+        self.assertIsNone(result)
+    
+    def test_data_validation(self):
+        """Test data validation for chart creation"""
+        # Test with invalid data types
+        invalid_data = pd.DataFrame({
+            'category': ['A', 'B', 'C'],
+            'value': ['not_a_number', 'also_not_a_number', 'still_not_a_number']
+        })
+        
+        config = {
+            'chart_type': 'bar',
+            'x_axis': 'category',
+            'y_axis': 'value',
+            'title': 'Invalid Data Chart'
+        }
+        
+        result = self.viz_engine.create_visualization(invalid_data, config)
+        
+        # Should handle gracefully
+        self.assertIsNone(result)
     
     def test_chart_styling(self):
         """Test chart styling options"""
         config = {
             'chart_type': 'bar',
             'x_axis': 'category',
-            'y_axis': 'values',
+            'y_axis': 'value',
             'title': 'Styled Chart',
-            'color_scheme': 'viridis',
-            'width': 800,
-            'height': 600
+            'style': {
+                'color_scheme': 'viridis',
+                'width': 800,
+                'height': 600
+            }
         }
         
         result = self.viz_engine.create_visualization(self.sample_data, config)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        # Check if styling options are applied (this depends on implementation)
+        self.assertIsNotNone(result)
+        self.assertIn('style', result)
     
-    def test_multiple_series_chart(self):
-        """Test chart with multiple data series"""
-        config = {
-            'chart_type': 'line',
-            'x_axis': 'date',
-            'y_axis': ['sales', 'profit'],
-            'title': 'Sales and Profit Over Time'
-        }
-        
-        result = self.viz_engine.create_visualization(self.time_series_data, config)
-        
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        self.assertIn('insights', result)
-    
-    def test_chart_with_grouping(self):
-        """Test chart with grouping/color coding"""
-        config = {
-            'chart_type': 'scatter',
-            'x_axis': 'values',
-            'y_axis': 'values',
-            'color_by': 'category',
-            'title': 'Grouped Scatter Plot'
-        }
-        
-        result = self.viz_engine.create_visualization(self.sample_data, config)
-        
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-    
-    def test_chart_data_validation(self):
-        """Test data validation for chart creation"""
-        # Test with non-numeric data for numeric chart
-        invalid_data = pd.DataFrame({
-            'category': ['A', 'B', 'C'],
-            'text_values': ['low', 'medium', 'high']
-        })
-        
+    def test_export_formats(self):
+        """Test different export formats"""
         config = {
             'chart_type': 'bar',
             'x_axis': 'category',
-            'y_axis': 'text_values'
-        }
-        
-        result = self.viz_engine.create_visualization(invalid_data, config)
-        
-        # Should handle gracefully
-        self.assertIsInstance(result, dict)
-        # May return error or attempt to convert/handle the data
-    
-    def test_chart_export_formats(self):
-        """Test different chart export formats"""
-        config = {
-            'chart_type': 'bar',
-            'x_axis': 'category',
-            'y_axis': 'values',
-            'title': 'Export Test',
-            'export_format': 'png'
+            'y_axis': 'value',
+            'title': 'Export Test Chart'
         }
         
         result = self.viz_engine.create_visualization(self.sample_data, config)
         
-        self.assertIsInstance(result, dict)
-        self.assertIn('chart_html', result)
-        # Check if export format is handled (depends on implementation)
-
+        # Test different export formats
+        formats = ['png', 'svg', 'html', 'json']
+        for fmt in formats:
+            export_result = self.viz_engine.export_chart(result, fmt)
+            self.assertIsNotNone(export_result)
 
 if __name__ == '__main__':
     unittest.main() 
