@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import multer from 'multer';
 import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
@@ -11,7 +12,7 @@ const openai = new OpenAI({
 });
 
 const upload = multer({
-  dest: '/tmp',
+  dest: os.tmpdir(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
@@ -56,7 +57,7 @@ export default async function handler(req, res) {
     // Handle file upload (multipart/form-data)
     if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
       let sessionId = req.headers['x-session-id'] || uuidv4();
-      const sampleDataPath = path.join('/tmp', `sample_data_${sessionId}.txt`);
+      const sampleDataPath = path.join(os.tmpdir(), `sample_data_${sessionId}.txt`);
       
       await runMiddleware(req, res, upload.array('files'));
       const files = req.files || [];
@@ -103,22 +104,30 @@ export default async function handler(req, res) {
       }
     }
     
-    const { prompt, sampleDataReady, conversation, sessionId: bodySessionId } = body;           
+    const { prompt, sampleDataReady, conversation, sessionId: bodySessionId, filesContent } = body;           
     
     console.log('Received sessionId from body:', bodySessionId);
     console.log('sampleDataReady:', sampleDataReady);
+    console.log('Files content provided:', !!filesContent);
+    console.log('Files content length:', filesContent ? filesContent.length : 0);
     
     let sampleData = '';
     let sessionId = bodySessionId || req.headers['x-session-id'] || uuidv4();
-    const sampleDataPath = path.join('/tmp', `sample_data_${sessionId}.txt`);
+    const sampleDataPath = path.join(os.tmpdir(), `sample_data_${sessionId}.txt`);
     
     console.log('Resolved sampleDataPath:', sampleDataPath);
     console.log('File exists?', fs.existsSync(sampleDataPath));
 
-    if (sampleDataReady) {
+    // Use filesContent directly if provided, otherwise fall back to session file
+    if (filesContent) {
+      sampleData = filesContent;
+      console.log('Using filesContent, length:', sampleData.length);
+      console.log('Sample data preview:', sampleData.substring(0, 500) + '...');
+    } else if (sampleDataReady) {
       try {
         if (fs.existsSync(sampleDataPath)) {
           sampleData = fs.readFileSync(sampleDataPath, 'utf8');
+          console.log('Using session file, length:', sampleData.length);
         }
       } catch (err) {
         console.error('Sample data read error:', err);
