@@ -354,27 +354,45 @@ class DiagnosticAnalytics:
     def calculate_partial_correlation(self, x: pd.Series, y: pd.Series, z: pd.Series) -> float:
         """Calculate partial correlation between x and y controlling for z"""
         try:
+            # Remove NaN values
+            valid_indices = x.notna() & y.notna() & z.notna()
+            x_clean = x[valid_indices]
+            y_clean = y[valid_indices]
+            z_clean = z[valid_indices]
+            
+            if len(x_clean) < 3:  # Need at least 3 points for correlation
+                return 0.0
+                
+            # Check for constant series
+            if x_clean.nunique() <= 1 or y_clean.nunique() <= 1 or z_clean.nunique() <= 1:
+                return 0.0
+            
             # Correlations
-            rxy, _ = pearsonr(x, y)
-            rxz, _ = pearsonr(x, z)
-            ryz, _ = pearsonr(y, z)
+            rxy, _ = pearsonr(x_clean, y_clean)
+            rxz, _ = pearsonr(x_clean, z_clean)
+            ryz, _ = pearsonr(y_clean, z_clean)
+            
+            # Handle NaN correlations
+            if pd.isna(rxy) or pd.isna(rxz) or pd.isna(ryz):
+                return 0.0
             
             # Partial correlation formula
             numerator = rxy - (rxz * ryz)
             denominator = np.sqrt((1 - rxz**2) * (1 - ryz**2))
             
-            if denominator == 0:
-                return 0
+            if denominator == 0 or pd.isna(denominator):
+                return 0.0
             
-            return numerator / denominator
+            result = numerator / denominator
+            return 0.0 if pd.isna(result) else float(result)
         except:
-            return 0
+            return 0.0
     
     def approximate_granger_causality(self, x: pd.Series, y: pd.Series, max_lag: int = 3) -> float:
         """Approximate Granger causality using lagged correlations"""
         try:
             if len(x) < max_lag + 1:
-                return 0
+                return 0.0
             
             # Calculate lagged correlations
             lagged_corrs = []
@@ -383,13 +401,19 @@ class DiagnosticAnalytics:
                     x_lagged = x.shift(lag).dropna()
                     y_aligned = y.iloc[lag:lag+len(x_lagged)]
                     
-                    if len(x_lagged) > 0 and len(y_aligned) > 0:
+                    if len(x_lagged) > 2 and len(y_aligned) > 2:
+                        # Check for constant series
+                        if x_lagged.nunique() <= 1 or y_aligned.nunique() <= 1:
+                            continue
+                            
                         corr, _ = pearsonr(x_lagged, y_aligned)
-                        lagged_corrs.append(abs(corr))
+                        if not pd.isna(corr):
+                            lagged_corrs.append(abs(corr))
             
-            return np.mean(lagged_corrs) if lagged_corrs else 0
+            result = np.mean(lagged_corrs) if lagged_corrs else 0.0
+            return 0.0 if pd.isna(result) else float(result)
         except:
-            return 0
+            return 0.0
     
     def perform_correlation_analysis(self, df: pd.DataFrame, goal: str) -> Dict[str, Any]:
         """Perform comprehensive correlation analysis"""
@@ -402,11 +426,26 @@ class DiagnosticAnalytics:
             # Clean data
             df_clean = df[numerical_cols].fillna(df[numerical_cols].mean())
             
-            # Pearson correlation
-            pearson_corr = df_clean.corr(method='pearson')
+            # Check for constant columns (will produce NaN correlations)
+            constant_cols = []
+            for col in numerical_cols:
+                if df_clean[col].nunique() <= 1:
+                    constant_cols.append(col)
             
-            # Spearman correlation
-            spearman_corr = df_clean.corr(method='spearman')
+            # Remove constant columns
+            if constant_cols:
+                logger.warning(f"Removing constant columns: {constant_cols}")
+                numerical_cols = [col for col in numerical_cols if col not in constant_cols]
+                df_clean = df_clean[numerical_cols]
+            
+            if len(numerical_cols) < 2:
+                raise ValueError("Need at least 2 non-constant numerical columns for correlation analysis")
+            
+            # Pearson correlation
+            pearson_corr = df_clean.corr(method='pearson').fillna(0)
+            
+            # Spearman correlation  
+            spearman_corr = df_clean.corr(method='spearman').fillna(0)
             
             # Find strong correlations
             strong_correlations = []
@@ -415,12 +454,18 @@ class DiagnosticAnalytics:
                     pearson_val = pearson_corr.iloc[i, j]
                     spearman_val = spearman_corr.iloc[i, j]
                     
+                    # Handle NaN values
+                    if pd.isna(pearson_val):
+                        pearson_val = 0
+                    if pd.isna(spearman_val):
+                        spearman_val = 0
+                    
                     if abs(pearson_val) > 0.5 or abs(spearman_val) > 0.5:
                         strong_correlations.append({
                             'variable1': col1,
                             'variable2': col2,
-                            'pearson': pearson_val,
-                            'spearman': spearman_val,
+                            'pearson': float(pearson_val),
+                            'spearman': float(spearman_val),
                             'strength': max(abs(pearson_val), abs(spearman_val))
                         })
             
@@ -437,14 +482,29 @@ class DiagnosticAnalytics:
                 pearson_corr, spearman_corr, strong_correlations, numerical_cols
             )
             
+            # Clean correlation matrices for JSON serialization
+            pearson_dict = {}
+            spearman_dict = {}
+            
+            for col1 in numerical_cols:
+                pearson_dict[col1] = {}
+                spearman_dict[col1] = {}
+                for col2 in numerical_cols:
+                    p_val = pearson_corr.loc[col1, col2]
+                    s_val = spearman_corr.loc[col1, col2]
+                    
+                    pearson_dict[col1][col2] = 0 if pd.isna(p_val) else float(p_val)
+                    spearman_dict[col1][col2] = 0 if pd.isna(s_val) else float(s_val)
+            
             return {
                 'algorithm': 'Correlation Analysis',
                 'results': {
-                    'pearson_correlation': pearson_corr.to_dict(),
-                    'spearman_correlation': spearman_corr.to_dict(),
+                    'pearson_correlation': pearson_dict,
+                    'spearman_correlation': spearman_dict,
                     'strong_correlations': strong_correlations,
                     'variables': numerical_cols,
-                    'n_strong_correlations': len(strong_correlations)
+                    'n_strong_correlations': len(strong_correlations),
+                    'constant_columns_removed': constant_cols
                 },
                 'insights': insights,
                 'graphs': graphs,

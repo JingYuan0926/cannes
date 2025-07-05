@@ -43,6 +43,8 @@ class NumpyEncoder(json.JSONEncoder):
         if isinstance(obj, np.integer):
             return int(obj)
         elif isinstance(obj, np.floating):
+            if np.isnan(obj) or np.isinf(obj):
+                return None
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -54,7 +56,31 @@ class NumpyEncoder(json.JSONEncoder):
 
 def safe_jsonify(data):
     """Safely convert data to JSON using custom encoder"""
-    return json.loads(json.dumps(data, cls=NumpyEncoder))
+    def clean_data(obj):
+        """Recursively clean data to handle NaN values"""
+        if isinstance(obj, dict):
+            return {key: clean_data(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [clean_data(item) for item in obj]
+        elif isinstance(obj, float) and (np.isnan(obj) or np.isinf(obj)):
+            return None
+        elif pd.isna(obj):
+            return None
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            if np.isnan(obj) or np.isinf(obj):
+                return None
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, pd.Timestamp):
+            return obj.isoformat()
+        else:
+            return obj
+    
+    cleaned_data = clean_data(data)
+    return json.loads(json.dumps(cleaned_data, cls=NumpyEncoder))
 
 def create_app():
     """Create and configure the Flask application"""

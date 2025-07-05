@@ -3,31 +3,22 @@
 AI-Powered EDA Analysis System
 
 This Flask application analyzes datasets and generates intelligent visualizations
-based on user prompts, covering four types of analytics:
-- Descriptive: What happened?
-- Diagnostic: Why did it happen?
-- Predictive: What will happen?
-- Prescriptive: What should we do?
+based on user prompts, returning everything in JSON format for frontend rendering.
 """
 
 import os
 import json
 import pandas as pd
 import numpy as np
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
-import openai
 from datetime import datetime
 import logging
-from io import StringIO
-import tempfile
-import base64
 from dotenv import load_dotenv
-from utils.image_analyzer import ImageAnalyzer
 from utils.data_analyzer import DataAnalyzer
 from utils.business_intelligence import BusinessIntelligenceEngine
 from utils.visualization_engine import VisualizationEngine
-from utils.plot_converter import PlotConverter
 
 # Load environment variables from .env file
 load_dotenv()
@@ -42,6 +33,8 @@ class NumpyEncoder(json.JSONEncoder):
         if isinstance(obj, np.integer):
             return int(obj)
         elif isinstance(obj, np.floating):
+            if np.isnan(obj):
+                return None
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
@@ -63,16 +56,56 @@ def safe_jsonify(data):
     """Safely convert data to JSON, handling numpy types"""
     return json.loads(json.dumps(data, cls=NumpyEncoder))
 
+def json_safe_convert(obj):
+    """Convert data to JSON-safe format, handling NaN values"""
+    if isinstance(obj, dict):
+        return {key: json_safe_convert(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [json_safe_convert(item) for item in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        if np.isnan(obj):
+            return None
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif pd.isna(obj):
+        return None
+    else:
+        return obj
+
 def create_app():
     """Create and configure the Flask application"""
     app = Flask(__name__)
     
-    # Configuration
-    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-    app.config['UPLOAD_FOLDER'] = 'data'
+    # Enable CORS for all routes
+    CORS(app, origins=['http://localhost:3000', 'http://localhost:3001'])
     
-    # Initialize OpenAI
-    openai.api_key = os.getenv('OPENAI_API_KEY')
+    # Configuration - Increase limits for large datasets
+    app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
+    app.config['UPLOAD_FOLDER'] = 'data'
+    app.config['JSON_AS_ASCII'] = False
+    app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+    
+    # Additional configurations for handling large JSON payloads
+    import sys
+    if hasattr(sys, 'set_int_max_str_digits'):
+        sys.set_int_max_str_digits(100000)
+    
+    # Initialize OpenAI client
+    openai_client = None
+    try:
+        from openai import OpenAI
+        api_key = os.getenv('OPENAI_API_KEY')
+        if api_key:
+            openai_client = OpenAI(api_key=api_key)
+            logger.info("OpenAI client initialized successfully")
+        else:
+            logger.warning("OPENAI_API_KEY not found in environment variables")
+    except Exception as e:
+        logger.warning(f"Failed to initialize OpenAI client: {str(e)}. Will use fallback strategy.")
+        openai_client = None
     
     # Initialize our engines
     viz_engine = VisualizationEngine()
@@ -140,8 +173,8 @@ def create_app():
             Please recommend 8 visualizations (2 per category) that would be most insightful for this dataset.
             """
             
-            if openai.api_key:
-                response = openai.ChatCompletion.create(
+            if openai_client:
+                response = openai_client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
                         {"role": "system", "content": system_prompt},
@@ -262,21 +295,16 @@ def create_app():
     
     @app.route('/')
     def home():
-        """Render the upload form"""
-        return render_template('upload.html')
-    
-    @app.route('/health')
-    def health_check():
-        """Health check endpoint"""
+        """Health check endpoint that returns JSON status"""
         return jsonify({
             'status': 'healthy',
-            'service': 'AI Data Analysis Pipeline',
+            'service': 'AI-Powered EDA Analysis System',
             'timestamp': datetime.now().isoformat()
         })
     
     @app.route('/analyze', methods=['POST'])
     def analyze_data():
-        """Main analysis endpoint"""
+        """Main analysis endpoint - returns everything in JSON format"""
         nonlocal current_dataset, current_analysis
         
         try:
@@ -328,42 +356,27 @@ def create_app():
             # Get OpenAI-powered visualization strategy
             viz_strategy = get_openai_analysis_strategy(df, user_prompt)
             
-            # Generate visualizations and save as JSON files
+            # Generate visualizations as JSON data only
             visualizations = []
-            plots_dir = 'plots'
-            if not os.path.exists(plots_dir):
-                os.makedirs(plots_dir)
             
             for i, viz_config in enumerate(viz_strategy.get('visualizations', [])):
                 try:
                     viz_result = viz_engine.create_visualization(df, viz_config)
                     if viz_result:
-                        # Save plot JSON to file
-                        plot_filename = f"plot_{i+1:02d}_{viz_config.get('chart_type', 'chart')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-                        plot_filepath = os.path.join(plots_dir, plot_filename)
-                        
-                        # Extract just the plot data for saving
-                        plot_data = {
-                            'chart_json': viz_result.get('chart_json', ''),
+                        # Keep only the JSON chart data and metadata
+                        chart_data = {
+                            'id': f"chart_{i+1}",
                             'chart_type': viz_result.get('chart_type', ''),
+                            'category': viz_config.get('category', ''),
+                            'title': viz_config.get('title', f'Chart {i+1}'),
+                            'description': viz_config.get('description', ''),
+                            'chart_json': viz_result.get('chart_json', {}),
                             'config': viz_result.get('config', {}),
-                            'title': viz_result.get('config', {}).get('title', f'Chart {i+1}'),
                             'timestamp': datetime.now().isoformat()
                         }
                         
-                        with open(plot_filepath, 'w') as f:
-                            json.dump(plot_data, f, indent=2)
-                        
-                        # Add file reference to visualization result
-                        viz_result['plot_file'] = plot_filename
-                        viz_result['plot_path'] = plot_filepath
-                        
-                        # Remove heavy HTML content to save memory
-                        if 'chart_html' in viz_result:
-                            del viz_result['chart_html']
-                        
-                        visualizations.append(viz_result)
-                        logger.info(f"Saved plot to {plot_filename}")
+                        visualizations.append(chart_data)
+                        logger.info(f"Generated chart {i+1}: {viz_config.get('chart_type', 'unknown')}")
                         
                 except Exception as e:
                     logger.error(f"Error creating visualization: {str(e)}")
@@ -387,6 +400,7 @@ def create_app():
             }
             
             # Convert to safe JSON format
+            current_analysis = json_safe_convert(current_analysis)
             safe_analysis = safe_jsonify(current_analysis)
             
             return jsonify({
@@ -432,117 +446,9 @@ def create_app():
         else:
             return jsonify({'error': 'No analysis available. Please analyze data first.'}), 404
     
-    @app.route('/convert-plots', methods=['POST'])
-    def convert_plots_to_png():
-        """Convert JSON plots to PNG images"""
-        try:
-            # Get parameters from request
-            data = request.get_json() if request.is_json else {}
-            plots_dir = data.get('plots_dir', 'plots')
-            output_dir = data.get('output_dir', 'images')
-            width = data.get('width', 1200)
-            height = data.get('height', 800)
-            scale = data.get('scale', 2.0)
-            
-            # Initialize plot converter
-            converter = PlotConverter(output_dir=output_dir)
-            
-            # Convert all plots
-            converted_files = converter.convert_all_plots(
-                plots_dir=plots_dir,
-                width=width,
-                height=height,
-                scale=scale
-            )
-            
-            if converted_files:
-                # Create summary report
-                report_path = converter.create_summary_report(converted_files)
-                
-                return jsonify({
-                    'status': 'success',
-                    'message': f'Successfully converted {len(converted_files)} plots to PNG',
-                    'converted_files': [os.path.basename(f) for f in converted_files],
-                    'output_directory': output_dir,
-                    'report_path': report_path,
-                    'total_converted': len(converted_files)
-                })
-            else:
-                return jsonify({
-                    'status': 'warning',
-                    'message': 'No plots were converted. Check if plots directory exists and contains JSON files.',
-                    'plots_dir': plots_dir
-                }), 404
-                
-        except Exception as e:
-            logger.error(f"Error converting plots: {str(e)}")
-            return jsonify({'error': f'Plot conversion failed: {str(e)}'}), 500
-    
-    @app.route('/analyze-images', methods=['POST'])
-    def analyze_images():
-        """
-        Analyze generated plot images and provide explanations.
-        
-        Expected JSON payload:
-        {
-            "images_dir": "images",  # optional, defaults to "images"
-            "create_report": true    # optional, defaults to true
-        }
-        """
-        try:
-            # Get parameters from request
-            data = request.get_json() or {}
-            images_dir = data.get('images_dir', 'images')
-            create_report = data.get('create_report', True)
-            
-            # Initialize analyzer
-            analyzer = ImageAnalyzer(images_dir)
-            
-            # Analyze all images
-            analyses = analyzer.analyze_all_images()
-            
-            if 'error' in analyses:
-                return jsonify({
-                    'success': False,
-                    'error': analyses['error']
-                }), 400
-            
-            if 'message' in analyses and not analyses.get('analyses'):
-                return jsonify({
-                    'success': False,
-                    'warning': analyses['message']
-                }), 200
-            
-            # Create HTML report if requested
-            report_path = None
-            if create_report:
-                report_path = analyzer.create_analysis_report(analyses)
-            
-            # Prepare response
-            response = {
-                'success': True,
-                'message': f'Successfully analyzed {analyses["summary"]["total_images"]} images',
-                'summary': analyses['summary'],
-                'analyses': analyses['analyses']
-            }
-            
-            if report_path:
-                response['report_path'] = report_path
-            
-            logger.info(f"Image analysis completed: {analyses['summary']['total_images']} images analyzed")
-            
-            return jsonify(response)
-            
-        except Exception as e:
-            logger.error(f"Error analyzing images: {str(e)}")
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
-    
     @app.errorhandler(413)
     def too_large(e):
-        return jsonify({'error': 'File too large. Maximum size is 16MB.'}), 413
+        return jsonify({'error': 'File too large. Maximum size is 100MB.'}), 413
     
     @app.errorhandler(404)
     def not_found(e):
@@ -558,4 +464,4 @@ if __name__ == '__main__':
     app = create_app()
     port = int(os.environ.get('PORT', 3035))
     app.run(host='0.0.0.0', port=port, debug=True)
-    print(f"🚀 AI Data Analysis Pipeline is running on port {port}") 
+    print(f"🚀 AI EDA Analysis System is running on port {port}") 

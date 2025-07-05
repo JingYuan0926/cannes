@@ -11,12 +11,20 @@ Created: 2025-01-21
 import os
 import json
 import logging
-import openai
 import pandas as pd
 import numpy as np
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import uuid
+
+try:
+    from openai import OpenAI
+    openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    OPENAI_AVAILABLE = bool(os.getenv('OPENAI_API_KEY'))
+except ImportError:
+    openai_client = None
+    OPENAI_AVAILABLE = False
+    logging.warning("OpenAI not available - using fallback strategies")
 
 from .descriptive_analytics import DescriptiveAnalytics
 from .predictive_analytics import PredictiveAnalytics
@@ -120,20 +128,28 @@ class AnalysisOrchestrator:
             Please recommend the most appropriate analytics approaches and algorithms for this dataset and goal.
             """
             
-            if openai.api_key:
-                response = openai.ChatCompletion.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_message}
-                    ],
-                    max_tokens=1500,
-                    temperature=0.3
-                )
-                
-                strategy = json.loads(response.choices[0].message.content)
-                return strategy
+            if OPENAI_AVAILABLE and openai_client:
+                try:
+                    response = openai_client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_message}
+                        ],
+                        max_tokens=1500,
+                        temperature=0.3
+                    )
+                    
+                    strategy = json.loads(response.choices[0].message.content)
+                    return strategy
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse OpenAI response: {e}")
+                    return self.get_fallback_strategy(df, goal)
+                except Exception as e:
+                    logger.error(f"OpenAI API error: {e}")
+                    return self.get_fallback_strategy(df, goal)
             else:
+                logger.info("OpenAI not available, using fallback strategy")
                 return self.get_fallback_strategy(df, goal)
                 
         except Exception as e:
@@ -330,7 +346,7 @@ class AnalysisOrchestrator:
                 'key_insights': all_insights[:10]  # Top 10 insights
             }
             
-            if openai.api_key:
+            if OPENAI_AVAILABLE and openai_client:
                 system_prompt = """You are an expert data scientist providing executive summary insights.
                 Based on the analysis results, provide a comprehensive summary with:
                 1. Justification for the analysis approach
@@ -355,7 +371,7 @@ class AnalysisOrchestrator:
                 Please provide executive summary insights.
                 """
                 
-                response = openai.ChatCompletion.create(
+                response = openai_client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
                         {"role": "system", "content": system_prompt},
