@@ -34,6 +34,7 @@ export default async function handler(req, res) {
     });
 
     const result = completion.choices[0].message.content.trim();
+    console.log("AI Output:", result);
 
     const extracted = {
       dataset: '',
