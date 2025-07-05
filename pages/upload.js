@@ -182,11 +182,7 @@ export default function Upload() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className={`flex-1 flex flex-col items-center px-8 min-h-0 overflow-y-auto ${
-          isUploadComplete || selectedFile || uploadError 
-            ? 'justify-start pt-8' 
-            : 'justify-center'
-        }`}
+        className="flex-1 flex flex-col items-center px-8 min-h-0 overflow-y-auto justify-start pt-8"
       >
         <div className="max-w-2xl w-full">
           
@@ -300,16 +296,6 @@ export default function Upload() {
             </div>
           </motion.div>
 
-          {/* Supported file types */}
-          <motion.div 
-            variants={itemVariants}
-            className="mt-4 text-center"
-          >
-            <p className="text-sm text-gray-600 transition-opacity duration-200">
-              Supported formats: CSV, Excel (.xlsx, .xls), JSON, TXT
-            </p>
-          </motion.div>
-          
           {/* File Information */}
           {selectedFile && (
             <motion.div 
@@ -393,32 +379,11 @@ export default function Upload() {
               className="mt-6 bg-green-50 p-4 rounded-2xl border border-green-200 shadow-lg"
             >
               <div className="text-center">
-                <div className="flex items-center justify-center mb-4">
+                <div className="flex items-center justify-center">
                   <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span className="text-green-700 font-medium">Upload completed successfully!</span>
-                </div>
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <p className="text-sm text-green-700 mb-2">
-                    <strong>Blob ID:</strong>
-                  </p>
-                  <p className="text-xs text-green-600 font-mono break-all bg-white p-2 rounded">
-                    {uploadedBlobId}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2 justify-center mt-4">
-                  <button
-                    onClick={() => navigator.clipboard.writeText(uploadedBlobId)}
-                    className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                  >
-                    Copy Blob ID
-                  </button>
-                  <Link href="/view">
-                    <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
-                      View Files
-                    </button>
-                  </Link>
                 </div>
               </div>
             </motion.div>
