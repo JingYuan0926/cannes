@@ -21,6 +21,8 @@ export default function Analyse() {
   const [activeChat, setActiveChat] = useState(chats[0]);
   const [darkMode, setDarkMode] = useState(false);
   const [message, setMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [isAiTyping, setIsAiTyping] = useState(false);
 
   // Dark mode persistence
   useEffect(() => {
@@ -53,7 +55,7 @@ export default function Analyse() {
       name: `Chat ${chats.length + 1}`,
       messages: [],
     };
-    setChats([...chats, newChat]);
+    setChats([newChat, ...chats]);
     setActiveChat(newChat);
   };
 
@@ -63,7 +65,7 @@ export default function Analyse() {
         id: Date.now(),
         text: messageText,
         sender: 'user',
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date(),
       };
       
       const updatedChat = {
@@ -75,14 +77,16 @@ export default function Analyse() {
         chat.id === activeChat.id ? updatedChat : chat
       ));
       setActiveChat(updatedChat);
+      setIsTyping(false);
+      setIsAiTyping(true);
       
-      // Simulate AI response after a short delay
+      // Simulate AI typing and response
       setTimeout(() => {
         const aiResponse = {
           id: Date.now() + 1,
           text: getAIResponse(messageText),
           sender: 'ai',
-          timestamp: new Date().toLocaleTimeString(),
+          timestamp: new Date(),
         };
         
         const updatedChatWithAI = {
@@ -94,7 +98,8 @@ export default function Analyse() {
           chat.id === activeChat.id ? updatedChatWithAI : chat
         ));
         setActiveChat(updatedChatWithAI);
-      }, 1000);
+        setIsAiTyping(false);
+      }, 1500 + Math.random() * 1000); // Random delay between 1.5-2.5 seconds
     }
   };
 
@@ -127,6 +132,74 @@ export default function Analyse() {
       handleSendMessage();
     }
   };
+
+  const handleInputChange = (e) => {
+    setMessage(e.target.value);
+    setIsTyping(e.target.value.length > 0);
+  };
+
+  const formatTimestamp = (timestamp) => {
+    const now = new Date();
+    const messageTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - messageTime) / (1000 * 60));
+    
+    if (diffInMinutes < 1) {
+      return 'Just now';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes}m ago`;
+    } else if (diffInMinutes < 1440) {
+      return `${Math.floor(diffInMinutes / 60)}h ago`;
+    } else {
+      return messageTime.toLocaleDateString();
+    }
+  };
+
+  const getUserAvatar = () => (
+    <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+      U
+    </div>
+  );
+
+  const getAIAvatar = () => (
+    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V7H2V9H3V15H2V17H3V21C3 22.1 3.89 23 5 23H19C20.1 23 21 22.1 21 21V17H22V15H21V9H22V7H21ZM19 9V15H5V9H19ZM9 11V13H7V11H9ZM13 11V13H11V11H13ZM17 11V13H15V11H17Z"/>
+      </svg>
+    </div>
+  );
+
+  const TypingIndicator = () => (
+    <div className="flex items-start space-x-3 mb-4">
+      {getAIAvatar()}
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-md px-4 py-3 transition-colors duration-300">
+        <div className="flex space-x-1">
+          <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const MessageBubble = ({ message, isOwn }) => (
+    <div className={`flex items-start space-x-3 mb-4 ${isOwn ? 'flex-row-reverse space-x-reverse' : ''} group`}>
+      {isOwn ? getUserAvatar() : getAIAvatar()}
+      <div className="flex flex-col max-w-xs lg:max-w-md">
+        <div className={`px-4 py-3 rounded-2xl transition-all duration-300 group-hover:shadow-md ${
+          isOwn
+            ? 'bg-blue-600 dark:bg-blue-500 text-white rounded-br-md'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
+        }`}>
+          <p className="text-sm leading-relaxed">{message.text}</p>
+        </div>
+        <div className={`flex items-center mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {formatTimestamp(message.timestamp)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
@@ -182,6 +255,12 @@ export default function Analyse() {
                       </span>
                     )}
                   </div>
+                  {/* Last message preview */}
+                  {chat.messages.length > 0 && (
+                    <p className="text-xs opacity-75 mt-1 truncate">
+                      {chat.messages[chat.messages.length - 1].text}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -205,57 +284,65 @@ export default function Analyse() {
         <main className="flex-1 flex flex-col bg-white dark:bg-gray-900">
           {/* Chat Name Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
-            <h2 className="text-xl font-semibold">{activeChat.name}</h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">{activeChat.name}</h2>
+                {isAiTyping && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                    AI is typing...
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
           
           {/* Chat Area */}
           <div className="flex-1 p-8 overflow-y-auto">
-            <div className="space-y-4 max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto">
               {activeChat.messages.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                    <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium mb-2">Start Your Analysis</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
                     Ask me anything about your data and I'll help you discover insights.
                   </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
+                  <div className="flex flex-wrap gap-3 justify-center">
                     <button 
                       onClick={() => handleSuggestionClick("Show me a summary")}
-                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 text-sm"
+                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm hover:shadow-md transform hover:scale-105"
                     >
-                      Show me a summary
+                      📊 Show me a summary
                     </button>
                     <button 
                       onClick={() => handleSuggestionClick("Find trends")}
-                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 text-sm"
+                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm hover:shadow-md transform hover:scale-105"
                     >
-                      Find trends
+                      📈 Find trends
                     </button>
                     <button 
                       onClick={() => handleSuggestionClick("Create visualization")}
-                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 text-sm"
+                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm hover:shadow-md transform hover:scale-105"
                     >
-                      Create visualization
+                      📈 Create visualization
                     </button>
                   </div>
                 </div>
               ) : (
-                activeChat.messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
-                      msg.sender === 'user'
-                        ? 'bg-blue-600 text-white rounded-br-md'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md'
-                    } transition-colors duration-300`}>
-                      <p className="text-sm">{msg.text}</p>
-                      <p className="text-xs mt-1 opacity-75">{msg.timestamp}</p>
-                    </div>
-                  </div>
-                ))
+                <div>
+                  {activeChat.messages.map((msg) => (
+                    <MessageBubble 
+                      key={msg.id} 
+                      message={msg} 
+                      isOwn={msg.sender === 'user'} 
+                    />
+                  ))}
+                  {isAiTyping && <TypingIndicator />}
+                </div>
               )}
             </div>
           </div>
@@ -263,24 +350,26 @@ export default function Analyse() {
           {/* Input Area */}
           <div className="p-8 pt-0">
             <div className="relative max-w-4xl mx-auto">
-              <div className="relative bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 transition-colors duration-300 focus-within:border-blue-500 dark:focus-within:border-blue-400">
+              <div className="relative bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 transition-all duration-300 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:shadow-lg">
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
                   className="w-full min-h-12 max-h-32 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-gray-500 dark:placeholder-gray-400"
                   placeholder="Ask your AI data analyst a question about your data"
                   rows="1"
                 />
-                <button 
-                  onClick={handleSendMessage}
-                  disabled={!message.trim()}
-                  className="absolute right-2 top-2 w-8 h-8 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
-                  </svg>
-                </button>
+                <div className="absolute right-2 top-2 flex items-center space-x-2">
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={!message.trim()}
+                    className="w-8 h-8 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-105 active:scale-95"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
                 Press Enter to send, Shift+Enter for new line
