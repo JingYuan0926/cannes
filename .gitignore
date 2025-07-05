@@ -41,3 +41,5 @@ yarn-error.log*
 next-env.d.ts
 __pycache__
 package-lock.json
+/eda/images
+/eda/plots
