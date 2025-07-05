@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "framer-motion": "^12.23.0",
     "@mysten/sui": "^1.35.0",
     "@mysten/walrus": "^0.2.1",
     "formidable": "^3.5.4",

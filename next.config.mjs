@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['@mysten/walrus', '@mysten/walrus-wasm'],
+  reactStrictMode: true,
 };
 
 export default nextConfig;
