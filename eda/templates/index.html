@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered EDA Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .upload-area {
+            border: 2px dashed #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #667eea;
+            background-color: #f8fafc;
+        }
+        .upload-area.dragover {
+            border-color: #667eea;
+            background-color: #edf2f7;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .insight-item {
+            background: #f8fafc;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin: 8px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .recommendation-item {
+            background: #fff5f5;
+            border-left: 4px solid #f56565;
+            padding: 16px;
+            margin: 8px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold mb-2">
+                    <i class="fas fa-chart-line mr-3"></i>
+                    AI-Powered EDA Analysis
+                </h1>
+                <p class="text-xl opacity-90">
+                    Upload your dataset and let AI generate intelligent insights and visualizations
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Upload Section -->
+        <div class="card-shadow bg-white rounded-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-upload mr-2"></i>
+                Upload Your Dataset
+            </h2>
+            
+            <form id="uploadForm" class="space-y-6">
+                <!-- File Upload Area -->
+                <div class="upload-area rounded-lg p-8 text-center cursor-pointer" id="uploadArea">
+                    <div class="mb-4">
+                        <i class="fas fa-cloud-upload-alt text-6xl text-gray-400"></i>
+                    </div>
+                    <div class="text-lg text-gray-600 mb-2">
+                        Drop your CSV file here or click to browse
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Supported formats: CSV (Max size: 10MB)
+                    </div>
+                    <input type="file" id="fileInput" accept=".csv" class="hidden">
+                </div>
+                
+                <!-- Selected File Info -->
+                <div id="fileInfo" class="hidden bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-file-csv text-green-600 mr-3"></i>
+                        <div>
+                            <div class="font-semibold text-green-800" id="fileName"></div>
+                            <div class="text-sm text-green-600" id="fileSize"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prompt Input -->
+                <div>
+                    <label for="userPrompt" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-question-circle mr-1"></i>
+                        Analysis Prompt (Optional)
+                    </label>
+                    <textarea 
+                        id="userPrompt" 
+                        name="prompt" 
+                        rows="3" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="What specific insights are you looking for? e.g., 'Analyze sales trends and identify growth opportunities' or 'Find correlations between customer demographics and purchase behavior'"
+                    ></textarea>
+                </div>
+
+                <!-- Analysis Type Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-cogs mr-1"></i>
+                        Analysis Type
+                    </label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="analysisType" value="descriptive" class="mr-2">
+                            <span class="text-sm">Descriptive</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="analysisType" value="diagnostic" class="mr-2">
+                            <span class="text-sm">Diagnostic</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="analysisType" value="predictive" class="mr-2">
+                            <span class="text-sm">Predictive</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="analysisType" value="all" class="mr-2" checked>
+                            <span class="text-sm">All Types</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center">
+                    <button 
+                        type="submit" 
+                        id="analyzeBtn"
+                        class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition duration-300 disabled:opacity-50"
+                        disabled
+                    >
+                        <i class="fas fa-magic mr-2"></i>
+                        Analyze Dataset
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Loading Section -->
+        <div id="loadingSection" class="hidden text-center py-12">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Analyzing Your Data...</h3>
+            <p class="text-gray-500">This may take a few moments depending on dataset size</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <!-- Executive Summary -->
+            <div class="result-card">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-chart-pie mr-2"></i>
+                    Executive Summary
+                </h2>
+                <div id="executiveSummary" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Summary cards will be populated here -->
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="result-card">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-tachometer-alt mr-2"></i>
+                    Key Metrics
+                </h2>
+                <div id="keyMetrics" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Metrics will be populated here -->
+                </div>
+            </div>
+
+            <!-- Visualizations -->
+            <div class="result-card">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-chart-bar mr-2"></i>
+                    Visualizations
+                </h2>
+                <div id="visualizations" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Charts will be populated here -->
+                </div>
+            </div>
+
+            <!-- AI Insights -->
+            <div class="result-card">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-brain mr-2"></i>
+                    AI-Generated Insights
+                </h2>
+                <div id="aiInsights">
+                    <!-- Insights will be populated here -->
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="result-card">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-lightbulb mr-2"></i>
+                    Strategic Recommendations
+                </h2>
+                <div id="recommendations">
+                    <!-- Recommendations will be populated here -->
+                </div>
+            </div>
+
+            <!-- Export Options -->
+            <div class="result-card">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                    <i class="fas fa-download mr-2"></i>
+                    Export Results
+                </h2>
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="exportResults('pdf')" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                        <i class="fas fa-file-pdf mr-2"></i>
+                        Export as PDF
+                    </button>
+                    <button onclick="exportResults('json')" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                        <i class="fas fa-file-code mr-2"></i>
+                        Export as JSON
+                    </button>
+                    <button onclick="exportResults('csv')" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">
+                        <i class="fas fa-file-csv mr-2"></i>
+                        Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2024 AI-Powered EDA Analysis. Built with Flask & OpenAI.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Global variables
+        let analysisResults = null;
+        let selectedFile = null;
+
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const uploadForm = document.getElementById('uploadForm');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultsSection = document.getElementById('resultsSection');
+
+        // File upload handling
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                alert('Please select a CSV file.');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                alert('File size must be less than 10MB.');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.remove('hidden');
+            analyzeBtn.disabled = false;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Form submission
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!selectedFile) {
+                alert('Please select a file first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('prompt', document.getElementById('userPrompt').value);
+            formData.append('analysis_type', document.querySelector('input[name="analysisType"]:checked').value);
+
+            // Show loading
+            loadingSection.classList.remove('hidden');
+            resultsSection.classList.add('hidden');
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const results = await response.json();
+                analysisResults = results;
+                
+                // Hide loading and show results
+                loadingSection.classList.add('hidden');
+                displayResults(results);
+                resultsSection.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error:', error);
+                loadingSection.classList.add('hidden');
+                alert('An error occurred during analysis. Please try again.');
+            }
+        });
+
+        function displayResults(results) {
+            // Display executive summary
+            displayExecutiveSummary(results.executive_summary);
+            
+            // Display key metrics
+            displayKeyMetrics(results);
+            
+            // Display visualizations
+            displayVisualizations(results.visualizations);
+            
+            // Display AI insights
+            displayAIInsights(results.ai_insights);
+            
+            // Display recommendations
+            displayRecommendations(results.strategic_recommendations);
+        }
+
+        function displayExecutiveSummary(summary) {
+            const container = document.getElementById('executiveSummary');
+            container.innerHTML = '';
+
+            if (summary && summary.overview) {
+                const cards = [
+                    {
+                        title: 'Dataset Size',
+                        value: summary.overview.dataset_size,
+                        icon: 'fas fa-database'
+                    },
+                    {
+                        title: 'Analysis Date',
+                        value: summary.overview.analysis_date,
+                        icon: 'fas fa-calendar'
+                    },
+                    {
+                        title: 'Analysis Type',
+                        value: summary.overview.analysis_type,
+                        icon: 'fas fa-cogs'
+                    }
+                ];
+
+                cards.forEach(card => {
+                    const cardElement = document.createElement('div');
+                    cardElement.className = 'metric-card';
+                    cardElement.innerHTML = `
+                        <i class="${card.icon} text-3xl mb-2"></i>
+                        <h3 class="text-lg font-semibold">${card.title}</h3>
+                        <p class="text-2xl font-bold">${card.value}</p>
+                    `;
+                    container.appendChild(cardElement);
+                });
+            }
+        }
+
+        function displayKeyMetrics(results) {
+            const container = document.getElementById('keyMetrics');
+            container.innerHTML = '';
+
+            if (results.executive_summary && results.executive_summary.key_metrics) {
+                const metrics = results.executive_summary.key_metrics;
+                
+                Object.entries(metrics).forEach(([key, value]) => {
+                    const metricElement = document.createElement('div');
+                    metricElement.className = 'metric-card';
+                    metricElement.innerHTML = `
+                        <h3 class="text-sm font-semibold mb-1">${key.replace(/_/g, ' ').toUpperCase()}</h3>
+                        <p class="text-xl font-bold">${value}</p>
+                    `;
+                    container.appendChild(metricElement);
+                });
+            }
+        }
+
+        function displayVisualizations(visualizations) {
+            const container = document.getElementById('visualizations');
+            container.innerHTML = '';
+
+            if (visualizations && visualizations.length > 0) {
+                visualizations.forEach((viz, index) => {
+                    const vizElement = document.createElement('div');
+                    vizElement.className = 'bg-white p-4 rounded-lg border';
+                    vizElement.innerHTML = `
+                        <h3 class="text-lg font-semibold mb-4">${viz.type.replace(/_/g, ' ').toUpperCase()}</h3>
+                        <div id="chart-${index}" style="height: 400px;"></div>
+                    `;
+                    container.appendChild(vizElement);
+
+                    // Render chart if data is available
+                    if (viz.chart && viz.chart.data) {
+                        try {
+                            Plotly.newPlot(`chart-${index}`, viz.chart.data, viz.chart.layout || {});
+                        } catch (error) {
+                            console.error('Error rendering chart:', error);
+                            document.getElementById(`chart-${index}`).innerHTML = 
+                                '<p class="text-gray-500 text-center">Chart data unavailable</p>';
+                        }
+                    }
+                });
+            } else {
+                container.innerHTML = '<p class="text-gray-500 text-center">No visualizations available</p>';
+            }
+        }
+
+        function displayAIInsights(insights) {
+            const container = document.getElementById('aiInsights');
+            container.innerHTML = '';
+
+            if (insights) {
+                Object.entries(insights).forEach(([category, categoryInsights]) => {
+                    if (categoryInsights && categoryInsights.insights) {
+                        const categoryElement = document.createElement('div');
+                        categoryElement.className = 'mb-6';
+                        categoryElement.innerHTML = `
+                            <h3 class="text-lg font-semibold mb-3 capitalize">${category.replace(/_/g, ' ')}</h3>
+                            <div class="space-y-2">
+                                ${categoryInsights.insights.map(insight => `
+                                    <div class="insight-item">
+                                        <p>${insight}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                        container.appendChild(categoryElement);
+                    }
+                });
+            } else {
+                container.innerHTML = '<p class="text-gray-500">No AI insights available</p>';
+            }
+        }
+
+        function displayRecommendations(recommendations) {
+            const container = document.getElementById('recommendations');
+            container.innerHTML = '';
+
+            if (recommendations && recommendations.length > 0) {
+                recommendations.forEach(rec => {
+                    const recElement = document.createElement('div');
+                    recElement.className = 'recommendation-item';
+                    recElement.innerHTML = `
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 mr-3">
+                                <span class="inline-block w-6 h-6 bg-red-500 text-white text-xs rounded-full text-center leading-6">
+                                    ${rec.priority === 'High' ? 'H' : rec.priority === 'Medium' ? 'M' : 'L'}
+                                </span>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800">${rec.title}</h4>
+                                <p class="text-gray-600 mt-1">${rec.description}</p>
+                                <div class="mt-2">
+                                    <span class="text-xs bg-gray-200 px-2 py-1 rounded">${rec.category}</span>
+                                    <span class="text-xs bg-${rec.priority === 'High' ? 'red' : rec.priority === 'Medium' ? 'yellow' : 'green'}-200 px-2 py-1 rounded ml-2">
+                                        ${rec.priority} Priority
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(recElement);
+                });
+            } else {
+                container.innerHTML = '<p class="text-gray-500">No recommendations available</p>';
+            }
+        }
+
+        // Export functions
+        function exportResults(format) {
+            if (!analysisResults) {
+                alert('No analysis results to export');
+                return;
+            }
+
+            const endpoint = `/export/${format}`;
+            const link = document.createElement('a');
+            link.href = endpoint;
+            link.download = `analysis_results.${format}`;
+            link.click();
+        }
+
+        // Health check on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/health');
+                if (!response.ok) {
+                    console.warn('Health check failed');
+                }
+            } catch (error) {
+                console.error('Health check error:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

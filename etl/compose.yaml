@@ -1,0 +1,22 @@
+services:
+  etl:
+    image: docker.io/derek2403/etl-service:latest
+    ports:
+      - "3030:3030"
+    environment:
+      - FLASK_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3030
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+    volumes:
+      - /storage/data:/app/data
+      - /storage/results:/app/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3030/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s 
