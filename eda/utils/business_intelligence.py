@@ -211,7 +211,7 @@ class BusinessIntelligenceEngine:
             """
             
             response = self.openai_client.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are a business intelligence expert analyzing data to provide actionable insights."},
                     {"role": "user", "content": full_prompt}

@@ -23,15 +23,14 @@ from io import StringIO
 import tempfile
 import base64
 from dotenv import load_dotenv
+from utils.image_analyzer import ImageAnalyzer
+from utils.data_analyzer import DataAnalyzer
+from utils.business_intelligence import BusinessIntelligenceEngine
+from utils.visualization_engine import VisualizationEngine
+from utils.plot_converter import PlotConverter
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Import our custom utilities
-from utils.visualization_engine import VisualizationEngine
-from utils.data_analyzer import DataAnalyzer
-from utils.business_intelligence import BusinessIntelligenceEngine
-from utils.plot_converter import PlotConverter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -478,6 +477,68 @@ def create_app():
         except Exception as e:
             logger.error(f"Error converting plots: {str(e)}")
             return jsonify({'error': f'Plot conversion failed: {str(e)}'}), 500
+    
+    @app.route('/analyze-images', methods=['POST'])
+    def analyze_images():
+        """
+        Analyze generated plot images and provide explanations.
+        
+        Expected JSON payload:
+        {
+            "images_dir": "images",  # optional, defaults to "images"
+            "create_report": true    # optional, defaults to true
+        }
+        """
+        try:
+            # Get parameters from request
+            data = request.get_json() or {}
+            images_dir = data.get('images_dir', 'images')
+            create_report = data.get('create_report', True)
+            
+            # Initialize analyzer
+            analyzer = ImageAnalyzer(images_dir)
+            
+            # Analyze all images
+            analyses = analyzer.analyze_all_images()
+            
+            if 'error' in analyses:
+                return jsonify({
+                    'success': False,
+                    'error': analyses['error']
+                }), 400
+            
+            if 'message' in analyses and not analyses.get('analyses'):
+                return jsonify({
+                    'success': False,
+                    'warning': analyses['message']
+                }), 200
+            
+            # Create HTML report if requested
+            report_path = None
+            if create_report:
+                report_path = analyzer.create_analysis_report(analyses)
+            
+            # Prepare response
+            response = {
+                'success': True,
+                'message': f'Successfully analyzed {analyses["summary"]["total_images"]} images',
+                'summary': analyses['summary'],
+                'analyses': analyses['analyses']
+            }
+            
+            if report_path:
+                response['report_path'] = report_path
+            
+            logger.info(f"Image analysis completed: {analyses['summary']['total_images']} images analyzed")
+            
+            return jsonify(response)
+            
+        except Exception as e:
+            logger.error(f"Error analyzing images: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
     
     @app.errorhandler(413)
     def too_large(e):
