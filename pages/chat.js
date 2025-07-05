@@ -79,6 +79,16 @@ export default function Chat() {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', color: '#ddd', backgroundColor: '#121212' }}>
+      <style jsx>{`
+        .react-markdown a {
+          color: #4fc3f7 !important;
+          text-decoration: underline;
+          cursor: pointer;
+        }
+        .react-markdown a:hover {
+          color: #81d4fa !important;
+        }
+      `}</style>
       <form onSubmit={handleSubmit} style={{ marginBottom: '20px' }}>
         <textarea
           value={userInput}
@@ -151,7 +161,7 @@ export default function Chat() {
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm, remarkBreaks]}
                         rehypePlugins={[rehypeRaw]}
-                        skipHtml={true}
+                        skipHtml={false}
                         style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
                       >
                         {msg.content}
