@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  ai-analysis:
+    build: .
+    ports:
+      - "3040:3040"
+    environment:
+      - FLASK_ENV=production
+      - DEBUG=False
+      - HOST=0.0.0.0
+      - PORT=3040
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./results:/app/results
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3040/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s 
