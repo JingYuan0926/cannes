@@ -29,6 +29,7 @@ from utils.predictive_analytics import PredictiveAnalytics
 from utils.prescriptive_analytics import PrescriptiveAnalytics
 from utils.diagnostic_analytics import DiagnosticAnalytics
 from utils.analysis_orchestrator import AnalysisOrchestrator
+from tee_signing import sign_analysis_results_with_tee
 
 # Load environment variables
 load_dotenv()
@@ -232,6 +233,11 @@ def create_app():
                 logger.error(f"Analysis error: {analysis_results['error']}")
                 return jsonify(safe_jsonify(analysis_results)), 500
             
+            analysis_id = analysis_results['analysis_id']
+            analysis_results = sign_analysis_results_with_tee(analysis_results)
+
+            logger.info(f"Analysis completed successfully for analysis_id: {analysis_id}")
+
             analysis_id = analysis_results['analysis_id']
             
             logger.info(f"Analysis completed successfully for analysis_id: {analysis_id}")

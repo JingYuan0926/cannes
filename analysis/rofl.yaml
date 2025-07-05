@@ -3,11 +3,11 @@ version: 0.1.0
 tee: tdx
 kind: container
 resources:
-  memory: 512
-  cpus: 1
+  memory: 4096
+  cpus: 2
   storage:
     kind: disk-persistent
-    size: 512
+    size: 10000
 artifacts:
   firmware: https://github.com/oasisprotocol/oasis-boot/releases/download/v0.5.0/ovmf.tdx.fd#db47100a7d6a0c1f6983be224137c3f8d7cb09b63bb1c7a5ee7829d8e994a42f
   kernel: https://github.com/oasisprotocol/oasis-boot/releases/download/v0.5.0/stage1.bin#23877530413a661e9187aad2eccfc9660fc4f1a864a1fbad2f6c7d43512071ca
@@ -15,3 +15,34 @@ artifacts:
   container:
     runtime: https://github.com/oasisprotocol/oasis-sdk/releases/download/rofl-containers%2Fv0.5.2/rofl-containers#3abac3e7519588c1a4e250f1bf5cbbbd58c4e4c8ee817070031b9e0e3d4e0095
     compose: compose.yaml
+deployments:
+  default:
+    app_id: rofl1qquxmr7y0ranr3man30020pwewdhan2udynt65k0
+    network: testnet
+    paratime: sapphire
+    admin: derek
+    oci_repository: rofl.sh/abf58c39-53d7-4c67-a808-553dccf6fbae:1751744325
+    trust_root:
+      height: 27369937
+      hash: 0a9301b76f345574159dc68e67dd9896f9faa6b29ca5cb600e8c870359c8f476
+    policy:
+      quotes:
+        pcs:
+          tcb_validity_period: 30
+          min_tcb_evaluation_data_number: 18
+          tdx: {}
+      enclaves:
+        - id: 2yxMM0AP/By/ORz1io9+RFQ2ucJMTlvE9JD7L2RM0I0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+        - id: huBHSnoJj/80jU9NtKbTgfTY4ep5JnTA20P3E4mrBzQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+      endorsements:
+        - any: {}
+      fees: endorsing_node
+      max_expiration: 3
+    secrets:
+      - name: OPENAI_API_KEY
+        value: pGJwa1ggUIEY6JZo+KS6SvsCYoQlzPpfpBYdmT9mZlhK3xU+TxRkbmFtZVgeAqWX37kFeDL5BJT9Fe1QWSa6X34rSxkbDcAxe7glZW5vbmNlT88VThy/Z32q0HzOetzNvWV2YWx1ZVi0I2bfsN5mUna8fTRXYqGkIajpxLqqWvqQvgS3Zdemoq+g+e87ZBHnPM/BNd0g3a64Qg7efA6zGrWKpACbpT7vBENwmK9N8ryMloe1r8F9bzKEXgzWEE1LjZLWJqubhphw4sIYJgTlM83a6euBzw+1Fj0/n+j+TedJzPJqrk3jd0Yu+Ng8im3owJLMKTyc+NbaQe6y/TJpvRZN3vQqaY7gO7A+zNQVYwzl6c7qGQ1yLMniClMQ
+    machines:
+      default:
+        provider: oasis1qp2ens0hsp7gh23wajxa4hpetkdek3swyyulyrmz
+        offer: playground_short
+        id: "0000000000000158"
