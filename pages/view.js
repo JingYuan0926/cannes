@@ -98,34 +98,7 @@ export default function View() {
     }
   };
 
-  const getFileIcon = (type) => {
-    switch (type.toLowerCase()) {
-      case 'csv':
-        return (
-          <svg className="w-5 h-5 text-green-500 transition-transform duration-200 hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm0 2h12v10H4V5z"/>
-          </svg>
-        );
-      case 'excel':
-        return (
-          <svg className="w-5 h-5 text-emerald-500 transition-transform duration-200 hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm0 2h12v10H4V5z"/>
-          </svg>
-        );
-      case 'json':
-        return (
-          <svg className="w-5 h-5 text-blue-500 transition-transform duration-200 hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm0 2h12v10H4V5z"/>
-          </svg>
-        );
-      default:
-        return (
-          <svg className="w-5 h-5 text-gray-500 transition-transform duration-200 hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm0 2h12v10H4V5z"/>
-          </svg>
-        );
-    }
-  };
+
 
   const filteredFiles = files.filter(file => {
     const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -283,13 +256,8 @@ export default function View() {
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="transition-transform duration-200 group-hover:scale-110">
-                          {getFileIcon(file.type)}
-                        </div>
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">{file.name}</div>
-                        </div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+                        {file.name}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors duration-200">
