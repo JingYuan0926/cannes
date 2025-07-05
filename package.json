@@ -13,8 +13,10 @@
     "formidable": "^3.5.4",
     "next": "15.3.5",
     "node-fetch": "^3.3.2",
+    "plotly.js-dist-min": "^3.0.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-plotly.js": "^2.6.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

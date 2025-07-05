@@ -177,6 +177,10 @@ class DiagnosticAnalytics:
             if len(numerical_cols) == 0:
                 raise ValueError("Need at least 1 numerical column for feature importance analysis")
             
+            # Check if we have enough samples
+            if len(df) < 5:
+                raise ValueError(f"Need at least 5 samples for feature importance analysis, but got {len(df)} samples")
+            
             # Prepare target and features
             if len(categorical_cols) > 0:
                 target_col = categorical_cols[0]
@@ -718,24 +722,56 @@ class DiagnosticAnalytics:
         """Generate insights from feature importance analysis"""
         insights = []
         
-        # Top feature
+        # Top feature analysis
         top_feature = importance_df.iloc[0]
-        insights.append(f"Most important feature: {top_feature['feature']} (combined score: {top_feature['combined_score']:.3f})")
+        insights.append(f"🎯 Most important feature: {top_feature['feature']} (combined score: {top_feature['combined_score']:.3f})")
         
-        # Feature ranking
+        # Feature ranking context
         insights.append(f"Analyzed {len(importance_df)} features for predicting {target_col}")
+        
+        # Top features analysis
+        top_3_features = importance_df.head(3)
+        feature_names = top_3_features['feature'].tolist()
+        scores = top_3_features['combined_score'].tolist()
+        
+        insights.append(f"Top 3 predictive features: {', '.join([f'{name} ({score:.3f})' for name, score in zip(feature_names, scores)])}")
+        
+        # Feature distribution analysis
+        high_importance = importance_df[importance_df['combined_score'] > 0.7]
+        medium_importance = importance_df[(importance_df['combined_score'] > 0.4) & (importance_df['combined_score'] <= 0.7)]
+        low_importance = importance_df[importance_df['combined_score'] <= 0.4]
+        
+        insights.append(f"Feature distribution: {len(high_importance)} high-impact, {len(medium_importance)} medium-impact, {len(low_importance)} low-impact features")
         
         # Correlation insights
         strong_corr = [c for c in correlations if abs(c['correlation']) > 0.7]
         if strong_corr:
-            insights.append(f"Found {len(strong_corr)} features with strong correlation (>0.7)")
+            insights.append(f"Found {len(strong_corr)} features with strong correlation (>0.7) to {target_col}")
+            strongest_corr = max(strong_corr, key=lambda x: abs(x['correlation']))
+            insights.append(f"Strongest predictor: {strongest_corr['feature']} (correlation: {strongest_corr['correlation']:.3f})")
         
-        # Method comparison
-        insights.append("Feature importance calculated using mutual information, random forest, and correlation")
+        # Feature quality assessment
+        if top_feature['combined_score'] > 0.8:
+            insights.append("✅ Excellent feature quality - strong predictive signals identified")
+        elif top_feature['combined_score'] > 0.6:
+            insights.append("✅ Good feature quality - moderate predictive signals available")
+        elif top_feature['combined_score'] > 0.4:
+            insights.append("⚠️ Fair feature quality - weak predictive signals, consider feature engineering")
+        else:
+            insights.append("❌ Poor feature quality - significant feature engineering needed")
         
-        # Recommendations
-        top_3_features = importance_df.head(3)['feature'].tolist()
-        insights.append(f"Focus on top 3 features: {', '.join(top_3_features)}")
+        # Methodology insights
+        insights.append("📊 Analysis methods: Mutual information (non-linear), Random Forest (interactions), Correlation (linear)")
+        
+        # Goal-specific recommendations
+        if 'predict' in goal.lower() or 'forecast' in goal.lower():
+            insights.append(f"💡 For prediction: Build model using top {min(5, len(importance_df))} features for optimal performance")
+            if len(high_importance) > 0:
+                insights.append(f"Focus on high-impact features: {', '.join(high_importance['feature'].head(3).tolist())}")
+        elif 'understand' in goal.lower() or 'insight' in goal.lower():
+            insights.append(f"💡 Key drivers of {target_col}: {', '.join(feature_names[:3])}")
+        elif 'optimization' in goal.lower():
+            insights.append(f"💡 Optimization targets: Modify {feature_names[0]} for maximum impact on {target_col}")
         
         return insights
     
@@ -746,18 +782,56 @@ class DiagnosticAnalytics:
         
         if causal_relationships:
             strongest = causal_relationships[0]
-            insights.append(f"Strongest causal relationship: {strongest['cause']} → {strongest['effect']} (strength: {strongest['strength']:.3f})")
+            insights.append(f"🔗 Strongest causal relationship: {strongest['cause']} → {strongest['effect']} (strength: {strongest['strength']:.3f})")
+            
+            # Significance analysis
+            significant_rels = [r for r in causal_relationships if r['p_value'] < 0.05]
+            insights.append(f"📊 Statistical significance: {len(significant_rels)} of {len(causal_relationships)} relationships are statistically significant (p<0.05)")
+            
+            # Top causal relationships
+            top_3_causal = causal_relationships[:3]
+            for i, rel in enumerate(top_3_causal, 1):
+                significance = "✓" if rel['p_value'] < 0.05 else "?"
+                insights.append(f"{i}. {rel['cause']} → {rel['effect']} (strength: {rel['strength']:.3f}) {significance}")
+            
+            # Causal network analysis
+            causes = list(set([r['cause'] for r in causal_relationships]))
+            effects = list(set([r['effect'] for r in causal_relationships]))
+            
+            # Find variables that are both causes and effects (mediators)
+            mediators = list(set(causes) & set(effects))
+            if mediators:
+                insights.append(f"🔄 Mediating variables identified: {', '.join(mediators[:3])} - these both influence and are influenced by other variables")
+            
+            # Find pure causes (only cause, never effect)
+            pure_causes = list(set(causes) - set(effects))
+            if pure_causes:
+                insights.append(f"🎯 Root causes identified: {', '.join(pure_causes[:3])} - these are fundamental drivers")
+            
+            # Find pure effects (only effect, never cause)
+            pure_effects = list(set(effects) - set(causes))
+            if pure_effects:
+                insights.append(f"📈 Outcome variables: {', '.join(pure_effects[:3])} - these are primarily influenced by other factors")
+            
+        else:
+            insights.append("❌ No significant causal relationships detected - variables appear to be independent")
+            insights.append("💡 Consider: Longer time series data or additional variables may reveal causal patterns")
         
-        # Significant relationships
-        significant_rels = [r for r in causal_relationships if r['p_value'] < 0.05]
-        insights.append(f"Found {len(significant_rels)} statistically significant causal relationships")
+        # Methodology insights
+        insights.append("🔬 Causal inference based on: Direct correlation, Partial correlation (controlling for confounders), Granger causality (temporal precedence)")
+        insights.append("⚠️ Note: Results suggest potential causal relationships but require experimental validation for confirmation")
         
-        # Causal network
-        insights.append(f"Analyzed {len(causal_relationships)} potential causal relationships")
-        
-        # Methodology
-        insights.append("Causal inference based on correlation, partial correlation, and Granger causality")
-        insights.append("Results suggest potential causal relationships but require further validation")
+        # Goal-specific recommendations
+        if 'intervention' in goal.lower() or 'action' in goal.lower():
+            if significant_rels:
+                top_intervention = max(significant_rels, key=lambda x: x['strength'])
+                insights.append(f"💡 Intervention target: Modify {top_intervention['cause']} to impact {top_intervention['effect']}")
+        elif 'root cause' in goal.lower():
+            if pure_causes:
+                insights.append(f"💡 Root cause analysis: Focus on {pure_causes[0]} as a fundamental driver")
+        elif 'predict' in goal.lower():
+            if causal_relationships:
+                insights.append(f"💡 Predictive modeling: Use causal relationships to build more robust, interpretable models")
         
         return insights
     
@@ -767,26 +841,56 @@ class DiagnosticAnalytics:
         """Generate insights from correlation analysis"""
         insights = []
         
-        # Strong correlations
-        insights.append(f"Found {len(strong_correlations)} strong correlations (>0.5)")
-        
+        # Strong correlations analysis
         if strong_correlations:
+            insights.append(f"Found {len(strong_correlations)} strong correlations (>0.5) among {len(variables)} variables")
+            
             strongest = strong_correlations[0]
-            insights.append(f"Strongest correlation: {strongest['variable1']} ↔ {strongest['variable2']} (r={strongest['pearson']:.3f})")
+            correlation_direction = "positive" if strongest['pearson'] > 0 else "negative"
+            insights.append(f"Strongest relationship: {strongest['variable1']} and {strongest['variable2']} show a strong {correlation_direction} correlation (r={strongest['pearson']:.3f})")
+            
+            # Business implications based on goal
+            if 'customer' in goal.lower() or 'behavior' in goal.lower():
+                insights.append(f"This relationship suggests that as {strongest['variable1']} increases, {strongest['variable2']} {'increases' if strongest['pearson'] > 0 else 'decreases'} proportionally")
+            elif 'sales' in goal.lower() or 'revenue' in goal.lower():
+                insights.append(f"Revenue drivers identified: focus on {strongest['variable1']} to impact {strongest['variable2']}")
+            elif 'predict' in goal.lower():
+                insights.append(f"{strongest['variable1']} can be used as a strong predictor for {strongest['variable2']}")
+        else:
+            insights.append(f"No strong correlations (>0.5) found among {len(variables)} variables - variables are relatively independent")
         
-        # Correlation types
+        # Correlation types analysis
         linear_strong = [c for c in strong_correlations if abs(c['pearson']) > 0.7]
         nonlinear_strong = [c for c in strong_correlations if abs(c['spearman']) > 0.7 and abs(c['pearson']) < 0.7]
         
         if linear_strong:
-            insights.append(f"Found {len(linear_strong)} strong linear relationships")
-        if nonlinear_strong:
-            insights.append(f"Found {len(nonlinear_strong)} strong non-linear relationships")
+            insights.append(f"Found {len(linear_strong)} strong linear relationships - these follow predictable patterns")
+            for rel in linear_strong[:2]:  # Top 2
+                insights.append(f"Linear relationship: {rel['variable1']} ↔ {rel['variable2']} (suitable for linear modeling)")
         
-        # Multicollinearity warning
+        if nonlinear_strong:
+            insights.append(f"Found {len(nonlinear_strong)} strong non-linear relationships - these require advanced modeling")
+            for rel in nonlinear_strong[:2]:  # Top 2
+                insights.append(f"Non-linear relationship: {rel['variable1']} ↔ {rel['variable2']} (consider polynomial or tree-based models)")
+        
+        # Multicollinearity analysis
         very_strong = [c for c in strong_correlations if abs(c['pearson']) > 0.9]
         if very_strong:
-            insights.append(f"Warning: {len(very_strong)} very strong correlations (>0.9) may indicate multicollinearity")
+            insights.append(f"⚠️ Warning: {len(very_strong)} very strong correlations (>0.9) detected - potential multicollinearity issue")
+            for rel in very_strong:
+                insights.append(f"Highly correlated: {rel['variable1']} and {rel['variable2']} (r={rel['pearson']:.3f}) - consider removing one for modeling")
+        
+        # Actionable recommendations
+        if len(strong_correlations) > 0:
+            insights.append(f"💡 Key insight: Focus analysis on the top {min(3, len(strong_correlations))} correlations for maximum impact")
+            
+            # Goal-specific recommendations
+            if 'optimization' in goal.lower():
+                insights.append("Use these correlations to identify leverage points for system optimization")
+            elif 'segmentation' in goal.lower():
+                insights.append("Strong correlations suggest natural groupings in your data for segmentation")
+            elif 'forecast' in goal.lower():
+                insights.append("Correlated variables can improve forecasting accuracy when used together")
         
         return insights
     

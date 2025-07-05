@@ -334,41 +334,68 @@ class AnalysisOrchestrator:
         try:
             # Collect all insights from individual analyses
             all_insights = []
+            analysis_summaries = []
+            
             for analysis in results.get('analyses', []):
                 all_insights.extend(analysis.get('insights', []))
+                analysis_summaries.append({
+                    'algorithm': analysis.get('algorithm', 'unknown'),
+                    'type': analysis.get('analysis_type', 'unknown'),
+                    'insights_count': len(analysis.get('insights', [])),
+                    'has_results': bool(analysis.get('results'))
+                })
             
-            # Create summary for AI
+            # Create detailed summary for AI
             summary = {
                 'goal': goal,
                 'total_analyses': len(results.get('analyses', [])),
-                'total_graphs': len(results.get('graphs', [])),
-                'analytics_types': list(results.get('analytics_summary', {}).keys()),
-                'key_insights': all_insights[:10]  # Top 10 insights
+                'analysis_details': analysis_summaries,
+                'key_insights': all_insights[:15],  # More insights for better context
+                'graphs_generated': sum(len(analysis.get('graphs', [])) for analysis in results.get('analyses', []))
             }
             
             if OPENAI_AVAILABLE and openai_client:
-                system_prompt = """You are an expert data scientist providing executive summary insights.
-                Based on the analysis results, provide a comprehensive summary with:
-                1. Justification for the analysis approach
-                2. Key conclusions from the findings
-                3. Actionable recommendations
+                system_prompt = """You are a senior data scientist providing executive insights for business stakeholders.
+                Based on the machine learning analysis results, provide specific, actionable insights that directly relate to the data and goal.
+                
+                IMPORTANT: 
+                - Be specific about what the data reveals, not generic statements
+                - Focus on actionable business insights, not technical details
+                - Mention specific patterns, trends, or anomalies found
+                - Provide concrete recommendations based on the findings
                 
                 Return JSON with this structure:
                 {
-                    "justification": "Why this analysis approach was chosen and executed",
-                    "conclusions": ["Key finding 1", "Key finding 2", "Key finding 3"],
-                    "recommendations": ["Action 1", "Action 2", "Action 3"]
+                    "conclusions": [
+                        "Specific finding about the data pattern/trend",
+                        "Another concrete insight from the analysis", 
+                        "Key business-relevant discovery"
+                    ],
+                    "recommendations": [
+                        "Specific actionable recommendation",
+                        "Another concrete action to take",
+                        "Strategic next step based on findings"
+                    ],
+                    "key_patterns": [
+                        "Important pattern discovered in the data",
+                        "Significant correlation or relationship found"
+                    ]
                 }
                 """
                 
                 user_message = f"""
-                Analysis Summary:
-                - Goal: {summary['goal']}
-                - Total Analyses: {summary['total_analyses']}
-                - Analytics Types: {summary['analytics_types']}
-                - Key Insights: {summary['key_insights']}
+                Analysis Goal: {summary['goal']}
                 
-                Please provide executive summary insights.
+                Analysis Results Summary:
+                - Total ML algorithms applied: {summary['total_analyses']}
+                - Visualizations generated: {summary['graphs_generated']}
+                - Analysis types performed: {[a['algorithm'] for a in summary['analysis_details']]}
+                
+                Key Insights from Analysis:
+                {chr(10).join('- ' + insight for insight in summary['key_insights'][:10])}
+                
+                Please provide specific, data-driven insights that a business stakeholder would find valuable.
+                Focus on what the analysis actually discovered about the data, not generic statements about completing analyses.
                 """
                 
                 response = openai_client.chat.completions.create(
@@ -377,7 +404,7 @@ class AnalysisOrchestrator:
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_message}
                     ],
-                    max_tokens=800,
+                    max_tokens=1000,
                     temperature=0.3
                 )
                 
@@ -391,26 +418,58 @@ class AnalysisOrchestrator:
             return self.generate_fallback_insights(results, goal)
     
     def generate_fallback_insights(self, results: Dict[str, Any], goal: str) -> Dict[str, Any]:
-        """Generate fallback insights when OpenAI is not available"""
-        analytics_types = list(results.get('analytics_summary', {}).keys())
-        total_analyses = len(results.get('analyses', []))
+        """Generate meaningful fallback insights when OpenAI is not available"""
+        analyses = results.get('analyses', [])
+        total_graphs = sum(len(analysis.get('graphs', [])) for analysis in analyses)
         
-        justification = f"Performed {total_analyses} analyses across {len(analytics_types)} analytics types to address the goal: {goal}. The analysis approach included {', '.join(analytics_types)} to provide comprehensive insights."
+        # Extract specific algorithms used
+        algorithms_used = [analysis.get('algorithm', 'unknown') for analysis in analyses]
+        unique_algorithms = list(set(algorithms_used))
         
-        conclusions = [
-            f"Successfully completed {total_analyses} different analytical approaches",
-            f"Generated {len(results.get('graphs', []))} visualizations to support findings",
-            "Identified key patterns and relationships in the data"
-        ]
+        # Create more specific insights based on actual analysis results
+        conclusions = []
+        recommendations = []
+        key_patterns = []
         
-        recommendations = [
-            "Review the detailed analysis results for specific insights",
-            "Consider implementing the suggested optimizations",
-            "Monitor key metrics identified in the analysis"
+        # Analyze what types of analyses were successful
+        if any('correlation' in alg.lower() for alg in algorithms_used):
+            conclusions.append("Correlation analysis revealed relationships between key variables in your dataset")
+            recommendations.append("Focus on the strongest correlations identified for predictive modeling")
+        
+        if any('cluster' in alg.lower() for alg in algorithms_used):
+            conclusions.append("Clustering analysis identified distinct groups within your data")
+            recommendations.append("Investigate the characteristics of each cluster for targeted strategies")
+        
+        if any('regression' in alg.lower() for alg in algorithms_used):
+            conclusions.append("Regression analysis provided insights into predictive relationships")
+            recommendations.append("Use the identified predictive factors for forecasting and decision making")
+        
+        if any('time' in alg.lower() or 'trend' in alg.lower() for alg in algorithms_used):
+            conclusions.append("Time series analysis revealed temporal patterns in your data")
+            recommendations.append("Monitor these trends for better timing of business decisions")
+        
+        # If no specific analysis types, provide general but meaningful insights
+        if not conclusions:
+            conclusions = [
+                f"Applied {len(unique_algorithms)} different analytical approaches to understand your data patterns",
+                f"Generated {total_graphs} visualizations highlighting key relationships and trends",
+                "Identified statistical patterns that can inform data-driven decisions"
+            ]
+            
+        if not recommendations:
+            recommendations = [
+                "Review the specific visualizations to understand data patterns",
+                "Consider the identified relationships when making strategic decisions",
+                "Use these insights as a foundation for further targeted analysis"
+            ]
+        
+        key_patterns = [
+            f"Applied advanced analytics including: {', '.join(unique_algorithms[:3])}",
+            f"Generated comprehensive visualizations across {total_graphs} charts"
         ]
         
         return {
-            'justification': justification,
             'conclusions': conclusions,
-            'recommendations': recommendations
+            'recommendations': recommendations,
+            'key_patterns': key_patterns
         } 

@@ -59,6 +59,10 @@ class DescriptiveAnalytics:
         if len(numerical_cols) < 2:
             raise ValueError("Need at least 2 numerical columns for clustering")
         
+        # Check if we have enough samples
+        if len(df) < 3:
+            raise ValueError(f"Need at least 3 samples for clustering, but got {len(df)} samples")
+        
         # Handle missing values
         df_clean = df[numerical_cols].fillna(df[numerical_cols].mean())
         
@@ -271,20 +275,97 @@ class DescriptiveAnalytics:
         
         # Cluster size analysis
         cluster_sizes = df['Cluster'].value_counts().sort_index()
-        insights.append(f"Identified {n_clusters} distinct clusters in the data")
-        insights.append(f"Cluster sizes range from {cluster_sizes.min()} to {cluster_sizes.max()} data points")
+        total_points = len(df)
         
-        # Feature analysis by cluster
-        for feature in feature_names[:3]:  # Top 3 features
-            cluster_means = df.groupby('Cluster')[feature].mean()
-            dominant_cluster = cluster_means.idxmax()
-            insights.append(f"Cluster {dominant_cluster} has the highest average {feature} ({cluster_means.max():.2f})")
+        insights.append(f"🎯 Identified {n_clusters} distinct clusters in the data ({total_points} total data points)")
         
-        # Goal-specific insights
-        if 'segment' in goal.lower() or 'group' in goal.lower():
-            insights.append("Clustering reveals natural customer/data segments for targeted strategies")
-        elif 'pattern' in goal.lower():
-            insights.append("Distinct patterns identified that can inform decision-making")
+        # Cluster size distribution analysis
+        largest_cluster = cluster_sizes.max()
+        smallest_cluster = cluster_sizes.min()
+        avg_cluster_size = cluster_sizes.mean()
+        
+        insights.append(f"📊 Cluster size distribution: Largest {largest_cluster} points ({largest_cluster/total_points*100:.1f}%), Smallest {smallest_cluster} points ({smallest_cluster/total_points*100:.1f}%)")
+        
+        # Check for balanced vs imbalanced clusters
+        cluster_balance = cluster_sizes.std() / cluster_sizes.mean()
+        if cluster_balance < 0.3:
+            insights.append("✅ Well-balanced clusters - roughly equal sizes indicate natural groupings")
+        elif cluster_balance < 0.6:
+            insights.append("⚠️ Moderately imbalanced clusters - some groups are more dominant")
+        else:
+            insights.append("❌ Highly imbalanced clusters - one or few groups dominate the data")
+        
+        # Feature analysis by cluster - more detailed insights
+        cluster_characteristics = {}
+        
+        for feature in feature_names[:5]:  # Top 5 features for detailed analysis
+            if feature in df.columns:
+                cluster_means = df.groupby('Cluster')[feature].mean()
+                cluster_stds = df.groupby('Cluster')[feature].std()
+                overall_mean = df[feature].mean()
+                overall_std = df[feature].std()
+                
+                # Find clusters that are significantly different from overall mean
+                for cluster_id in cluster_means.index:
+                    cluster_mean = cluster_means[cluster_id]
+                    z_score = abs(cluster_mean - overall_mean) / overall_std if overall_std > 0 else 0
+                    
+                    if cluster_id not in cluster_characteristics:
+                        cluster_characteristics[cluster_id] = []
+                    
+                    if z_score > 1.5:  # Significantly different
+                        direction = "high" if cluster_mean > overall_mean else "low"
+                        cluster_characteristics[cluster_id].append(f"{direction} {feature}")
+        
+        # Generate cluster personality insights
+        for cluster_id, characteristics in cluster_characteristics.items():
+            if characteristics:
+                cluster_size = cluster_sizes[cluster_id]
+                insights.append(f"🏷️ Cluster {cluster_id} ({cluster_size} points): Characterized by {', '.join(characteristics[:3])}")
+        
+        # Business value insights based on goal
+        if 'customer' in goal.lower() or 'segment' in goal.lower():
+            insights.append("💼 Customer segmentation identified - each cluster represents a distinct customer type")
+            
+            # Suggest naming for clusters based on characteristics
+            if cluster_characteristics:
+                largest_cluster_id = cluster_sizes.idxmax()
+                if largest_cluster_id in cluster_characteristics:
+                    insights.append(f"💡 Largest segment (Cluster {largest_cluster_id}): Consider targeting this group first")
+            
+            insights.append("🎯 Strategy: Develop targeted marketing campaigns for each cluster")
+            insights.append("📈 Next steps: Analyze cluster behavior patterns and preferences")
+            
+        elif 'behavior' in goal.lower() or 'pattern' in goal.lower():
+            insights.append("🔍 Distinct behavioral patterns identified across clusters")
+            insights.append("💡 Use these patterns to predict future behavior and optimize processes")
+            
+        elif 'anomaly' in goal.lower() or 'outlier' in goal.lower():
+            # Find smallest cluster as potential anomaly group
+            smallest_cluster_id = cluster_sizes.idxmin()
+            anomaly_percentage = cluster_sizes[smallest_cluster_id] / total_points * 100
+            
+            if anomaly_percentage < 5:
+                insights.append(f"🚨 Potential anomaly group: Cluster {smallest_cluster_id} ({anomaly_percentage:.1f}% of data)")
+                insights.append("🔍 Investigate this cluster for unusual patterns or data quality issues")
+            
+        elif 'product' in goal.lower() or 'recommendation' in goal.lower():
+            insights.append("🛍️ Product groupings identified - similar products clustered together")
+            insights.append("💡 Use for recommendation systems: suggest products from same cluster")
+            
+        # Actionable recommendations
+        insights.append(f"📋 Recommended next steps:")
+        insights.append(f"   • Analyze cluster {cluster_sizes.idxmax()} first (largest group)")
+        insights.append(f"   • Profile each cluster's key characteristics")
+        insights.append(f"   • Develop cluster-specific strategies")
+        
+        # Technical insights
+        if n_clusters < 3:
+            insights.append("⚠️ Few clusters suggest data may have limited natural groupings")
+        elif n_clusters > 8:
+            insights.append("⚠️ Many clusters suggest highly diverse data - consider hierarchical clustering")
+        else:
+            insights.append("✅ Optimal number of clusters for practical application")
         
         return insights
     
@@ -310,19 +391,80 @@ class DescriptiveAnalytics:
         """Generate insights from PCA analysis"""
         insights = []
         
-        insights.append(f"First component explains {explained_variance[0]*100:.1f}% of data variance")
-        insights.append(f"First two components explain {sum(explained_variance[:2])*100:.1f}% of total variance")
-        insights.append(f"Need {n_components_95} components to capture 95% of variance")
+        # Variance explanation insights
+        pc1_variance = explained_variance[0] * 100
+        pc2_variance = explained_variance[1] * 100 if len(explained_variance) > 1 else 0
+        cumulative_2pc = pc1_variance + pc2_variance
         
-        # Feature importance in first component
-        pc1_importance = feature_contributions['PC1'].abs().sort_values(ascending=False)
-        top_feature = pc1_importance.index[0]
-        insights.append(f"'{top_feature}' contributes most to the first principal component")
+        insights.append(f"🎯 First component captures {pc1_variance:.1f}% of data variance")
+        
+        if len(explained_variance) > 1:
+            insights.append(f"📊 First two components together explain {cumulative_2pc:.1f}% of total variance")
+            
+            if cumulative_2pc > 80:
+                insights.append("✅ Excellent dimensionality reduction - most information preserved in 2D")
+            elif cumulative_2pc > 60:
+                insights.append("✅ Good dimensionality reduction - adequate information in 2D visualization")
+            elif cumulative_2pc > 40:
+                insights.append("⚠️ Moderate dimensionality reduction - some information loss in 2D")
+            else:
+                insights.append("❌ Poor dimensionality reduction - significant information loss in 2D")
+        
+        insights.append(f"📈 Need {n_components_95} components to capture 95% of variance")
+        
+        # Feature importance in components
+        if 'PC1' in feature_contributions.columns:
+            pc1_contributions = feature_contributions['PC1'].abs().sort_values(ascending=False)
+            top_features_pc1 = pc1_contributions.head(3)
+            
+            insights.append(f"🔍 Primary dimension (PC1) driven by: {', '.join([f'{feat} ({abs(contrib):.3f})' for feat, contrib in top_features_pc1.items()])}")
+            
+            # Interpret what PC1 represents based on top features
+            top_feature = top_features_pc1.index[0]
+            insights.append(f"💡 Primary pattern: Variation mainly driven by {top_feature}")
+        
+        if 'PC2' in feature_contributions.columns and len(explained_variance) > 1:
+            pc2_contributions = feature_contributions['PC2'].abs().sort_values(ascending=False)
+            top_features_pc2 = pc2_contributions.head(3)
+            
+            insights.append(f"🔍 Secondary dimension (PC2) driven by: {', '.join([f'{feat} ({abs(contrib):.3f})' for feat, contrib in top_features_pc2.items()])}")
         
         # Dimensionality insights
-        if n_components_95 < len(feature_contributions):
-            reduction_pct = (1 - n_components_95/len(feature_contributions)) * 100
-            insights.append(f"Can reduce dimensionality by {reduction_pct:.1f}% while preserving 95% of information")
+        original_dimensions = len(feature_contributions)
+        reduction_percentage = (1 - n_components_95/original_dimensions) * 100
+        
+        if reduction_percentage > 50:
+            insights.append(f"🎯 Significant dimensionality reduction possible: {reduction_percentage:.1f}% reduction while preserving 95% information")
+            insights.append("💡 Consider using PCA for feature reduction in machine learning models")
+        elif reduction_percentage > 20:
+            insights.append(f"✅ Moderate dimensionality reduction: {reduction_percentage:.1f}% reduction possible")
+        else:
+            insights.append("⚠️ Limited dimensionality reduction - most features contribute unique information")
+        
+        # Goal-specific insights
+        if 'visualization' in goal.lower():
+            if cumulative_2pc > 60:
+                insights.append("🎨 Excellent for 2D visualization - most patterns will be visible")
+            else:
+                insights.append("🎨 Consider 3D visualization or additional components for complete picture")
+        
+        elif 'compression' in goal.lower() or 'storage' in goal.lower():
+            if reduction_percentage > 30:
+                insights.append(f"💾 Data compression potential: Reduce storage by {reduction_percentage:.1f}%")
+            else:
+                insights.append("💾 Limited compression benefits - original data is already compact")
+        
+        elif 'feature' in goal.lower() and 'selection' in goal.lower():
+            insights.append(f"🎯 Feature engineering: Create {n_components_95} principal components as new features")
+            insights.append("💡 These components are uncorrelated and capture maximum variance")
+        
+        # Technical recommendations
+        if n_components_95 <= 5:
+            insights.append("✅ Low-dimensional representation achievable - suitable for most analyses")
+        elif n_components_95 <= 15:
+            insights.append("⚠️ Medium-dimensional representation - manageable for most algorithms")
+        else:
+            insights.append("❌ High-dimensional structure - consider other dimensionality reduction techniques")
         
         return insights
     
