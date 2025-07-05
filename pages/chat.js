@@ -1,106 +1,86 @@
 import { useState } from 'react';
 
 export default function Chat() {
-  const [walletAddress, setWalletAddress] = useState('');
   const [userInput, setUserInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState('');
-  const [actionApiUrl, setActionApiUrl] = useState('');
-  const [justCopied, setJustCopied] = useState(false);
-  const [csvFile, setCsvFile] = useState(null);
-  const [csvAnalysis, setCsvAnalysis] = useState('');
+  const [files, setFiles] = useState([]);
+  const [sampleDataReady, setSampleDataReady] = useState(false);
+  const [conversation, setConversation] = useState([]); // [{role: 'user'|'assistant', content: string}]
+  const [sessionId, setSessionId] = useState(''); // Store sessionId for follow-up requests
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!userInput.trim()) {
-      setResponse('Please enter your question.');
-      return;
-    }
-    if (!walletAddress.trim()) {
-      setResponse('Please enter your wallet address.');
+    if (!userInput.trim() && files.length === 0) {
+      setConversation((prev) => [...prev, { role: 'assistant', content: 'Please enter your question or upload at least one file.' }]);
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/chatbot', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt: userInput, walletAddress }),
-      });
-      if (!res.ok) throw new Error(`Error: ${res.status}`);
-      const result = await res.json();
-      setResponse(result.message);
-      const newApiUrl = `http://localhost:3000/api/actions/${walletAddress}/runAnalysis`;
-      setActionApiUrl(newApiUrl);
+      let result;
+      if (files.length > 0 && !sampleDataReady) {
+        // Upload files and get sample data ready
+        const formData = new FormData();
+        formData.append('prompt', userInput);
+        files.forEach((file) => {
+          formData.append('files', file);
+        });
+        
+        const res = await fetch('/api/chatbot', {
+          method: 'POST',
+          body: formData,
+        });
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        result = await res.json();
+        setSampleDataReady(true);
+        setFiles([]); // Clear files after upload
+        setConversation([]); // Start new conversation after sample data
+        setSessionId(result.sessionId); // Store the sessionId
+        setConversation((prev) => [...prev, { role: 'assistant', content: result.message || 'Analysis Finished!' }]);
+        setUserInput('');
+        setLoading(false);
+        return;
+      } else {
+        // Continue conversation, send user message and sampleDataReady flag
+        const newConversation = [...conversation, { role: 'user', content: userInput }];
+        setConversation(newConversation); // Optimistically add user message
+        
+        // Log the values for debugging
+        console.log('Sending sessionId:', sessionId);
+        console.log('sampleDataReady:', sampleDataReady);
+        
+        const res = await fetch('/api/chatbot', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: userInput,
+            sampleDataReady: true,
+            conversation: newConversation,
+            sessionId: sessionId
+          }),
+        });
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        result = await res.json();
+        setConversation((prev) => [...prev, { role: 'assistant', content: result.message }]);
+        setUserInput('');
+      }
     } catch (err) {
       console.error('Error:', err);
-      setResponse('Something went wrong.');
+      setConversation((prev) => [...prev, { role: 'assistant', content: 'Something went wrong.' }]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCsvChange = (e) => {
-    setCsvFile(e.target.files[0]);
-  };
-
-  const handleCsvUpload = async () => {
-    if (!csvFile) {
-      setCsvAnalysis('Please select a CSV file to upload.');
-      return;
-    }
-    setLoading(true);
-    setCsvAnalysis('');
-    const formData = new FormData();
-    formData.append('file', csvFile);
-    try {
-      const res = await fetch('/api/uploadCsv', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error(`Error: ${res.status}`);
-      const result = await res.json();
-      setCsvAnalysis(result.analysis || result.message || 'Analysis completed.');
-    } catch (err) {
-      console.error('CSV Upload Error:', err);
-      setCsvAnalysis('Failed to analyze CSV. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(actionApiUrl).then(() => {
-      setJustCopied(true);
-      setTimeout(() => setJustCopied(false), 2000);
-    });
   };
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', color: '#ddd', backgroundColor: '#121212' }}>
       <form onSubmit={handleSubmit} style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          value={walletAddress}
-          onChange={e => setWalletAddress(e.target.value)}
-          placeholder="Enter your wallet address"
-          style={{
-            width: '100%',
-            padding: '10px',
-            borderRadius: '8px',
-            border: '1px solid #333',
-            backgroundColor: '#1e1e1e',
-            color: '#eee',
-            marginBottom: '10px',
-          }}
-        />
         <textarea
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           rows="4"
-          placeholder="Ask a data question..."
+          placeholder={sampleDataReady ? "Ask a data question..." : "Ask a data question or upload sample data..."}
           style={{
             width: '100%',
             padding: '10px',
@@ -110,6 +90,14 @@ export default function Chat() {
             color: '#eee',
             resize: 'vertical',
           }}
+        />
+        <input
+          type="file"
+          accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          multiple
+          onChange={e => setFiles(Array.from(e.target.files))}
+          style={{ marginTop: '10px', marginBottom: '10px', color: '#eee' }}
+          disabled={sampleDataReady}
         />
         <button
           type="submit"
@@ -124,96 +112,16 @@ export default function Chat() {
             cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >
-          {loading ? 'Analyzing...' : 'Run Analysis'}
+          {loading ? 'Analyzing...' : sampleDataReady ? 'Send' : 'Run Analysis'}
         </button>
       </form>
-
-      {/* CSV Upload Section */}
-      <div style={{ marginBottom: '20px', backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
-        <h3 style={{ marginBottom: '10px' }}>Upload CSV for Analysis</h3>
-        <input type="file" accept=".csv" onChange={handleCsvChange} style={{ marginBottom: '10px' }} />
-        <button
-          onClick={handleCsvUpload}
-          disabled={loading}
-          style={{
-            marginLeft: '10px',
-            padding: '6px 12px',
-            backgroundColor: '#3366cc',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {loading ? 'Uploading...' : 'Upload & Analyze'}
-        </button>
-        {csvAnalysis && (
-          <div style={{ marginTop: '10px', backgroundColor: '#222', padding: '10px', borderRadius: '6px', fontSize: '14px' }}>
-            <p>{csvAnalysis}</p>
-          </div>
-        )}
-      </div>
-
-      {actionApiUrl && (
-        <div style={{ marginBottom: '20px', backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
-          <h3 style={{ marginBottom: '10px' }}>Analysis Ready</h3>
-          <p style={{ wordBreak: 'break-all', fontSize: '14px' }}>{actionApiUrl}</p>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <button
-              onClick={copyToClipboard}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#444',
-                color: '#ccc',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              {justCopied ? 'Copied!' : 'Copy Link'}
-            </button>
-            <button
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/runDataAnalysis', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                      dataset: 'User Dataset', 
-                      type: 'Analysis', 
-                      title: 'Data Analysis', 
-                      action: 'Perform comprehensive analysis',
-                      prompt: userInput 
-                    }),
-                  });
-                  if (!res.ok) throw new Error(`Error: ${res.status}`);
-                  const result = await res.json();
-                  setResponse(result.analysis || 'Analysis completed successfully.');
-                } catch (err) {
-                  console.error('Analysis Error:', err);
-                  setResponse('Failed to run analysis. Please try again.');
-                }
-              }}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: '#3366cc',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              Run Analysis Now
-            </button>
-          </div>
-        </div>
-      )}
-
-      {response && (
-        <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '8px', fontSize: '14px' }}>
-          <p>{response}</p>
+      {conversation.length > 0 && (
+        <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' }}>
+          {conversation.map((msg, idx) => (
+            <div key={idx} style={{ marginBottom: '10px' }}>
+              <b style={{ color: msg.role === 'user' ? '#6cf' : '#9f6' }}>{msg.role === 'user' ? 'You' : 'AI'}:</b> {msg.content}
+            </div>
+          ))}
         </div>
       )}
     </div>
