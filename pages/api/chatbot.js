@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     });
 
     if (!extracted.dataset || !extracted.type || !extracted.title || !extracted.action || !extracted.buttonLabel) {
-      throw new Error('Missing fields from AI output');
+      return res.status(200).json({ message: result, warning: 'AI output missing required fields. Please clarify your question.' });
     }
 
     const payload = {
