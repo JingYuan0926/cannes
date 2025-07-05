@@ -336,12 +336,8 @@ export default function Analyse() {
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="text-center py-12"
                 >
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center transform transition-all duration-300 shadow-lg">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium mb-2 text-black">Start Your Analysis</h3>
+
+                  <h3 className="text-lg font-medium mb-2 text-black mt-4">Start Your Analysis</h3>
                   <p className="text-gray-600 mb-6">
                     Ask me anything about your data and I'll help you discover insights.
                   </p>
@@ -350,19 +346,19 @@ export default function Analyse() {
                       onClick={() => handleSuggestionClick("Show me a summary")}
                       className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                     >
-                      📊 Show me a summary
+                      Show me a summary
                     </button>
                     <button 
                       onClick={() => handleSuggestionClick("Find trends")}
                       className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                     >
-                      📈 Find trends
+                      Find trends
                     </button>
                     <button 
                       onClick={() => handleSuggestionClick("Create visualization")}
                       className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                     >
-                      📈 Create visualization
+                      Create visualization
                     </button>
                   </div>
                 </motion.div>
@@ -405,7 +401,7 @@ export default function Analyse() {
                     disabled={!message.trim()}
                     className="w-8 h-8 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
                   >
-                    <svg className="w-4 h-4 transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4Removed  transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
                     </svg>
                   </button>

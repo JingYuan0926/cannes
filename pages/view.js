@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function View() {
   const [files, setFiles] = useState([
@@ -48,6 +48,28 @@ export default function View() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const filterOptions = [
+    { value: "all", label: "All Files" },
+    { value: "active", label: "Active Only" },
+    { value: "inactive", label: "Inactive Only" }
+  ];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const toggleFileStatus = (id) => {
     setFiles(files.map(file => 
@@ -167,16 +189,9 @@ export default function View() {
             variants={statsVariants}
             className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-bold text-black">{files.length}</h3>
-                <p className="text-black text-sm">Total Files</p>
-              </div>
-              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
+            <div>
+              <h3 className="text-2xl font-bold text-black">{files.length}</h3>
+              <p className="text-black text-sm">Total Files</p>
             </div>
           </motion.div>
           
@@ -184,18 +199,11 @@ export default function View() {
             variants={statsVariants}
             className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-bold text-green-600">
-                  {files.filter(file => file.isActive).length}
-                </h3>
-                <p className="text-black text-sm">Active Files</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+            <div>
+              <h3 className="text-2xl font-bold text-green-600">
+                {files.filter(file => file.isActive).length}
+              </h3>
+              <p className="text-black text-sm">Active Files</p>
             </div>
           </motion.div>
           
@@ -203,18 +211,11 @@ export default function View() {
             variants={statsVariants}
             className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-bold text-red-600">
-                  {files.filter(file => !file.isActive).length}
-                </h3>
-                <p className="text-black text-sm">Inactive Files</p>
-              </div>
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+            <div>
+              <h3 className="text-2xl font-bold text-red-600">
+                {files.filter(file => !file.isActive).length}
+              </h3>
+              <p className="text-black text-sm">Inactive Files</p>
             </div>
           </motion.div>
           
@@ -222,18 +223,11 @@ export default function View() {
             variants={statsVariants}
             className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-2xl font-bold text-purple-600">
-                  {files.reduce((total, file) => total + parseFloat(file.size), 0).toFixed(1)} MB
-                </h3>
-                <p className="text-black text-sm">Total Size</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-8 6v8m4-8v8M5 4h14l-1 14H6L5 4z" />
-                </svg>
-              </div>
+            <div>
+              <h3 className="text-2xl font-bold text-purple-600">
+                {files.reduce((total, file) => total + parseFloat(file.size), 0).toFixed(1)} MB
+              </h3>
+              <p className="text-black text-sm">Total Size</p>
             </div>
           </motion.div>
         </motion.div>
@@ -257,15 +251,65 @@ export default function View() {
               />
             </div>
           </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-3 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg transform hover:scale-105 focus:scale-105 text-black"
-          >
-            <option value="all">All Files</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
-          </select>
+          
+          {/* Custom Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center justify-between w-full sm:w-40 px-4 py-3 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg transform hover:scale-105 focus:scale-105 text-black"
+            >
+              <div className="flex items-center">
+                <span className="text-sm font-medium">
+                  {filterOptions.find(option => option.value === filterStatus)?.label}
+                </span>
+              </div>
+              <svg 
+                className={`w-4 h-4 text-gray-600 transition-transform duration-200 mr-1 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <AnimatePresence>
+              {isDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute top-full left-0 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden z-50"
+                >
+                  {filterOptions.map((option, index) => (
+                    <motion.button
+                      key={option.value}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.1, delay: index * 0.05 }}
+                      onClick={() => {
+                        setFilterStatus(option.value);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-all duration-200 flex items-center justify-between ${
+                        filterStatus === option.value 
+                          ? 'bg-gray-100 border-l-4 border-gray-500' 
+                          : 'border-l-4 border-transparent'
+                      }`}
+                    >
+                      <span className="text-sm font-medium text-gray-900">{option.label}</span>
+                      {filterStatus === option.value && (
+                        <svg className="w-4 h-4 text-gray-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </motion.button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
           
         {/* Files Table */}
