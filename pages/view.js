@@ -27,7 +27,18 @@ export default function View() {
     const loadFiles = () => {
       try {
         const storedFiles = JSON.parse(localStorage.getItem('walrusFiles') || '[]');
-        setFiles(storedFiles);
+        // Remove duplicates by name, keeping the newest (by timestamp or id)
+        const uniqueFilesMap = {};
+        for (const file of storedFiles) {
+          // If not seen or this one is newer, keep it
+          if (!uniqueFilesMap[file.name] || new Date(file.timestamp) > new Date(uniqueFilesMap[file.name].timestamp)) {
+            uniqueFilesMap[file.name] = file;
+          }
+        }
+        const uniqueFiles = Object.values(uniqueFilesMap);
+        setFiles(uniqueFiles);
+        // Optionally, update localStorage to keep it clean
+        localStorage.setItem('walrusFiles', JSON.stringify(uniqueFiles));
       } catch (error) {
         console.error('Failed to load files from localStorage:', error);
         setFiles([]);
