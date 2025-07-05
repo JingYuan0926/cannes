@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { uploadFile } from "../utils/writeToWalrus";
 
 export default function Upload() {
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -13,9 +13,9 @@ export default function Upload() {
   const [uploadError, setUploadError] = useState('');
 
   const handleFileSelect = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = Array.from(event.target.files);
+    if (files.length > 0) {
+      setSelectedFiles(files);
       setIsUploadComplete(false);
       setUploadedBlobId(null);
       setUploadError('');
@@ -36,9 +36,9 @@ export default function Upload() {
   const handleDrop = (event) => {
     event.preventDefault();
     setIsDragging(false);
-    const file = event.dataTransfer.files[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) {
+      setSelectedFiles(files);
       setIsUploadComplete(false);
       setUploadedBlobId(null);
       setUploadError('');
@@ -47,55 +47,53 @@ export default function Upload() {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
-    
+    if (!selectedFiles.length) return;
     setIsUploading(true);
     setUploadProgress(0);
     setIsUploadComplete(false);
     setUploadError('');
     setUploadedBlobId(null);
-    
+    let completed = 0;
     try {
-      // Simulate upload progress for UI feedback
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90; // Keep at 90% until actual upload completes
-          }
-          return prev + 15;
+      for (const file of selectedFiles) {
+        // Simulate upload progress for UI feedback
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(progressInterval);
+              return 90;
+            }
+            return prev + 15;
+          });
+        }, 100);
+        // Upload file to Walrus
+        const result = await uploadFile(file, {
+          epochs: 1,
+          deletable: true
         });
-      }, 100);
-
-      // Upload file to Walrus
-      const result = await uploadFile(selectedFile, {
-        epochs: 1,
-        deletable: true
-      });
-      
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      
-      // Store file metadata in localStorage for view.js
-      const fileMetadata = {
-        id: Date.now(),
-        name: selectedFile.name,
-        size: formatFileSize(selectedFile.size),
-        type: selectedFile.type || 'Unknown',
-        blobId: result.blobId,
-        timestamp: new Date().toISOString(),
-        isActive: true,
-        originalSize: selectedFile.size
-      };
-      
-      const existingFiles = JSON.parse(localStorage.getItem('walrusFiles') || '[]');
-      const updatedFiles = [fileMetadata, ...existingFiles];
-      localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
-      
-      setUploadedBlobId(result.blobId);
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+        // Store file metadata in localStorage for view.js
+        const fileMetadata = {
+          id: Date.now() + Math.random(),
+          name: file.name,
+          size: formatFileSize(file.size),
+          type: file.type || 'Unknown',
+          blobId: result.blobId,
+          timestamp: new Date().toISOString(),
+          isActive: true,
+          originalSize: file.size
+        };
+        const existingFiles = JSON.parse(localStorage.getItem('walrusFiles') || '[]');
+        const updatedFiles = [fileMetadata, ...existingFiles];
+        localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
+        setUploadedBlobId(result.blobId);
+        completed++;
+      }
       setIsUploadComplete(true);
       setIsUploading(false);
-      
+      setUploadProgress(0);
+      setSelectedFiles([]);
     } catch (error) {
       console.error('Upload failed:', error);
       setUploadError(error.message || 'Upload failed. Please try again.');
@@ -190,7 +188,7 @@ export default function Upload() {
           <motion.div
             variants={itemVariants}
             className={`border-2 rounded-2xl p-12 text-center transition-all duration-300 transform hover:scale-[1.02] ${
-              selectedFile
+              selectedFiles.length > 0
                 ? 'border-solid border-green-500 bg-green-50 scale-[1.02] shadow-lg'
                 : isDragging
                 ? 'border-dashed border-gray-500 bg-gray-200 scale-[1.05] shadow-2xl animate-pulse'
@@ -202,7 +200,7 @@ export default function Upload() {
           >
             <div className="space-y-4">
               <div className="flex justify-center">
-                {selectedFile ? (
+                {selectedFiles.length > 0 ? (
                   <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -224,14 +222,14 @@ export default function Upload() {
               </div>
               
               <div>
-                {selectedFile ? (
+                {selectedFiles.length > 0 ? (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
                   >
                     <p className="text-lg font-medium mb-2 text-green-700">
-                      ✓ {selectedFile.name}
+                      {selectedFiles.map(file => file.name).join(', ')}
                     </p>
                     <p className="text-sm text-black">
                       Ready to upload
@@ -240,7 +238,7 @@ export default function Upload() {
                 ) : (
                   <div>
                     <p className="text-lg font-medium mb-2 text-black transition-all duration-200">
-                      Drop your file here
+                      Drop your files here
                     </p>
                     <p className="text-black">
                       or click to browse
@@ -255,18 +253,19 @@ export default function Upload() {
                 className="hidden"
                 id="fileInput"
                 accept=".csv,.xlsx,.xls,.json,.txt"
+                multiple
               />
               
-              {!selectedFile && (
+              {!selectedFiles.length && (
                 <label
                   htmlFor="fileInput"
                   className="inline-block px-6 py-3 bg-gray-300 text-black rounded-lg font-medium cursor-pointer hover:bg-gray-400 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                 >
-                  Select File
+                  Select Files
                 </label>
               )}
 
-              {selectedFile && (
+              {selectedFiles.length > 0 && (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -277,11 +276,11 @@ export default function Upload() {
                     htmlFor="fileInput"
                     className="px-4 py-2 bg-gray-300 text-black rounded-lg font-medium cursor-pointer hover:bg-gray-400 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
-                    Change File
+                    Change Files
                   </label>
                   <button
                     onClick={() => {
-                      setSelectedFile(null);
+                      setSelectedFiles([]);
                       setIsUploadComplete(false);
                       setUploadedBlobId(null);
                       setUploadError('');
@@ -289,7 +288,7 @@ export default function Upload() {
                     }}
                     className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
-                    Remove
+                    Remove All
                   </button>
                 </motion.div>
               )}
@@ -297,7 +296,7 @@ export default function Upload() {
           </motion.div>
 
           {/* File Information */}
-          {selectedFile && (
+          {selectedFiles.length > 0 && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -308,15 +307,15 @@ export default function Upload() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
                   <p className="text-sm text-black">Name</p>
-                  <p className="font-medium text-black truncate">{selectedFile.name}</p>
+                  <p className="font-medium text-black truncate">{selectedFiles[0].name}</p>
                 </div>
                 <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
                   <p className="text-sm text-black">Size</p>
-                  <p className="font-medium text-black">{formatFileSize(selectedFile.size)}</p>
+                  <p className="font-medium text-black">{formatFileSize(selectedFiles[0].size)}</p>
                 </div>
                 <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
                   <p className="text-sm text-black">Type</p>
-                  <p className="font-medium text-black">{selectedFile.type || 'Unknown'}</p>
+                  <p className="font-medium text-black">{selectedFiles[0].type || 'Unknown'}</p>
                 </div>
               </div>
             </motion.div>
@@ -396,9 +395,9 @@ export default function Upload() {
           >
             <button
               onClick={handleUpload}
-              disabled={!selectedFile || isUploading}
+              disabled={selectedFiles.length === 0 || isUploading}
               className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
-                selectedFile && !isUploading
+                selectedFiles.length > 0 && !isUploading
                   ? 'bg-gray-600 text-white hover:bg-gray-700 hover:-translate-y-1'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100'
               }`}
@@ -412,7 +411,7 @@ export default function Upload() {
                   Uploading...
                 </div>
               ) : (
-                'Upload File'
+                'Upload Files'
               )}
             </button>
           </motion.div>
