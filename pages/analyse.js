@@ -1,16 +1,5 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export default function Analyse() {
   const [chats, setChats] = useState([
@@ -19,46 +8,14 @@ export default function Analyse() {
     { id: 3, name: "Chat 3", messages: [] },
   ]);
   const [activeChat, setActiveChat] = useState(chats[0]);
-  const [darkMode, setDarkMode] = useState(false);
   const [message, setMessage] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const [isAiTyping, setIsAiTyping] = useState(false);
   const messagesEndRef = useRef(null);
-  const textareaRef = useRef(null);
-
-  // Dark mode persistence
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedDarkMode !== null) {
-      setDarkMode(JSON.parse(savedDarkMode));
-    } else {
-      setDarkMode(false); // Default to light mode instead of system preference
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(darkMode));
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeChat.messages, isAiTyping]);
-
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-    }
-  }, [message]);
 
   const handleChatSelect = (chat) => {
     setActiveChat(chat);
@@ -70,7 +27,6 @@ export default function Analyse() {
       name: `Chat ${chats.length + 1}`,
       messages: [],
     };
-    // Add new chat at the beginning of the array instead of the end
     setChats([newChat, ...chats]);
     setActiveChat(newChat);
   };
@@ -93,7 +49,6 @@ export default function Analyse() {
         chat.id === activeChat.id ? updatedChat : chat
       ));
       setActiveChat(updatedChat);
-      setIsTyping(false);
       setIsAiTyping(true);
       
       // Simulate AI typing and response
@@ -115,7 +70,7 @@ export default function Analyse() {
         ));
         setActiveChat(updatedChatWithAI);
         setIsAiTyping(false);
-      }, 1500 + Math.random() * 1000); // Random delay between 1.5-2.5 seconds
+      }, 1500 + Math.random() * 1000);
     }
   };
 
@@ -151,7 +106,6 @@ export default function Analyse() {
 
   const handleInputChange = (e) => {
     setMessage(e.target.value);
-    setIsTyping(e.target.value.length > 0);
   };
 
   const formatTimestamp = (timestamp) => {
@@ -218,7 +172,7 @@ export default function Analyse() {
   );
 
   return (
-    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 transition-colors duration-300 overflow-hidden`}>
+    <div className="min-h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden">
       {/* Navigation Bar */}
       <nav className="flex justify-center pt-8 pb-4 animate-slideInUp">
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
@@ -275,7 +229,6 @@ export default function Analyse() {
                       </span>
                     )}
                   </div>
-                  {/* Last message preview */}
                   {chat.messages.length > 0 && (
                     <p className="text-xs opacity-75 mt-1 truncate">
                       {chat.messages[chat.messages.length - 1].text}
@@ -367,7 +320,6 @@ export default function Analyse() {
             <div className="relative max-w-4xl mx-auto">
               <div className="relative bg-gray-200 rounded-2xl transition-all duration-300 focus-within:border-gray-500 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md">
                 <textarea
-                  ref={textareaRef}
                   value={message}
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}

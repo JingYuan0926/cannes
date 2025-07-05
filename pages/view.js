@@ -1,16 +1,5 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { useState } from "react";
 
 export default function View() {
   const [files, setFiles] = useState([
@@ -56,30 +45,8 @@ export default function View() {
     },
   ]);
 
-  const [darkMode, setDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-
-  // Dark mode persistence
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedDarkMode !== null) {
-      setDarkMode(JSON.parse(savedDarkMode));
-    } else {
-      setDarkMode(false); // Default to light mode instead of system preference
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(darkMode));
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   const toggleFileStatus = (id) => {
     setFiles(files.map(file => 
@@ -89,7 +56,6 @@ export default function View() {
 
   const handleViewFile = (file) => {
     console.log("Viewing file:", file.name);
-    // This would typically open a modal or navigate to a file viewer
   };
 
   const handleDeleteFile = (id) => {
@@ -97,8 +63,6 @@ export default function View() {
       setFiles(files.filter(file => file.id !== id));
     }
   };
-
-
 
   const filteredFiles = files.filter(file => {
     const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -109,7 +73,7 @@ export default function View() {
   });
 
   return (
-    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 transition-colors duration-300 overflow-hidden`}>
+    <div className="min-h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden">
       {/* Navigation Bar */}
       <nav className="flex justify-center pt-8 pb-4 animate-slideInUp">
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
