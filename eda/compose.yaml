@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  eda:
+    image: docker.io/derek2403/eda-service:latest
+    ports:
+      - "3035:3035"
+    environment:
+      - FLASK_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3035
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+    volumes:
+      - /storage/data:/app/data
+      - /storage/results:/app/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3035/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

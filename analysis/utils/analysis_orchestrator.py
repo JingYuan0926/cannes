@@ -18,11 +18,11 @@ from typing import Dict, List, Any, Optional
 import uuid
 
 try:
-    from openai import OpenAI
-    openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    import openai
+    openai.api_key = os.getenv('OPENAI_API_KEY')
     OPENAI_AVAILABLE = bool(os.getenv('OPENAI_API_KEY'))
 except ImportError:
-    openai_client = None
+    openai = None
     OPENAI_AVAILABLE = False
     logging.warning("OpenAI not available - using fallback strategies")
 
@@ -128,9 +128,9 @@ class AnalysisOrchestrator:
             Please recommend the most appropriate analytics approaches and algorithms for this dataset and goal.
             """
             
-            if OPENAI_AVAILABLE and openai_client:
+            if OPENAI_AVAILABLE and openai:
                 try:
-                    response = openai_client.chat.completions.create(
+                    response = openai.ChatCompletion.create(
                         model="gpt-4o-mini",
                         messages=[
                             {"role": "system", "content": system_prompt},
@@ -354,7 +354,7 @@ class AnalysisOrchestrator:
                 'graphs_generated': sum(len(analysis.get('graphs', [])) for analysis in results.get('analyses', []))
             }
             
-            if OPENAI_AVAILABLE and openai_client:
+            if OPENAI_AVAILABLE and openai:
                 system_prompt = """You are a senior data scientist providing executive insights for business stakeholders.
                 Based on the machine learning analysis results, provide specific, actionable insights that directly relate to the data and goal.
                 
@@ -398,7 +398,7 @@ class AnalysisOrchestrator:
                 Focus on what the analysis actually discovered about the data, not generic statements about completing analyses.
                 """
                 
-                response = openai_client.chat.completions.create(
+                response = openai.ChatCompletion.create(
                     model="gpt-4o-mini",
                     messages=[
                         {"role": "system", "content": system_prompt},
