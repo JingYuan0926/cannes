@@ -9,8 +9,6 @@ export default function WalrusStorePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('Walrus HTTP API ready');
-  const [epochs, setEpochs] = useState(1);
-  const [deletable, setDeletable] = useState(false);
   const [useDirectAPI, setUseDirectAPI] = useState(false);
 
   const handleStoreText = async () => {
@@ -31,8 +29,7 @@ export default function WalrusStorePage() {
         },
         body: JSON.stringify({
           text: textToStore,
-          epochs: epochs,
-          deletable: deletable,
+          // Using defaults: epochs: 1, deletable: true
         }),
       });
 
@@ -151,6 +148,7 @@ export default function WalrusStorePage() {
               <li>No keypair management or seed phrases needed</li>
               <li>Works seamlessly across all browsers and environments</li>
               <li>Automatic fallback to multiple public endpoints</li>
+              <li><strong>Default settings:</strong> 1 epoch storage, deletable blobs</li>
             </ul>
           </div>
 
@@ -172,54 +170,9 @@ export default function WalrusStorePage() {
                 <p className="text-xs text-gray-500 mt-1">
                   Characters: {textToStore.length} | Bytes: {new TextEncoder().encode(textToStore).length}
                 </p>
-              </div>
-              
-              {/* Storage Options */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Storage Epochs:
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={epochs}
-                    onChange={(e) => setEpochs(parseInt(e.target.value) || 1)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Number of epochs to store (1 epoch ≈ 1 day)
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Storage Type:
-                  </label>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="deletable"
-                        checked={!deletable}
-                        onChange={() => setDeletable(false)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">Permanent</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="deletable"
-                        checked={deletable}
-                        onChange={() => setDeletable(true)}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">Deletable</span>
-                    </label>
-                  </div>
-                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  Storage: 1 epoch (≈ 1 day), deletable blob
+                </p>
               </div>
               
               <button
@@ -378,9 +331,8 @@ export default function WalrusStorePage() {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ 
-    text: 'Hello Walrus!', 
-    epochs: ${epochs}, 
-    deletable: ${deletable} 
+    text: 'Hello Walrus!'
+    // Uses defaults: epochs: 1, deletable: true
   })
 })`}
               </pre>
@@ -422,6 +374,7 @@ export default function WalrusStorePage() {
               <li>3. Uses public Walrus testnet endpoints - no tokens required for reading</li>
               <li>4. Writing may require WAL tokens depending on the publisher</li>
               <li>5. HTTP API handles all operations with automatic endpoint selection</li>
+              <li>6. <strong>Default settings:</strong> Deletable blobs, 1 epoch storage duration</li>
             </ol>
           </div>
 

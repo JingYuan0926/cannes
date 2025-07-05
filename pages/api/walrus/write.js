@@ -7,13 +7,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { text, epochs = 1, deletable = false } = req.body;
+    const { text, epochs = 1, deletable = true } = req.body;
 
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'Text must be a non-empty string' });
     }
 
-    console.log(`Writing text to Walrus: ${text.length} characters for ${epochs} epochs`);
+    console.log(`Writing text to Walrus: ${text.length} characters for ${epochs} epochs (deletable: ${deletable})`);
 
     // Build query parameters
     const params = new URLSearchParams();
