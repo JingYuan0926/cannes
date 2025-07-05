@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 export default function View() {
   const [files, setFiles] = useState([
@@ -72,10 +73,51 @@ export default function View() {
     return matchesSearch && matchesFilter;
   });
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+      },
+    },
+  };
+
+  const statsVariants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
+  };
+
   return (
     <div className="min-h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden">
       {/* Navigation Bar */}
-      <nav className="flex justify-center pt-8 pb-4 animate-slideInUp">
+      <motion.nav 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="flex justify-center pt-8 pb-4"
+      >
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
             <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
@@ -93,25 +135,41 @@ export default function View() {
             </div>
           </Link>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Page Header */}
-      <div className="px-8 py-4 animate-slideInUp" style={{ animationDelay: '0.1s' }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+        className="px-8 py-4"
+      >
         <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">View Your Data</h1>
         <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
           Manage and explore your uploaded datasets
         </p>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-8 animate-slideInUp" style={{ animationDelay: '0.2s' }}>
+      <motion.main 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-7xl mx-auto px-8 py-8"
+      >
         
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md animate-slideInUp">
+        <motion.div 
+          variants={containerVariants}
+          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+        >
+          <motion.div 
+            variants={statsVariants}
+            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-black counter-animation">{files.length}</h3>
+                <h3 className="text-2xl font-bold text-black">{files.length}</h3>
                 <p className="text-black text-sm">Total Files</p>
               </div>
               <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
@@ -120,12 +178,15 @@ export default function View() {
                 </svg>
               </div>
             </div>
-          </div>
+          </motion.div>
           
-          <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md animate-slideInUp" style={{ animationDelay: '0.1s' }}>
+          <motion.div 
+            variants={statsVariants}
+            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-green-600 counter-animation">
+                <h3 className="text-2xl font-bold text-green-600">
                   {files.filter(file => file.isActive).length}
                 </h3>
                 <p className="text-black text-sm">Active Files</p>
@@ -136,12 +197,15 @@ export default function View() {
                 </svg>
               </div>
             </div>
-          </div>
+          </motion.div>
           
-          <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md animate-slideInUp" style={{ animationDelay: '0.2s' }}>
+          <motion.div 
+            variants={statsVariants}
+            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-red-600 counter-animation">
+                <h3 className="text-2xl font-bold text-red-600">
                   {files.filter(file => !file.isActive).length}
                 </h3>
                 <p className="text-black text-sm">Inactive Files</p>
@@ -152,12 +216,15 @@ export default function View() {
                 </svg>
               </div>
             </div>
-          </div>
+          </motion.div>
           
-          <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md animate-slideInUp" style={{ animationDelay: '0.3s' }}>
+          <motion.div 
+            variants={statsVariants}
+            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-purple-600 counter-animation">
+                <h3 className="text-2xl font-bold text-purple-600">
                   {files.reduce((total, file) => total + parseFloat(file.size), 0).toFixed(1)} MB
                 </h3>
                 <p className="text-black text-sm">Total Size</p>
@@ -168,11 +235,14 @@ export default function View() {
                 </svg>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Search and Filter */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6 animate-slideInUp" style={{ animationDelay: '0.6s' }}>
+        <motion.div 
+          variants={itemVariants}
+          className="flex flex-col sm:flex-row gap-4 mb-6"
+        >
           <div className="flex-1">
             <div className="relative group">
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-600 transition-all duration-200 group-focus-within:text-gray-800 group-focus-within:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,12 +266,15 @@ export default function View() {
             <option value="active">Active Only</option>
             <option value="inactive">Inactive Only</option>
           </select>
-        </div>
+        </motion.div>
           
-          {/* Files Table */}
-        <div className="bg-gray-200 rounded-2xl border border-gray-300 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl animate-slideInUp">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+        {/* Files Table */}
+        <motion.div 
+          variants={itemVariants}
+          className="bg-gray-200 rounded-2xl border border-gray-300 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full">
               <thead className="bg-gray-300 transition-colors duration-300">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">File</th>
@@ -210,14 +283,16 @@ export default function View() {
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Modified</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Actions</th>
-                  </tr>
-                </thead>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-gray-300">
                 {filteredFiles.map((file, index) => (
-                    <tr 
-                      key={file.id} 
-                    className="hover:bg-gray-300 transition-all duration-200 group hover:shadow-md animate-slideInUp"
-                    style={{ animationDelay: `${index * 0.1}s` }}
+                  <motion.tr 
+                    key={file.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="hover:bg-gray-300 transition-all duration-200 group hover:shadow-md"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-black group-hover:text-gray-800 transition-colors duration-200">
@@ -238,19 +313,19 @@ export default function View() {
                         month: '2-digit', 
                         year: 'numeric'
                       })}
-                      </td>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                        <button
+                      <button
                         onClick={() => toggleFileStatus(file.id)}
                         className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                            file.isActive
+                          file.isActive
                             ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-md'
                             : 'bg-red-100 text-red-800 hover:bg-red-200 hover:shadow-md'
-                          }`}
-                        >
-                          {file.isActive ? 'Active' : 'Inactive'}
-                        </button>
-                      </td>
+                        }`}
+                      >
+                        {file.isActive ? 'Active' : 'Inactive'}
+                      </button>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex space-x-2">
                         <button
@@ -266,71 +341,28 @@ export default function View() {
                           Delete
                         </button>
                       </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
           </div>
           
           {filteredFiles.length === 0 && (
-            <div className="text-center py-12 animate-fadeIn">
-              <svg className="w-12 h-12 mx-auto text-gray-600 mb-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="text-center py-12"
+            >
+              <svg className="w-12 h-12 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <p className="text-black text-lg">No files found matching your criteria</p>
-            </div>
+            </motion.div>
           )}
-        </div>
-      </main>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes countUp {
-          from {
-            opacity: 0;
-            transform: scale(0.5);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .animate-slideInUp {
-          animation: slideInUp 0.4s ease-out;
-        }
-
-        .counter-animation {
-          animation: countUp 0.6s ease-out;
-        }
-      `}</style>
+        </motion.div>
+      </motion.main>
     </div>
   );
 }

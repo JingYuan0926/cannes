@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 export default function Upload() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -68,10 +69,39 @@ export default function Upload() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+      },
+    },
+  };
+
   return (
     <div className="min-h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden">
       {/* Navigation Bar */}
-      <nav className="flex justify-center pt-8 pb-4 animate-slideInUp">
+      <motion.nav 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="flex justify-center pt-8 pb-4"
+      >
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
             <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
@@ -89,30 +119,40 @@ export default function Upload() {
             </div>
           </Link>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Page Header */}
-      <div className="px-8 py-4 animate-slideInUp" style={{ animationDelay: '0.1s' }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+        className="px-8 py-4"
+      >
         <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Upload Your Data</h1>
         <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
           Upload your datasets to start analyzing and discovering insights
         </p>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
-      <main className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-8 animate-slideInUp" style={{ animationDelay: '0.2s' }}>
+      <motion.main 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-8"
+      >
         <div className="max-w-2xl w-full">
           
           {/* File Upload Area */}
-          <div
-            className={`border-2 rounded-2xl p-12 text-center transition-all duration-300 transform hover:scale-[1.02] animate-slideInUp ${
+          <motion.div
+            variants={itemVariants}
+            className={`border-2 rounded-2xl p-12 text-center transition-all duration-300 transform hover:scale-[1.02] ${
               selectedFile
                 ? 'border-solid border-green-500 bg-green-50 scale-[1.02] shadow-lg'
                 : isDragging
                 ? 'border-dashed border-gray-500 bg-gray-200 scale-[1.05] shadow-2xl animate-pulse'
                 : 'border-dashed border-gray-300 hover:border-gray-400 bg-gray-200 shadow-md hover:shadow-xl'
             }`}
-            style={{ animationDelay: '0.3s' }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -142,14 +182,18 @@ export default function Upload() {
               
               <div>
                 {selectedFile ? (
-                  <div className="animate-fadeIn">
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
                     <p className="text-lg font-medium mb-2 text-green-700">
                       ✓ {selectedFile.name}
                     </p>
                     <p className="text-sm text-black">
                       Ready to upload
                     </p>
-                  </div>
+                  </motion.div>
                 ) : (
                   <div>
                     <p className="text-lg font-medium mb-2 text-black transition-all duration-200">
@@ -180,7 +224,12 @@ export default function Upload() {
               )}
 
               {selectedFile && (
-                <div className="flex gap-2 justify-center animate-slideInUp">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex gap-2 justify-center"
+                >
                   <label
                     htmlFor="fileInput"
                     className="px-4 py-2 bg-gray-300 text-black rounded-lg font-medium cursor-pointer hover:bg-gray-400 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
@@ -196,21 +245,29 @@ export default function Upload() {
                   >
                     Remove
                   </button>
-                </div>
+                </motion.div>
               )}
             </div>
-          </div>
+          </motion.div>
 
           {/* Supported file types */}
-          <div className="mt-4 text-center animate-slideInUp" style={{ animationDelay: '0.4s' }}>
+          <motion.div 
+            variants={itemVariants}
+            className="mt-4 text-center"
+          >
             <p className="text-sm text-gray-600 transition-opacity duration-200">
               Supported formats: CSV, Excel (.xlsx, .xls), JSON, TXT
             </p>
-          </div>
+          </motion.div>
           
           {/* File Information */}
           {selectedFile && (
-            <div className="mt-6 bg-gray-200 p-6 rounded-2xl border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg animate-slideInUp">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="mt-6 bg-gray-200 p-6 rounded-2xl border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg"
+            >
               <h3 className="font-semibold text-lg mb-4 text-black transform transition-all duration-200">File Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
@@ -226,39 +283,54 @@ export default function Upload() {
                   <p className="font-medium text-black">{selectedFile.type || 'Unknown'}</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Upload Progress */}
           {isUploading && (
-            <div className="mt-6 bg-gray-200 p-6 rounded-2xl border border-gray-300 animate-slideInUp shadow-lg">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="mt-6 bg-gray-200 p-6 rounded-2xl border border-gray-300 shadow-lg"
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-black">Uploading...</span>
                 <span className="text-sm text-black animate-pulse">{uploadProgress}%</span>
               </div>
               <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
-                <div 
-                  className="bg-gray-600 h-2 rounded-full transition-all duration-300 ease-out animate-pulse"
-                  style={{ width: `${uploadProgress}%` }}
-                ></div>
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${uploadProgress}%` }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-gray-600 h-2 rounded-full animate-pulse"
+                ></motion.div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Success Message */}
           {isUploadComplete && (
-            <div className="mt-6 bg-green-50 p-6 rounded-2xl border border-green-200 animate-slideInUp shadow-lg">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="mt-6 bg-green-50 p-6 rounded-2xl border border-green-200 shadow-lg"
+            >
               <div className="flex items-center justify-center">
                 <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="text-green-700 font-medium">Upload completed successfully!</span>
               </div>
-            </div>
+            </motion.div>
           )}
           
           {/* Upload Button */}
-          <div className="mt-8 text-center">
+          <motion.div 
+            variants={itemVariants}
+            className="mt-8 text-center"
+          >
             <button
               onClick={handleUpload}
               disabled={!selectedFile || isUploading}
@@ -280,41 +352,9 @@ export default function Upload() {
                 'Upload File'
               )}
             </button>
-          </div>
+          </motion.div>
         </div>
-      </main>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .animate-slideInUp {
-          animation: slideInUp 0.4s ease-out;
-        }
-      `}</style>
+      </motion.main>
     </div>
   );
 }

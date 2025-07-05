@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 
 export default function Analyse() {
   const [chats, setChats] = useState([
@@ -139,7 +140,11 @@ export default function Analyse() {
   );
 
   const TypingIndicator = () => (
-    <div className="flex items-start space-x-3 mb-4 animate-fadeIn">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex items-start space-x-3 mb-4"
+    >
       {getAIAvatar()}
       <div className="bg-gray-200 rounded-2xl rounded-bl-md px-4 py-3 transition-all duration-300 shadow-sm hover:shadow-md">
         <div className="flex space-x-1">
@@ -148,11 +153,16 @@ export default function Analyse() {
           <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   const MessageBubble = ({ message, isOwn }) => (
-    <div className={`flex items-start space-x-3 mb-4 ${isOwn ? 'flex-row-reverse space-x-reverse' : ''} group animate-slideInUp`}>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className={`flex items-start space-x-3 mb-4 ${isOwn ? 'flex-row-reverse space-x-reverse' : ''} group`}
+    >
       {isOwn ? getUserAvatar() : getAIAvatar()}
       <div className="flex flex-col max-w-xs lg:max-w-md">
         <div className={`px-4 py-3 rounded-2xl transition-all duration-300 group-hover:shadow-lg group-hover:scale-[1.02] ${
@@ -168,13 +178,42 @@ export default function Analyse() {
           </span>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+      },
+    },
+  };
 
   return (
     <div className="min-h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden">
       {/* Navigation Bar */}
-      <nav className="flex justify-center pt-8 pb-4 animate-slideInUp">
+      <motion.nav 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="flex justify-center pt-8 pb-4"
+      >
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
             <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
@@ -192,32 +231,47 @@ export default function Analyse() {
             </div>
           </Link>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Page Header */}
-      <div className="px-8 py-4 animate-slideInUp" style={{ animationDelay: '0.1s' }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+        className="px-8 py-4"
+      >
         <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Analyse Your Data</h1>
         <p className="text-center text-gray-600 mt-2">Chat with our AI to analyze and understand your data better</p>
-      </div>
+      </motion.div>
 
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-180px)] animate-slideInUp" style={{ animationDelay: '0.2s' }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+        className="flex h-[calc(100vh-180px)]"
+      >
         {/* Left Sidebar */}
-        <div className="w-64 bg-white flex flex-col transition-all duration-300 shadow-lg animate-slideInUp" style={{ animationDelay: '0.3s' }}>
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="w-64 bg-white flex flex-col transition-all duration-300 shadow-lg"
+        >
           {/* Chat History */}
           <div className="h-[calc(100vh-280px)] p-4">
             <h3 className="font-medium text-sm mb-4 text-black">Chat History</h3>
             <div className="space-y-2">
               {chats.map((chat, index) => (
-                <div
+                <motion.div
                   key={chat.id}
+                  variants={itemVariants}
                   onClick={() => handleChatSelect(chat)}
-                  className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md active:scale-95 animate-slideInUp ${
+                  className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                     activeChat.id === chat.id
                       ? 'bg-gray-600 text-white shadow-lg scale-[1.02]'
                       : 'hover:bg-gray-300 text-black'
                   }`}
-                  style={{ animationDelay: `${0.4 + index * 0.1}s` }}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{chat.name}</span>
@@ -234,13 +288,16 @@ export default function Analyse() {
                       {chat.messages[chat.messages.length - 1].text}
                     </p>
                   )}
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
           
           {/* New Chat Button */}
-          <div className="p-4">
+          <motion.div 
+            variants={itemVariants}
+            className="p-4"
+          >
             <button
               onClick={handleNewChat}
               className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
@@ -250,13 +307,18 @@ export default function Analyse() {
               </svg>
               New Chat
             </button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col bg-white animate-slideInUp" style={{ animationDelay: '0.4s' }}>
+        <motion.main 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 }}
+          className="flex-1 flex flex-col bg-white"
+        >
           {/* Chat Name Header */}
-          <div className="p-4 bg-white transition-all duration-300 animate-slideInUp" style={{ animationDelay: '0.5s' }}>
+          <div className="p-4 bg-white transition-all duration-300">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-black">{activeChat.name}</h2>
@@ -268,7 +330,12 @@ export default function Analyse() {
           <div className="h-[calc(100vh-280px)] p-8 overflow-y-auto">
             <div className="max-w-4xl mx-auto">
               {activeChat.messages.length === 0 ? (
-                <div className="text-center py-12 animate-fadeIn">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="text-center py-12"
+                >
                   <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center transform transition-all duration-300 shadow-lg">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -298,7 +365,7 @@ export default function Analyse() {
                       📈 Create visualization
                     </button>
                   </div>
-                </div>
+                </motion.div>
               ) : (
                 <div>
                   {activeChat.messages.map((msg) => (
@@ -316,7 +383,12 @@ export default function Analyse() {
           </div>
           
           {/* Input Area */}
-          <div className="p-8 pt-0">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut", delay: 0.4 }}
+            className="p-8 pt-0"
+          >
             <div className="relative max-w-4xl mx-auto">
               <div className="relative bg-gray-200 rounded-2xl transition-all duration-300 focus-within:border-gray-500 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md">
                 <textarea
@@ -343,41 +415,9 @@ export default function Analyse() {
                 Press Enter to send, Shift+Enter for new line
               </p>
             </div>
-          </div>
-        </main>
-      </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-
-        .animate-slideInUp {
-          animation: slideInUp 0.4s ease-out;
-        }
-      `}</style>
+          </motion.div>
+        </motion.main>
+      </motion.div>
     </div>
   );
 }
