@@ -206,13 +206,13 @@ export default function Analyse() {
   };
 
   return (
-    <div className="min-h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden">
+    <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
       {/* Navigation Bar */}
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="flex justify-center pt-8 pb-4"
+        className="flex justify-center pt-8 pb-4 flex-shrink-0"
       >
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
@@ -238,7 +238,7 @@ export default function Analyse() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
-        className="px-8 py-4"
+        className="px-8 py-4 flex-shrink-0"
       >
         <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Analyse Your Data</h1>
         <p className="text-center text-gray-600 mt-2">Chat with our AI to analyze and understand your data better</p>
@@ -249,7 +249,7 @@ export default function Analyse() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
-        className="flex h-[calc(100vh-180px)]"
+        className="flex flex-1 min-h-0"
       >
         {/* Left Sidebar */}
         <motion.div 
@@ -259,7 +259,7 @@ export default function Analyse() {
           className="w-64 bg-white flex flex-col transition-all duration-300 shadow-lg"
         >
           {/* Chat History */}
-          <div className="h-[calc(100vh-280px)] p-4">
+          <div className="flex-1 p-4 min-h-0 overflow-hidden">
             <h3 className="font-medium text-sm mb-4 text-black">Chat History</h3>
             <div className="space-y-2">
               {chats.map((chat, index) => (
@@ -267,16 +267,16 @@ export default function Analyse() {
                   key={chat.id}
                   variants={itemVariants}
                   onClick={() => handleChatSelect(chat)}
-                  className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
+                  className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.01] hover:shadow-md active:scale-95 ${
                     activeChat.id === chat.id
-                      ? 'bg-gray-600 text-white shadow-lg scale-[1.02]'
+                      ? 'bg-gray-600 text-white shadow-lg scale-[1.01]'
                       : 'hover:bg-gray-300 text-black'
                   }`}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">{chat.name}</span>
+                    <span className="font-medium truncate flex-1 mr-2">{chat.name}</span>
                     {chat.messages.length > 0 && (
-                      <span className={`text-xs opacity-75 px-2 py-1 rounded-full transition-all duration-200 ${
+                      <span className={`text-xs opacity-75 px-2 py-1 rounded-full transition-all duration-200 flex-shrink-0 ${
                         activeChat.id === chat.id ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-400 hover:bg-gray-500'
                       }`}>
                         {chat.messages.length}
@@ -296,11 +296,11 @@ export default function Analyse() {
           {/* New Chat Button */}
           <motion.div 
             variants={itemVariants}
-            className="p-4"
+            className="p-4 flex-shrink-0"
           >
             <button
               onClick={handleNewChat}
-              className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+              className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-95 shadow-md hover:shadow-lg"
             >
               <svg className="w-4 h-4 transform transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -315,10 +315,10 @@ export default function Analyse() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 }}
-          className="flex-1 flex flex-col bg-white"
+          className="flex-1 flex flex-col bg-white min-h-0"
         >
           {/* Chat Name Header */}
-          <div className="p-4 bg-white transition-all duration-300">
+          <div className="p-4 bg-white transition-all duration-300 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-black">{activeChat.name}</h2>
@@ -327,7 +327,7 @@ export default function Analyse() {
           </div>
           
           {/* Chat Area */}
-          <div className="h-[calc(100vh-280px)] p-8 overflow-y-auto">
+          <div className="flex-1 p-8 overflow-y-auto min-h-0">
             <div className="max-w-4xl mx-auto">
               {activeChat.messages.length === 0 ? (
                 <motion.div 
@@ -387,7 +387,7 @@ export default function Analyse() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut", delay: 0.4 }}
-            className="p-8 pt-0"
+            className="p-8 pt-0 flex-shrink-0"
           >
             <div className="relative max-w-4xl mx-auto">
               <div className="relative bg-gray-200 rounded-2xl transition-all duration-300 focus-within:border-gray-500 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md">
@@ -399,7 +399,7 @@ export default function Analyse() {
                   placeholder="Ask your AI data analyst a question about your data"
                   rows="1"
                 />
-                <div className="absolute right-2 top-2 flex items-center space-x-2">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2">
                   <button 
                     onClick={handleSendMessage}
                     disabled={!message.trim()}

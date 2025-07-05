@@ -110,13 +110,13 @@ export default function View() {
   };
 
   return (
-    <div className="min-h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden">
+    <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
       {/* Navigation Bar */}
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="flex justify-center pt-8 pb-4"
+        className="flex justify-center pt-8 pb-4 flex-shrink-0"
       >
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
@@ -142,7 +142,7 @@ export default function View() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
-        className="px-8 py-4"
+        className="px-8 py-4 flex-shrink-0"
       >
         <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">View Your Data</h1>
         <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
@@ -155,7 +155,7 @@ export default function View() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-7xl mx-auto px-8 py-8"
+        className="flex-1 max-w-7xl mx-auto px-8 py-8 w-full min-h-0 overflow-y-auto"
       >
         
         {/* Summary Stats */}
