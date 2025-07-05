@@ -116,10 +116,34 @@ export default function Chat() {
         </button>
       </form>
       {conversation.length > 0 && (
-        <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' }}>
+        <div
+          style={{
+            backgroundColor: '#1a1a1a',
+            padding: '20px',
+            borderRadius: '12px',
+            fontSize: '15px',
+            marginBottom: '24px',
+            lineHeight: 1.7,
+          }}
+        >
           {conversation.map((msg, idx) => (
-            <div key={idx} style={{ marginBottom: '10px' }}>
-              <b style={{ color: msg.role === 'user' ? '#6cf' : '#9f6' }}>{msg.role === 'user' ? 'You' : 'AI'}:</b> {msg.content}
+            <div
+              key={idx}
+              style={{
+                marginBottom: '24px',
+                padding: '16px',
+                background: msg.role === 'assistant' ? '#181f1a' : 'transparent',
+                borderRadius: '8px',
+                border: msg.role === 'assistant' ? '1px solid #333' : 'none',
+              }}
+            >
+              <b style={{ color: msg.role === 'user' ? '#6cf' : '#9f6' }}>
+                {msg.role === 'user' ? 'You' : 'AI'}:
+              </b>{' '}
+              {msg.role === 'assistant'
+                ? <span className="ai-response" dangerouslySetInnerHTML={{ __html: msg.content }} />
+                : <span>{msg.content}</span>
+              }
             </div>
           ))}
         </div>
