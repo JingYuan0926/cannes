@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { blobId } = req.query;
+    const { blobId, format } = req.query;
 
     if (!blobId || typeof blobId !== 'string') {
       return res.status(400).json({ error: 'Blob ID must be a non-empty string' });
@@ -29,17 +29,51 @@ export default async function handler(req, res) {
       throw new Error(`Walrus aggregator error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    // Get the text content
-    const text = await response.text();
+    const contentType = response.headers.get('content-type') || 'application/octet-stream';
     
-    console.log('Text read successfully from Walrus:', text.length, 'characters');
+    // Handle different format requests
+    if (format === 'raw') {
+      // Return raw binary data for downloads
+      const buffer = await response.arrayBuffer();
+      const uint8Array = new Uint8Array(buffer);
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', buffer.byteLength);
+      res.status(200).send(Buffer.from(uint8Array));
+      return;
+    }
+
+    // For JSON response, handle both text and binary content
+    let content;
+    let isText = false;
+    let isBinary = false;
+    
+    // Detect if content is likely text or binary
+    if (contentType.startsWith('text/') || 
+        contentType.includes('json') || 
+        contentType.includes('xml') || 
+        contentType.includes('csv')) {
+      content = await response.text();
+      isText = true;
+    } else {
+      // Handle binary content (images, PDFs, etc.)
+      const buffer = await response.arrayBuffer();
+      const uint8Array = new Uint8Array(buffer);
+      content = Buffer.from(uint8Array).toString('base64');
+      isBinary = true;
+    }
+    
+    console.log(`Content read successfully from Walrus: ${isText ? content.length + ' characters' : 'binary data'}`);
     
     res.status(200).json({
       success: true,
-      text: text,
+      content: content,
       blobId: blobId,
-      length: text.length,
-      bytes: new TextEncoder().encode(text).length,
+      contentType: contentType,
+      isText: isText,
+      isBinary: isBinary,
+      length: isText ? content.length : Buffer.from(content, 'base64').length,
+      bytes: isText ? new TextEncoder().encode(content).length : Buffer.from(content, 'base64').length,
     });
 
   } catch (error) {
