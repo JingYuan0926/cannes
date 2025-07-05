@@ -1,16 +1,16 @@
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 import pandas as pd
 import os
 import json
 import logging
 from datetime import datetime
 from pathlib import Path
-import openai
-from openai import OpenAI
 import traceback
 import io
 import tempfile
 from dotenv import load_dotenv
+import numpy as np
 
 # Load environment variables from .env file
 load_dotenv()
@@ -24,13 +24,44 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+# Initialize OpenAI client with error handling
+client = None
+try:
+    from openai import OpenAI
+    api_key = os.getenv('OPENAI_API_KEY')
+    if api_key:
+        client = OpenAI(api_key=api_key)
+        logger.info("OpenAI client initialized successfully")
+    else:
+        logger.warning("OPENAI_API_KEY not found in environment variables")
+except Exception as e:
+    logger.warning(f"Failed to initialize OpenAI client: {str(e)}. Will use fallback recommendations.")
+    client = None
 
 # Global variables
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
+
+def json_safe_convert(obj):
+    """Convert data to JSON-safe format, handling NaN values"""
+    if isinstance(obj, dict):
+        return {key: json_safe_convert(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [json_safe_convert(item) for item in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        if np.isnan(obj):
+            return None
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif pd.isna(obj):
+        return None
+    else:
+        return obj
 
 class AIDataCleaningAgent:
     def __init__(self):
@@ -45,6 +76,10 @@ class AIDataCleaningAgent:
     
     def get_cleaning_recommendations(self, analysis):
         """Use OpenAI to decide on cleaning strategies based on analysis"""
+        
+        if client is None:
+            logger.info("OpenAI client not available, using fallback recommendations")
+            return self._fallback_recommendations(analysis)
         
         # Prepare the prompt for OpenAI
         prompt = self._create_analysis_prompt(analysis)
@@ -236,50 +271,30 @@ def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'service': 'AI Data Cleaning Agent',
-        'timestamp': datetime.now().isoformat()
+        'service': 'AI Data Cleaning Agent (ETL)',
+        'timestamp': datetime.now().isoformat(),
+        'openai_available': client is not None
     })
 
 @app.route('/analyze', methods=['POST'])
-def analyze_data():
-    """Analyze uploaded CSV data"""
+def analyze_and_clean():
+    """Main endpoint that combines analysis and cleaning for the pipeline"""
     try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file uploaded'}), 400
+        # Handle both file upload and JSON data
+        if 'file' in request.files:
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({'error': 'No file selected'}), 400
+            df = pd.read_csv(file)
+        elif request.is_json:
+            data = request.get_json()
+            if 'data' not in data:
+                return jsonify({'error': 'No data provided in JSON'}), 400
+            df = pd.DataFrame(data['data'])
+        else:
+            return jsonify({'error': 'No file or data provided'}), 400
         
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-        
-        # Read the CSV file
-        df = pd.read_csv(file)
-        
-        # Analyze the dataset
-        analysis = ai_agent.analyze_dataset(df)
-        
-        return jsonify({
-            'status': 'success',
-            'analysis': analysis,
-            'message': 'Dataset analyzed successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error analyzing data: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/clean', methods=['POST'])
-def clean_data():
-    """Clean data using AI recommendations"""
-    try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file uploaded'}), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-        
-        # Read the CSV file
-        df = pd.read_csv(file)
+        goal = request.form.get('goal') if 'file' in request.files else request.get_json().get('goal', '')
         original_shape = df.shape
         
         # Analyze the dataset
@@ -287,29 +302,37 @@ def clean_data():
         analysis = ai_agent.analyze_dataset(df)
         
         # Get AI recommendations
-        logger.info("Getting AI recommendations...")
+        logger.info("Getting cleaning recommendations...")
         recommendations = ai_agent.get_cleaning_recommendations(analysis)
         
         # Execute cleaning
         logger.info("Executing cleaning steps...")
         cleaned_df, execution_log = ai_agent.execute_cleaning(df, recommendations)
         
-        # Save cleaned data
-        output_path = DATA_DIR / "cleaned.csv"
-        cleaned_df.to_csv(output_path, index=False)
+        # Convert cleaned dataframe to list of dictionaries for JSON serialization
+        # Handle NaN values which are not valid JSON
+        cleaned_df_for_json = cleaned_df.fillna('')  # Replace NaN with empty string
+        processed_data = cleaned_df_for_json.to_dict('records')
+        
+        # Ensure all data is JSON-safe
+        analysis = json_safe_convert(analysis)
+        recommendations = json_safe_convert(recommendations)
+        execution_log = json_safe_convert(execution_log)
         
         return jsonify({
             'status': 'success',
+            'message': 'ETL process completed successfully',
             'original_shape': original_shape,
             'cleaned_shape': cleaned_df.shape,
+            'processed_data': processed_data,
+            'analysis': analysis,
             'recommendations': recommendations,
             'execution_log': execution_log,
-            'output_file': str(output_path),
-            'message': 'Data cleaned successfully'
+            'goal': goal
         })
         
     except Exception as e:
-        logger.error(f"Error cleaning data: {str(e)}")
+        logger.error(f"Error in ETL process: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
@@ -386,4 +409,5 @@ if __name__ == '__main__':
         logger.warning("OPENAI_API_KEY not set. AI recommendations will fall back to rule-based approach.")
     
     port = int(os.environ.get('PORT', 3030))
+    logger.info(f"Starting ETL service on port {port}")
     app.run(host='0.0.0.0', port=port, debug=True) 

@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 import pandas as pd
 import os
 import json
@@ -11,6 +12,7 @@ import traceback
 import io
 import tempfile
 from dotenv import load_dotenv
+import numpy as np
 
 # Load environment variables from .env file
 load_dotenv()
@@ -24,6 +26,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
@@ -31,6 +34,25 @@ client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 # Global variables
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
+
+def json_safe_convert(obj):
+    """Convert data to JSON-safe format, handling NaN values"""
+    if isinstance(obj, dict):
+        return {key: json_safe_convert(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [json_safe_convert(item) for item in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        if np.isnan(obj):
+            return None
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif pd.isna(obj):
+        return None
+    else:
+        return obj
 
 class AIDataPreprocessingAgent:
     def __init__(self):
@@ -292,15 +314,21 @@ def analyze_data():
 def preprocess_data():
     """Preprocess data using AI recommendations"""
     try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file uploaded'}), 400
+        # Handle both file upload and JSON data
+        if 'file' in request.files:
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({'error': 'No file selected'}), 400
+            df = pd.read_csv(file)
+        elif request.is_json:
+            data = request.get_json()
+            if 'data' not in data:
+                return jsonify({'error': 'No data provided in JSON'}), 400
+            df = pd.DataFrame(data['data'])
+        else:
+            return jsonify({'error': 'No file or data provided'}), 400
         
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-        
-        # Read CSV file
-        df = pd.read_csv(file)
+        goal = request.form.get('goal') if 'file' in request.files else request.get_json().get('goal', '')
         original_shape = df.shape
         
         # Analyze the dataset
@@ -312,18 +340,24 @@ def preprocess_data():
         # Execute preprocessing
         processed_df, execution_log = agent.execute_preprocessing(df, recommendations)
         
-        # Save processed data
-        output_file = DATA_DIR / "preprocessed.csv"
-        processed_df.to_csv(output_file, index=False)
+        # Convert processed dataframe to list of dictionaries for JSON serialization
+        # Handle NaN values which are not valid JSON
+        processed_df_for_json = processed_df.fillna('')  # Replace NaN with empty string
+        processed_data = processed_df_for_json.to_dict('records')
+        
+        # Ensure all data is JSON-safe
+        recommendations = json_safe_convert(recommendations)
+        execution_log = json_safe_convert(execution_log)
         
         return jsonify({
             'status': 'success',
             'message': 'Data preprocessed successfully',
             'original_shape': original_shape,
             'processed_shape': processed_df.shape,
+            'processed_data': processed_data,
             'recommendations': recommendations,
             'execution_log': execution_log,
-            'output_file': str(output_file)
+            'goal': goal
         })
         
     except Exception as e:

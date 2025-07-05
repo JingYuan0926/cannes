@@ -18,6 +18,7 @@ import json
 import pandas as pd
 import numpy as np
 from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import openai
 from datetime import datetime
@@ -58,6 +59,9 @@ def safe_jsonify(data):
 def create_app():
     """Create and configure the Flask application"""
     app = Flask(__name__)
+    
+    # Enable CORS for all routes
+    CORS(app)
     
     # Configuration
     app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
@@ -155,6 +159,26 @@ def create_app():
                 if 'data' in data:
                     df = pd.DataFrame(data['data'])
                     goal = data.get('goal', '')
+                    
+                    # Convert data types - preprocessing may return everything as strings
+                    logger.info("Converting data types for analysis...")
+                    for col in df.columns:
+                        if df[col].dtype == 'object':
+                            # Try to convert to numeric first
+                            try:
+                                df[col] = pd.to_numeric(df[col], errors='ignore')
+                            except:
+                                pass
+                            
+                            # Try to convert to datetime if it looks like dates
+                            if df[col].dtype == 'object':
+                                try:
+                                    if df[col].astype(str).str.contains(r'\d{4}-\d{2}-\d{2}', na=False).any():
+                                        df[col] = pd.to_datetime(df[col], errors='ignore')
+                                except:
+                                    pass
+                    
+                    logger.info(f"After type conversion - dtypes: {df.dtypes.to_dict()}")
                 else:
                     return jsonify({'error': 'No data provided in JSON'}), 400
             
@@ -170,26 +194,26 @@ def create_app():
             # Perform comprehensive AI-powered analysis
             logger.info(f"Starting analysis for goal: {goal}")
             logger.info(f"Dataset shape: {df.shape}")
+            logger.info(f"Dataset columns: {df.columns.tolist()}")
+            logger.info(f"Dataset dtypes: {df.dtypes.to_dict()}")
+            logger.info(f"Sample data: {df.head(2).to_dict('records')}")
             
             analysis_results = orchestrator.perform_comprehensive_analysis(df, goal)
             
+            logger.info(f"Analysis results received - analyses: {len(analysis_results.get('analyses', []))}, graphs: {len(analysis_results.get('graphs', []))}")
+            
             if 'error' in analysis_results:
+                logger.error(f"Analysis error: {analysis_results['error']}")
                 return jsonify(safe_jsonify(analysis_results)), 500
             
-            # Save results to JSON file
             analysis_id = analysis_results['analysis_id']
-            results_file = f"results/analysis_{analysis_id}.json"
             
-            with open(results_file, 'w') as f:
-                json.dump(analysis_results, f, cls=NumpyEncoder, indent=2)
-            
-            logger.info(f"Analysis completed successfully. Results saved to {results_file}")
+            logger.info(f"Analysis completed successfully for analysis_id: {analysis_id}")
             
             response_data = {
                 'status': 'success',
                 'message': 'Analysis completed successfully',
                 'analysis_id': analysis_id,
-                'results_file': results_file,
                 'summary': {
                     'total_analyses': len(analysis_results.get('analyses', [])),
                     'total_graphs': len(analysis_results.get('graphs', [])),
