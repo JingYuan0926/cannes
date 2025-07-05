@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function Chat() {
   const [userInput, setUserInput] = useState('');
@@ -119,11 +121,59 @@ export default function Chat() {
         <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' }}>
           {conversation.map((msg, idx) => (
             <div key={idx} style={{ marginBottom: '10px' }}>
-              <b style={{ color: msg.role === 'user' ? '#6cf' : '#9f6' }}>{msg.role === 'user' ? 'You' : 'AI'}:</b> {msg.content}
+              <b style={{ color: msg.role === 'user' ? '#6cf' : '#9f6' }}>{msg.role === 'user' ? 'You' : 'AI'}:</b>{' '}
+              {msg.role === 'assistant'
+                ? (
+                    <div className="chat-markdown-response">
+                      <div className="chat-markdown">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  )
+                : msg.content}
             </div>
           ))}
         </div>
       )}
+      <style jsx>{`
+        .chat-markdown-response {
+          margin-top: 8px;
+          margin-bottom: 8px;
+          white-space: normal;
+        }
+        .chat-markdown h1 {
+          font-size: 2rem;
+          font-weight: bold;
+          text-decoration: underline;
+          margin: 1.2em 0 0.6em 0;
+          color: #7ecfff;
+        }
+        .chat-markdown h2 {
+          font-size: 1.5rem;
+          font-weight: bold;
+          text-decoration: underline;
+          margin: 1em 0 0.5em 0;
+          color: #7ecfff;
+        }
+        .chat-markdown h3 {
+          font-size: 1.2rem;
+          font-weight: bold;
+          margin: 0.8em 0 0.4em 0;
+          color: #7ecfff;
+        }
+        .chat-markdown ul {
+          margin: 0.5em 0 0.5em 1.5em;
+          padding-left: 1.2em;
+        }
+        .chat-markdown li {
+          margin-bottom: 0.3em;
+        }
+        .chat-markdown p {
+          margin: 0.5em 0;
+        }
+      `}</style>
     </div>
   );
 }
