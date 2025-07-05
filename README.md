@@ -1,37 +1,29 @@
-# AI Data Analyst Chatbot 👇
-**Privacy-First, Enterprise-Grade AI Data Analysis with Secure Document Processing**
+# AI Data Analyst (Name) 👇
+**An AI Agent Data Analyst build in TEE(Trusted Execution Environment)**
 
-![Logo](https://github.com/JingYuan0926/cannes/blob/main/public/next.svg?raw=true)
-
-A breakthrough AI-powered data analysis platform that processes PDF and DOCX documents within a secure environment, providing intelligent insights through conversational AI while maintaining complete data privacy and confidentiality.
+An AI-powered data analysis platform that processes data within a Trusted Execution Environment (TEE), providing intelligent insights through conversational AI while maintaining complete data privacy and confidentiality. No more data leaks, no more privacy concerns — just secure, powerful analysis that keeps your data safe.
 
 For a comprehensive guide on setup and deployment, please refer to this [README Guide](https://github.com/JingYuan0926/cannes/blob/main/README.md).
 
-We've deployed a live demonstration of **AI Data Analyst Chatbot** at [http://localhost:3000/chat](http://localhost:3000/chat).
+We've deployed a live demonstration of **(NAME)** at [http://localhost:3000/chat](http://localhost:3000/chat).
 
 ---
 
 ## Inspiration: How We Came Up with This Idea 💡
 
-In today's data-driven world, organizations and individuals constantly struggle with analyzing complex documents and extracting meaningful insights. Traditional data analysis tools often require technical expertise, while cloud-based AI services raise concerns about data privacy and security. Many users find themselves juggling between multiple tools—uploading documents to one service, copying results to another, and manually piecing together insights.
+We noticed two critical problems in the data analysis landscape:
+
+**For Small and Medium Enterprises (SMEs):**
+Hiring a data analyst is prohibitively expensive. The average salary for a data analyst ranges from $60,000 to $120,000 annually, plus benefits and training costs. For SMEs operating on tight budgets, this is simply unaffordable, leaving them without access to crucial business insights that could drive growth and efficiency.
+
+**For Fortune 500 Enterprises and Governments:**
+Data leakage is a constant threat. High-profile breaches—from government agencies to Fortune 500 companies—make headlines weekly. Even with expensive security measures, sensitive data often ends up in the wrong hands, causing financial losses, reputational damage, and regulatory penalties.
 
 We thought:
 
-> *"What if we could create a single, secure platform that combines document processing, AI analysis, and conversational interaction—all while keeping data completely private and accessible to anyone?"*
+> *"What if we could create an AI Agent data analyst that's both affordable for SMEs and secure enough for enterprises and governments?"*
 
-This exploration led us to design a privacy-first AI data analyst that operates within a secure environment, providing enterprise-grade analysis capabilities without compromising on security or ease of use.
-
----
-
-## Important Terms ⚡
-
-To better understand our AI Data Analyst Chatbot's documentation:
-
-- **TEE (Trusted Execution Environment):** A secure computing environment that protects data and code from external access, ensuring privacy and confidentiality.
-- **Session Management:** UUID-based tracking that maintains conversation context across multiple queries while keeping data isolated.
-- **Document Sharding:** The process of breaking down large documents into manageable chunks for secure processing and analysis.
-
-These terms help clarify how our platform securely processes documents and maintains user privacy throughout the analysis process.
+This exploration led us to design a privacy-first AI data analyst that operates within a Trusted Execution Environment (TEE), providing enterprise-grade analysis capabilities at a fraction of the cost while ensuring complete data security and confidentiality.
 
 ---
 
@@ -47,9 +39,7 @@ Organizations and individuals face several significant challenges when attemptin
 
 **4. Limited Context:** Most AI analysis tools provide one-off responses without maintaining conversation context, making it difficult to ask follow-up questions or explore deeper insights.
 
-**5. File Format Limitations:** Many platforms only support specific file formats, forcing users to convert documents or lose valuable formatting and structure.
-
-**6. Cost Prohibitive:** Enterprise-grade AI analysis tools often come with high costs, making them inaccessible to smaller organizations and individuals.
+**5. Cost Prohibitive:** Enterprise-grade AI analysis tools often come with high costs, making them inaccessible to smaller organizations and individuals.
 
 ---
 
@@ -57,19 +47,19 @@ Organizations and individuals face several significant challenges when attemptin
 
 Our AI Data Analyst Chatbot addresses these challenges by implementing a secure, conversational document analysis platform:
 
-**1. Privacy-First Architecture:** All document processing and AI analysis occurs within a secure environment, ensuring that sensitive data never leaves the user's control.
+**1. Privacy-First Architecture:** All document processing and AI analysis occurs within Trusted Execution Environments (TEEs), ensuring that sensitive data aren't accessible to anyone, not even users themselves.
 
-**2. Multi-Format Support:** Seamlessly processes PDF and DOCX documents while preserving formatting and structure for accurate analysis.
+**2. Adaptive Insight Cards:** Dynamically displays relevant insight cards based on user needs and data content, hiding irrelevant information to provide focused, actionable intelligence. Users can view both individual insight cards and a comprehensive summary of all insights.
 
-**3. Conversational Interface:** Maintains context throughout the session, allowing users to ask follow-up questions and explore insights naturally.
+**3. Three-Tier Analysis:** Provides descriptive (what happened), predictive (what will happen), and prescriptive (what should be done) analysis capabilities for comprehensive data insights.
 
-**4. Enterprise-Grade AI:** Powered by GPT-4, providing sophisticated analysis capabilities while maintaining the security and privacy of sensitive documents.
+**4. Conversational Interface:** Maintains context throughout the session, allowing users to ask follow-up questions and explore insights naturally.
 
-**5. Session Management:** UUID-based session tracking ensures data isolation and secure conversation continuity.
+**5. Enterprise-Grade AI:** Powered by GPT-4, providing sophisticated analysis capabilities while maintaining the security and privacy of sensitive documents.
 
 **6. Source Citations:** Includes reputable sources with clickable hyperlinks, providing transparency and credibility to AI-generated insights.
 
-In short, our platform enables users to upload documents, ask questions in natural language, and receive intelligent, contextual responses—all while maintaining complete data privacy and security.
+In short, our platform enables users to upload encrypted data, ask questions in natural language and receive intelligent, contextual responses—all while maintaining complete data privacy and security.
 
 ---
 
@@ -77,42 +67,32 @@ In short, our platform enables users to upload documents, ask questions in natur
 
 ### Project Flow 1: Document Upload & Analysis
 
-1. **Upload Documents**
-   - Users upload PDF or DOCX files through our secure interface
-   - Files are automatically parsed and processed within the secure environment
-   - Document content is extracted and prepared for AI analysis
+1. **Upload Encrypted Data**
+   - Users upload encrypted data through our secure interface
+   - Data is automatically processed within the secure environment
+   - Encrypted content is decrypted and prepared for AI analysis
 
 2. **Establish Context**
-   - The AI system processes the uploaded documents to understand the content
+   - The AI system processes the uploaded encrypted data to understand the content
    - A session ID is generated to maintain conversation context
-   - Users receive confirmation that their documents are ready for analysis
+   - Users receive confirmation that their data is ready for analysis
 
 3. **Conversational Analysis**
-   - Users ask questions about their documents in natural language
+   - Users ask questions about the data in natural language
    - The AI provides concise, actionable insights (2-4 sentences by default)
    - Follow-up questions maintain context from previous interactions
+   - Users can view adaptive insight cards that display relevant information based on their needs
+   - A summary of all insight cards is provided for comprehensive overview
 
-4. **Detailed Analysis (Optional)**
+4. **Three Types of Analysis**
+   - **Descriptive Analysis**: Understand what happened in the past with detailed data summaries and trends
+   - **Predictive Analysis**: Forecast future outcomes and trends based on historical patterns
+   - **Prescriptive Analysis**: Provide actionable recommendations and next steps for optimal decision-making
+
+5. **Detailed Analysis (Optional)**
    - Users can request detailed explanations by explicitly asking for more information
    - The AI provides comprehensive analysis when requested
    - Source citations are included with clickable hyperlinks
-
-### Project Flow 2: Direct Chat Analysis
-
-1. **Start Conversation**
-   - Users can begin chatting with the AI without uploading documents
-   - The AI provides general data analysis insights and guidance
-   - Context is maintained throughout the conversation
-
-2. **Ask Questions**
-   - Users pose questions about data analysis, trends, or insights
-   - The AI responds with intelligent, well-formatted answers
-   - Responses include relevant source citations when appropriate
-
-3. **Follow-up Exploration**
-   - Users can ask follow-up questions to dive deeper into topics
-   - The AI maintains conversation context for coherent responses
-   - Complex queries are broken down into manageable insights
 
 ---
 
@@ -128,31 +108,16 @@ The current architecture consists of a Next.js frontend, OpenAI API integration,
 - **Document Processing**: Files are parsed using pdf-parse and mammoth libraries
 - **Session Management**: UUID-based session tracking maintains conversation context
 - **AI Analysis**: GPT-4 processes document content and user queries
-- **Response Generation**: Formatted responses with source citations are returned to users
+- **Response Generation**: Formatted responses with source citations and insight cards are returned to users
 
 ### Direct Chat Flow (Without File Upload - Green Line)
 
-- **User Input**: Users ask questions directly without uploading documents
+- **User Input**: Users ask questions directly without uploading encrypted data
 - **Context Management**: Conversation history is maintained for coherent responses
 - **AI Processing**: GPT-4 analyzes queries and provides intelligent insights
-- **Response Delivery**: Formatted responses with relevant source citations
+- **Response Delivery**: Formatted responses with relevant source citations and insight cards
 
 This dual-flow system architecture ensures flexibility, security, and user-friendly interaction while maintaining data privacy and providing enterprise-grade analysis capabilities.
-
----
-
-## Document Processing Architecture 📦
-
-![Document Processing](https://github.com/JingYuan0926/cannes/blob/main/public/next.svg?raw=true)
-
-Our document processing pipeline handles multiple file formats securely:
-
-- **PDF Processing**: Uses pdf-parse library to extract text while preserving structure
-- **DOCX Processing**: Leverages mammoth library for Word document parsing
-- **Security**: All processing occurs within secure environment with automatic file cleanup
-- **Session Isolation**: Each user session is isolated with unique UUID tracking
-
-The processed content is then made available to the AI for intelligent analysis and response generation.
 
 ---
 
@@ -197,9 +162,9 @@ Unlike traditional document analysis tools, our platform focuses on **conversati
 
 | **Feature**                          | **Traditional Document Analysis**                                     | **AI Data Analyst Chatbot**                                                                 |
 |--------------------------------------|-----------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| **Privacy & Security**               | Often requires uploading to third-party servers with limited privacy guarantees | **Privacy-first architecture** with secure document processing and automatic file cleanup |
+| **Privacy & Security**               | Often requires uploading to third-party servers with limited privacy guarantees | **Privacy-first architecture** with secure encrypted data processing and automatic cleanup |
 | **Conversational Interface**         | Typically one-off analysis with no follow-up capability | **Maintains conversation context** allowing natural follow-up questions and deeper exploration |
-| **Multi-Format Support**             | Often limited to specific file formats | **Seamless PDF and DOCX processing** with preserved formatting |
+| **Encrypted Data Processing**        | Often limited to specific file formats | **Seamless encrypted data processing** with complete security |
 | **Source Citations**                 | Rarely includes source attribution | **Reputable sources with clickable hyperlinks** for transparency and credibility |
 | **Response Formatting**              | Plain text or basic formatting | **Rich HTML formatting** with proper styling and structure |
 | **Session Management**               | No conversation continuity | **UUID-based session tracking** for secure, isolated conversations |
@@ -294,7 +259,7 @@ The app will be accessible at [http://localhost:3000/chat](http://localhost:3000
 - **Processing**: Files are automatically parsed and analyzed
 
 ### **Conversation Flow**
-1. **Upload Phase**: Upload documents to establish context
+1. **Upload Phase**: Upload encrypted data to establish context
 2. **Analysis Phase**: Ask questions about your data
 3. **Follow-up**: Continue the conversation with additional queries
 
