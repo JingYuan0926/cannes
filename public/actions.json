@@ -1,0 +1,12 @@
+{
+  "rules": [
+    {
+      "pathPattern": "/api/actions/0xc59d401b0cf8ec0f3094b75aeff72305404787c5/runAnalysis",
+      "apiPath": "/api/actions/0xc59d401b0cf8ec0f3094b75aeff72305404787c5/runAnalysis"
+    },
+    {
+      "pathPattern": "/api/actions/0xc59d401b0cf8ec0f3094b75aeff72305404787c5/runAnalysis",
+      "apiPath": "/api/actions/0xc59d401b0cf8ec0f3094b75aeff72305404787c5/runAnalysis"
+    }
+  ]
+}

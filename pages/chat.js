@@ -7,6 +7,8 @@ export default function Chat() {
   const [response, setResponse] = useState('');
   const [actionApiUrl, setActionApiUrl] = useState('');
   const [justCopied, setJustCopied] = useState(false);
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvAnalysis, setCsvAnalysis] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,6 +37,35 @@ export default function Chat() {
     } catch (err) {
       console.error('Error:', err);
       setResponse('Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCsvChange = (e) => {
+    setCsvFile(e.target.files[0]);
+  };
+
+  const handleCsvUpload = async () => {
+    if (!csvFile) {
+      setCsvAnalysis('Please select a CSV file to upload.');
+      return;
+    }
+    setLoading(true);
+    setCsvAnalysis('');
+    const formData = new FormData();
+    formData.append('file', csvFile);
+    try {
+      const res = await fetch('/api/uploadCsv', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error(`Error: ${res.status}`);
+      const result = await res.json();
+      setCsvAnalysis(result.analysis || result.message || 'Analysis completed.');
+    } catch (err) {
+      console.error('CSV Upload Error:', err);
+      setCsvAnalysis('Failed to analyze CSV. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -96,6 +127,32 @@ export default function Chat() {
           {loading ? 'Analyzing...' : 'Run Analysis'}
         </button>
       </form>
+
+      {/* CSV Upload Section */}
+      <div style={{ marginBottom: '20px', backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
+        <h3 style={{ marginBottom: '10px' }}>Upload CSV for Analysis</h3>
+        <input type="file" accept=".csv" onChange={handleCsvChange} style={{ marginBottom: '10px' }} />
+        <button
+          onClick={handleCsvUpload}
+          disabled={loading}
+          style={{
+            marginLeft: '10px',
+            padding: '6px 12px',
+            backgroundColor: '#3366cc',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {loading ? 'Uploading...' : 'Upload & Analyze'}
+        </button>
+        {csvAnalysis && (
+          <div style={{ marginTop: '10px', backgroundColor: '#222', padding: '10px', borderRadius: '6px', fontSize: '14px' }}>
+            <p>{csvAnalysis}</p>
+          </div>
+        )}
+      </div>
 
       {actionApiUrl && (
         <div style={{ marginBottom: '20px', backgroundColor: '#1e1e1e', padding: '15px', borderRadius: '8px' }}>
