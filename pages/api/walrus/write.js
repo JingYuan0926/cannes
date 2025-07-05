@@ -1,46 +1,5 @@
-import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
-import { WalrusClient, RetryableWalrusClientError } from '@mysten/walrus';
-import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
-
-// Global client instances for writing
-let suiClient;
-let walrusClient;
-let keypair;
-let initialized = false;
-
-/**
- * Initialize Walrus clients and keypair for writing
- */
-const initializeWalrusWrite = async () => {
-  if (initialized) return;
-  
-  // Get seed phrase from environment variable
-  const seedPhrase = process.env.NEXT_PUBLIC_WALRUS_SEED_PHRASE;
-  if (!seedPhrase) {
-    throw new Error('NEXT_PUBLIC_WALRUS_SEED_PHRASE environment variable is required');
-  }
-
-  // Create keypair from seed phrase
-  keypair = Ed25519Keypair.deriveKeypair(seedPhrase);
-
-  // Create SUI client with Walrus extension
-  suiClient = new SuiClient({
-    url: getFullnodeUrl('testnet'),
-    network: 'testnet',
-  }).$extend(
-    WalrusClient.experimental_asClientExtension({
-      storageNodeClientOptions: {
-        timeout: 60_000,
-      },
-    }),
-  );
-  
-  walrusClient = suiClient.walrus;
-  initialized = true;
-  
-  console.log('Walrus write client initialized successfully');
-  console.log('Signer address:', keypair.toSuiAddress());
-};
+// Simple HTTP API proxy for Walrus storage
+const WALRUS_PUBLISHER = process.env.WALRUS_PUBLISHER_URL || 'https://publisher.walrus-testnet.walrus.space';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -48,52 +7,72 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { text, epochs = 3, deletable = false } = req.body;
+    const { text, epochs = 1, deletable = false } = req.body;
 
     if (!text || typeof text !== 'string') {
       return res.status(400).json({ error: 'Text must be a non-empty string' });
     }
 
-    // Initialize if not already done
-    await initializeWalrusWrite();
+    console.log(`Writing text to Walrus: ${text.length} characters for ${epochs} epochs`);
 
-    // Convert text to Uint8Array
-    const blob = new TextEncoder().encode(text);
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (epochs > 1) {
+      params.append('epochs', epochs.toString());
+    }
+    if (deletable) {
+      params.append('deletable', 'true');
+    }
 
-    console.log(`Writing text to Walrus: ${text.length} characters (${blob.length} bytes) for ${epochs} epochs`);
-
-    // Write blob using Walrus client
-    const result = await walrusClient.writeBlob({
-      blob,
-      deletable,
-      epochs,
-      signer: keypair,
+    // Make HTTP PUT request to Walrus publisher
+    const walrusUrl = `${WALRUS_PUBLISHER}/v1/blobs${params.toString() ? '?' + params.toString() : ''}`;
+    
+    const response = await fetch(walrusUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+      body: text,
     });
 
-    console.log('Text written successfully to Walrus:', result.blobId);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Walrus publisher error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('Text written successfully to Walrus:', result);
     
+    // Extract blob ID from response
+    let blobId;
+    let blobObject;
+    
+    if (result.newlyCreated) {
+      blobId = result.newlyCreated.blobObject.blobId;
+      blobObject = result.newlyCreated.blobObject.id;
+    } else if (result.alreadyCertified) {
+      blobId = result.alreadyCertified.blobId;
+      blobObject = null; // Not provided in alreadyCertified response
+    } else {
+      throw new Error('Unexpected response format from Walrus publisher');
+    }
+
     res.status(200).json({
       success: true,
-      blobId: result.blobId,
-      blobObject: result.blobObject,
-      signerAddress: keypair.toSuiAddress(),
+      blobId,
+      blobObject,
+      result, // Include full response for debugging
     });
 
   } catch (error) {
     console.error('Failed to write text to Walrus:', error);
     
-    // Handle specific network/certificate errors
+    // Handle specific network errors
     if (error.message.includes('Failed to fetch') || 
         error.message.includes('ERR_CERT_DATE_INVALID') ||
         error.message.includes('ERR_CONNECTION_REFUSED')) {
       return res.status(500).json({ 
-        error: 'Network connectivity issues with Walrus storage nodes. This may be due to SSL certificate problems or CORS restrictions.' 
-      });
-    }
-    
-    if (error instanceof RetryableWalrusClientError) {
-      return res.status(500).json({ 
-        error: 'Temporary network issue with Walrus nodes. Please try again.' 
+        error: 'Network connectivity issues with Walrus publisher. Please try again later.' 
       });
     }
     
