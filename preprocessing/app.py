@@ -6,7 +6,6 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-import openai
 from openai import OpenAI
 import traceback
 import io
@@ -14,24 +13,20 @@ import tempfile
 from dotenv import load_dotenv
 import numpy as np
 
-# Load environment variables from .env file
 load_dotenv()
 
 from utils.data_preprocessor import DataPreprocessor
 from utils.preprocessing_analyzer import PreprocessingAnalyzer
 from utils.standardization_techniques import StandardizationTechniques
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)  
 
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-# Global variables
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 
