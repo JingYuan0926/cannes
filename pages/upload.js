@@ -18,6 +18,7 @@ export default function Upload() {
   const [darkMode, setDarkMode] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadComplete, setIsUploadComplete] = useState(false);
 
   // Dark mode persistence
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function Upload() {
     const file = event.target.files[0];
     if (file) {
       setSelectedFile(file);
+      setIsUploadComplete(false);
     }
   };
 
@@ -63,6 +65,7 @@ export default function Upload() {
     const file = event.dataTransfer.files[0];
     if (file) {
       setSelectedFile(file);
+      setIsUploadComplete(false);
     }
   };
 
@@ -70,6 +73,7 @@ export default function Upload() {
     if (selectedFile) {
       setIsUploading(true);
       setUploadProgress(0);
+      setIsUploadComplete(false);
       
       // Simulate upload progress
       const interval = setInterval(() => {
@@ -77,7 +81,8 @@ export default function Upload() {
           if (prev >= 100) {
             clearInterval(interval);
             setIsUploading(false);
-            // Show success message or redirect
+            setIsUploadComplete(true);
+            // Show success message
             setTimeout(() => {
               alert('File uploaded successfully!');
             }, 500);
@@ -101,19 +106,19 @@ export default function Upload() {
     <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
       {/* Navigation Bar */}
       <nav className="flex justify-center pt-8 pb-4">
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1 transition-colors duration-300">
+        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 font-medium text-sm transition-all duration-300 cursor-pointer">
+            <div className="px-6 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Analyse
             </div>
           </Link>
           <Link href="/upload">
-            <div className="px-6 py-2 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium text-sm transition-all duration-300 cursor-pointer">
+            <div className="px-6 py-2 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
               Upload
             </div>
           </Link>
           <Link href="/view">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 font-medium text-sm transition-all duration-300 cursor-pointer">
+            <div className="px-6 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               View
             </div>
           </Link>
@@ -122,8 +127,8 @@ export default function Upload() {
 
       {/* Page Header */}
       <div className="px-8 py-4">
-        <h1 className="text-3xl font-bold text-center">Upload Your Data</h1>
-        <p className="text-center text-gray-600 dark:text-gray-400 mt-2">
+        <h1 className="text-3xl font-bold text-center transform transition-all duration-300">Upload Your Data</h1>
+        <p className="text-center text-gray-600 dark:text-gray-400 mt-2 transition-opacity duration-200">
           Upload your datasets to start analyzing and discovering insights
         </p>
       </div>
@@ -134,12 +139,12 @@ export default function Upload() {
           
           {/* File Upload Area */}
           <div
-            className={`border-2 rounded-2xl p-12 text-center transition-all duration-300 ${
+            className={`border-2 rounded-2xl p-12 text-center transition-all duration-300 transform hover:scale-[1.02] ${
               selectedFile
-                ? 'border-solid border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-950'
+                ? 'border-solid border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-950 scale-[1.02] shadow-lg'
                 : isDragging
-                ? 'border-dashed border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950'
-                : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-gray-50 dark:bg-gray-800'
+                ? 'border-dashed border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950 scale-[1.05] shadow-2xl animate-pulse'
+                : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-gray-50 dark:bg-gray-800 shadow-md hover:shadow-xl'
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -153,7 +158,7 @@ export default function Upload() {
                   </svg>
                 ) : (
                   <svg
-                    className="w-12 h-12 text-gray-400 dark:text-gray-500"
+                    className={`w-12 h-12 text-gray-400 dark:text-gray-500 transition-all duration-300 ${isDragging ? 'animate-bounce text-blue-500' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -170,7 +175,7 @@ export default function Upload() {
               
               <div>
                 {selectedFile ? (
-                  <div>
+                  <div className="animate-fadeIn">
                     <p className="text-lg font-medium mb-2 text-green-700 dark:text-green-300">
                       ✓ {selectedFile.name}
                     </p>
@@ -180,7 +185,7 @@ export default function Upload() {
                   </div>
                 ) : (
                   <div>
-                    <p className="text-lg font-medium mb-2">
+                    <p className="text-lg font-medium mb-2 transition-all duration-200">
                       Drop your file here
                     </p>
                     <p className="text-gray-600 dark:text-gray-400">
@@ -201,23 +206,26 @@ export default function Upload() {
               {!selectedFile && (
                 <label
                   htmlFor="fileInput"
-                  className="inline-block px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+                  className="inline-block px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                 >
                   Select File
                 </label>
               )}
 
               {selectedFile && (
-                <div className="flex gap-2 justify-center">
+                <div className="flex gap-2 justify-center animate-slideInUp">
                   <label
                     htmlFor="fileInput"
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 text-sm"
+                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
                     Change File
                   </label>
                   <button
-                    onClick={() => setSelectedFile(null)}
-                    className="px-4 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg font-medium hover:bg-red-200 dark:hover:bg-red-800 transition-colors duration-200 text-sm"
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setIsUploadComplete(false);
+                    }}
+                    className="px-4 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg font-medium hover:bg-red-200 dark:hover:bg-red-800 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
                     Remove
                   </button>
@@ -228,25 +236,25 @@ export default function Upload() {
 
           {/* Supported file types */}
           <div className="mt-4 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-gray-400 transition-opacity duration-200">
               Supported formats: CSV, Excel (.xlsx, .xls), JSON, TXT
             </p>
           </div>
           
           {/* File Information */}
           {selectedFile && (
-            <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-              <h3 className="font-semibold text-lg mb-4 text-gray-900 dark:text-gray-100">File Details</h3>
+            <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 transition-all duration-300 shadow-md hover:shadow-lg animate-slideInUp">
+              <h3 className="font-semibold text-lg mb-4 text-gray-900 dark:text-gray-100 transform transition-all duration-200">File Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg transition-all duration-200">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Name</p>
                   <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{selectedFile.name}</p>
                 </div>
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg transition-all duration-200">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Size</p>
                   <p className="font-medium text-gray-900 dark:text-gray-100">{formatFileSize(selectedFile.size)}</p>
                 </div>
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg transition-all duration-200">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Type</p>
                   <p className="font-medium text-gray-900 dark:text-gray-100">{selectedFile.type || 'Unknown'}</p>
                 </div>
@@ -256,16 +264,28 @@ export default function Upload() {
 
           {/* Upload Progress */}
           {isUploading && (
-            <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700">
+            <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 animate-slideInUp shadow-lg">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Uploading...</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">{uploadProgress}%</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out animate-pulse"
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
+              </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {isUploadComplete && (
+            <div className="mt-6 bg-green-50 dark:bg-green-950 p-6 rounded-2xl border border-green-200 dark:border-green-800 animate-slideInUp shadow-lg">
+              <div className="flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-green-700 dark:text-green-300 font-medium">Upload completed successfully!</span>
               </div>
             </div>
           )}
@@ -275,10 +295,10 @@ export default function Upload() {
             <button
               onClick={handleUpload}
               disabled={!selectedFile || isUploading}
-              className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 ${
+              className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
                 selectedFile && !isUploading
-                  ? 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 shadow-lg hover:shadow-xl'
-                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 hover:-translate-y-1'
+                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed scale-100'
               }`}
             >
               {isUploading ? (
@@ -296,6 +316,38 @@ export default function Upload() {
           </div>
         </div>
       </main>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        .animate-slideInUp {
+          animation: slideInUp 0.4s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
