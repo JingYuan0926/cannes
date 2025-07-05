@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import rehypeRaw from 'rehype-raw';
+import { readContentWithType } from "../utils/readFromWalrus";
 
 export default function Analyse() {
   const [chats, setChats] = useState([
@@ -11,12 +16,45 @@ export default function Analyse() {
   const [activeChat, setActiveChat] = useState(chats[0]);
   const [message, setMessage] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
+  const [activeFiles, setActiveFiles] = useState([]);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeChat.messages, isAiTyping]);
+
+  // Load active files from localStorage
+  useEffect(() => {
+    const loadActiveFiles = () => {
+      try {
+        const storedFiles = JSON.parse(localStorage.getItem('walrusFiles') || '[]');
+        console.log('All stored files:', storedFiles);
+        const activeFiles = storedFiles.filter(file => file.isActive);
+        console.log('Active files found:', activeFiles);
+        setActiveFiles(activeFiles);
+      } catch (error) {
+        console.error('Failed to load active files:', error);
+        setActiveFiles([]);
+      }
+    };
+    
+    loadActiveFiles();
+    
+    // Listen for storage changes
+    const handleStorageChange = () => {
+      loadActiveFiles();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('walrusFileUploaded', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('walrusFileUploaded', handleStorageChange);
+    };
+  }, []);
 
   const handleChatSelect = (chat) => {
     setActiveChat(chat);
@@ -32,7 +70,73 @@ export default function Analyse() {
     setActiveChat(newChat);
   };
 
-  const sendMessage = (messageText) => {
+  const loadActiveFilesContent = async () => {
+    if (activeFiles.length === 0) {
+      console.log('No active files to load');
+      return '';
+    }
+
+    console.log(`Loading content for ${activeFiles.length} active files:`, activeFiles);
+    setIsLoadingFiles(true);
+    let combinedContent = '';
+    
+    try {
+      for (const file of activeFiles) {
+        try {
+          console.log(`Loading content for file: ${file.name} (blobId: ${file.blobId})`);
+          
+          // Try to extract text using the new API endpoint
+          const extractResponse = await fetch('/api/walrus/extract-text', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              blobId: file.blobId,
+              fileName: file.name,
+              fileType: file.type
+            })
+          });
+          
+          if (extractResponse.ok) {
+            const extractResult = await extractResponse.json();
+            console.log(`Text extracted for ${file.name}, length: ${extractResult.length}`);
+            combinedContent += `\n\n--- File: ${file.name} ---\n${extractResult.text}`;
+          } else {
+            // Fallback to reading as raw content
+            console.log(`Text extraction failed for ${file.name}, trying raw content`);
+            const result = await readContentWithType(file.blobId);
+            console.log(`File ${file.name} result:`, {
+              isText: result.isText,
+              contentType: result.contentType,
+              contentLength: result.content?.length || 0
+            });
+            
+            if (result.isText && result.content) {
+              combinedContent += `\n\n--- File: ${file.name} ---\n${result.content}`;
+              console.log(`Added text content for ${file.name}, length: ${result.content.length}`);
+            } else {
+              combinedContent += `\n\n--- File: ${file.name} ---\n[Binary file - cannot read content]`;
+              console.log(`Skipped binary file: ${file.name}`);
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to load file ${file.name}:`, error);
+          combinedContent += `\n\n--- File: ${file.name} ---\n[Error loading file: ${error.message}]`;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading active files:', error);
+    } finally {
+      setIsLoadingFiles(false);
+    }
+    
+    console.log('Final combined content length:', combinedContent.length);
+    console.log('Combined content preview:', combinedContent.substring(0, 500) + '...');
+    return combinedContent;
+  };
+
+  const sendMessage = async (messageText) => {
     if (messageText.trim()) {
       const newMessage = {
         id: Date.now(),
@@ -52,11 +156,38 @@ export default function Analyse() {
       setActiveChat(updatedChat);
       setIsAiTyping(true);
       
-      // Simulate AI typing and response
-      setTimeout(() => {
+      try {
+        // Load active files content
+        const filesContent = await loadActiveFilesContent();
+        console.log('About to send to API:', {
+          promptLength: messageText.length,
+          filesContentLength: filesContent.length,
+          sampleDataReady: filesContent.length > 0,
+          conversationLength: [...updatedChat.messages, newMessage].length
+        });
+        
+        // Prepare conversation for API
+        const conversation = [...updatedChat.messages, newMessage];
+        
+        const res = await fetch('/api/chatbot', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: messageText,
+            sampleDataReady: filesContent.length > 0,
+            conversation: conversation,
+            filesContent: filesContent // Send files content directly
+          }),
+        });
+        
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        const result = await res.json();
+        
         const aiResponse = {
           id: Date.now() + 1,
-          text: getAIResponse(messageText),
+          text: result.message,
           sender: 'ai',
           timestamp: new Date(),
         };
@@ -70,24 +201,32 @@ export default function Analyse() {
           chat.id === activeChat.id ? updatedChatWithAI : chat
         ));
         setActiveChat(updatedChatWithAI);
+        
+      } catch (error) {
+        console.error('Error sending message:', error);
+        const errorResponse = {
+          id: Date.now() + 1,
+          text: 'Sorry, I encountered an error. Please try again.',
+          sender: 'ai',
+          timestamp: new Date(),
+        };
+        
+        const updatedChatWithError = {
+          ...updatedChat,
+          messages: [...updatedChat.messages, errorResponse]
+        };
+        
+        setChats(chats.map(chat => 
+          chat.id === activeChat.id ? updatedChatWithError : chat
+        ));
+        setActiveChat(updatedChatWithError);
+      } finally {
         setIsAiTyping(false);
-      }, 1500 + Math.random() * 1000);
+      }
     }
   };
 
-  const getAIResponse = (userMessage) => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('summary')) {
-      return "I'd be happy to provide a summary of your data! Please upload your dataset first, and I'll analyze the key metrics, data distribution, and provide insights about your data structure.";
-    } else if (lowerMessage.includes('trends')) {
-      return "I can help you identify trends in your data! Once you upload your dataset, I'll look for patterns, correlations, and time-based trends that might be valuable for your analysis.";
-    } else if (lowerMessage.includes('visualization') || lowerMessage.includes('chart')) {
-      return "I can create various visualizations for your data! I can generate charts, graphs, and plots to help you better understand your data. Please upload your dataset and let me know what type of visualization you'd like.";
-    } else {
-      return "I'm here to help you analyze your data! You can ask me to summarize your data, find trends, create visualizations, or perform specific analyses. Please upload your dataset first so I can assist you better.";
-    }
-  };
+
 
   const handleSendMessage = () => {
     sendMessage(message);
@@ -170,7 +309,19 @@ export default function Analyse() {
             ? 'bg-gray-600 text-white rounded-br-md shadow-md hover:bg-gray-700'
             : 'bg-gray-200 text-black rounded-bl-md shadow-sm hover:bg-gray-300'
         }`}>
-          <p className="text-sm leading-relaxed">{message.text}</p>
+          {message.sender === 'ai' && !isOwn ? (
+            <div className="react-markdown text-sm leading-relaxed">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkBreaks]}
+                rehypePlugins={[rehypeRaw]}
+                skipHtml={false}
+              >
+                {message.text}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <p className="text-sm leading-relaxed">{message.text}</p>
+          )}
         </div>
         <div className={`flex items-center mt-1 ${isOwn ? 'justify-end' : 'justify-start'} opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
           <span className="text-xs text-gray-600">
@@ -207,6 +358,16 @@ export default function Analyse() {
 
   return (
     <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
+      <style jsx>{`
+        .react-markdown a {
+          color: #4fc3f7 !important;
+          text-decoration: underline;
+          cursor: pointer;
+        }
+        .react-markdown a:hover {
+          color: #81d4fa !important;
+        }
+      `}</style>
       {/* Navigation Bar */}
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
@@ -338,29 +499,54 @@ export default function Analyse() {
                 >
 
                   <h3 className="text-lg font-medium mb-2 text-black mt-4">Start Your Analysis</h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-gray-600 mb-4">
                     Ask me anything about your data and I'll help you discover insights.
                   </p>
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    <button 
-                      onClick={() => handleSuggestionClick("Show me a summary")}
-                      className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
-                    >
-                      Show me a summary
-                    </button>
-                    <button 
-                      onClick={() => handleSuggestionClick("Find trends")}
-                      className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
-                    >
-                      Find trends
-                    </button>
-                    <button 
-                      onClick={() => handleSuggestionClick("Create visualization")}
-                      className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
-                    >
-                      Create visualization
-                    </button>
+                  <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      <strong>Active Files:</strong> {activeFiles.length} file{activeFiles.length !== 1 ? 's' : ''} ready for analysis
+                    </p>
+                    {activeFiles.length === 0 && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        No active files found. Upload files in the <Link href="/upload" className="text-blue-600 hover:underline">Upload</Link> section and mark them as active in the <Link href="/view" className="text-blue-600 hover:underline">View</Link> section.
+                      </p>
+                    )}
+                    {activeFiles.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-600">Ready to analyze:</p>
+                        <ul className="text-xs text-gray-600 mt-1">
+                          {activeFiles.slice(0, 3).map(file => (
+                            <li key={file.id} className="truncate">• {file.name}</li>
+                          ))}
+                          {activeFiles.length > 3 && (
+                            <li className="text-gray-500">• ... and {activeFiles.length - 3} more</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
                   </div>
+                  {activeFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-3 justify-center">
+                      <button 
+                        onClick={() => handleSuggestionClick("Provide a summary of my data")}
+                        className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                      >
+                        Summarize my data
+                      </button>
+                      <button 
+                        onClick={() => handleSuggestionClick("What trends can you find in my data?")}
+                        className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                      >
+                        Find trends
+                      </button>
+                      <button 
+                        onClick={() => handleSuggestionClick("What insights can you provide from my data?")}
+                        className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                      >
+                        Key insights
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               ) : (
                 <div>
@@ -371,6 +557,21 @@ export default function Analyse() {
                       isOwn={msg.sender === 'user'} 
                     />
                   ))}
+                  {isLoadingFiles && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-start space-x-3 mb-4"
+                    >
+                      {getAIAvatar()}
+                      <div className="bg-gray-200 rounded-2xl rounded-bl-md px-4 py-3 transition-all duration-300 shadow-sm">
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                          <span className="text-sm text-gray-700">Loading active files...</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                   {isAiTyping && <TypingIndicator />}
                   <div ref={messagesEndRef} />
                 </div>
@@ -392,13 +593,13 @@ export default function Analyse() {
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
                   className="w-full h-12 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-gray-600 text-black transition-all duration-200 overflow-hidden"
-                  placeholder="Ask your AI data analyst a question about your data"
+                  placeholder={activeFiles.length > 0 ? "Ask me anything about your active files..." : "Upload and activate files to start analysis..."}
                   rows="1"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2">
                   <button 
                     onClick={handleSendMessage}
-                    disabled={!message.trim()}
+                    disabled={!message.trim() || activeFiles.length === 0}
                     className="w-8 h-8 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
                   >
                     <svg className="w-4 h-4Removed  transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
@@ -408,7 +609,9 @@ export default function Analyse() {
                 </div>
               </div>
               <p className="text-xs text-gray-600 mt-2 text-center transition-opacity duration-200">
-                Press Enter to send, Shift+Enter for new line
+                {activeFiles.length > 0 
+                  ? "Press Enter to send, Shift+Enter for new line" 
+                  : "Upload and activate files to start analysis"}
               </p>
             </div>
           </motion.div>
