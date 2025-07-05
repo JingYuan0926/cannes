@@ -28,7 +28,7 @@ export default function Upload() {
     if (savedDarkMode !== null) {
       setDarkMode(JSON.parse(savedDarkMode));
     } else {
-      setDarkMode(prefersDark);
+      setDarkMode(false); // Default to light mode instead of system preference
     }
   }, []);
 
@@ -103,7 +103,7 @@ export default function Upload() {
   };
 
   return (
-    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
+    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
       {/* Navigation Bar */}
       <nav className="flex justify-center pt-8 pb-4">
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
@@ -127,8 +127,8 @@ export default function Upload() {
 
       {/* Page Header */}
       <div className="px-8 py-4">
-        <h1 className="text-3xl font-bold text-center transform transition-all duration-300">Upload Your Data</h1>
-        <p className="text-center text-gray-600 dark:text-gray-400 mt-2 transition-opacity duration-200">
+        <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Upload Your Data</h1>
+        <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
           Upload your datasets to start analyzing and discovering insights
         </p>
       </div>
@@ -141,10 +141,10 @@ export default function Upload() {
           <div
             className={`border-2 rounded-2xl p-12 text-center transition-all duration-300 transform hover:scale-[1.02] ${
               selectedFile
-                ? 'border-solid border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-950 scale-[1.02] shadow-lg'
+                ? 'border-solid border-green-500 bg-green-50 scale-[1.02] shadow-lg'
                 : isDragging
-                ? 'border-dashed border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-950 scale-[1.05] shadow-2xl animate-pulse'
-                : 'border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-gray-50 dark:bg-gray-800 shadow-md hover:shadow-xl'
+                ? 'border-dashed border-gray-500 bg-gray-200 scale-[1.05] shadow-2xl animate-pulse'
+                : 'border-dashed border-gray-300 hover:border-gray-400 bg-gray-200 shadow-md hover:shadow-xl'
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -158,7 +158,7 @@ export default function Upload() {
                   </svg>
                 ) : (
                   <svg
-                    className={`w-12 h-12 text-gray-400 dark:text-gray-500 transition-all duration-300 ${isDragging ? 'animate-bounce text-blue-500' : ''}`}
+                    className={`w-12 h-12 text-gray-600 transition-all duration-300 ${isDragging ? 'animate-bounce text-gray-700' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -176,19 +176,19 @@ export default function Upload() {
               <div>
                 {selectedFile ? (
                   <div className="animate-fadeIn">
-                    <p className="text-lg font-medium mb-2 text-green-700 dark:text-green-300">
+                    <p className="text-lg font-medium mb-2 text-green-700">
                       ✓ {selectedFile.name}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-black">
                       Ready to upload
                     </p>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-lg font-medium mb-2 transition-all duration-200">
+                    <p className="text-lg font-medium mb-2 text-black transition-all duration-200">
                       Drop your file here
                     </p>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-black">
                       or click to browse
                     </p>
                   </div>
@@ -206,7 +206,7 @@ export default function Upload() {
               {!selectedFile && (
                 <label
                   htmlFor="fileInput"
-                  className="inline-block px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                  className="inline-block px-6 py-3 bg-gray-300 text-black rounded-lg font-medium cursor-pointer hover:bg-gray-400 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                 >
                   Select File
                 </label>
@@ -216,7 +216,7 @@ export default function Upload() {
                 <div className="flex gap-2 justify-center animate-slideInUp">
                   <label
                     htmlFor="fileInput"
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                    className="px-4 py-2 bg-gray-300 text-black rounded-lg font-medium cursor-pointer hover:bg-gray-400 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
                     Change File
                   </label>
@@ -225,7 +225,7 @@ export default function Upload() {
                       setSelectedFile(null);
                       setIsUploadComplete(false);
                     }}
-                    className="px-4 py-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg font-medium hover:bg-red-200 dark:hover:bg-red-800 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
                     Remove
                   </button>
@@ -236,27 +236,27 @@ export default function Upload() {
 
           {/* Supported file types */}
           <div className="mt-4 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400 transition-opacity duration-200">
+            <p className="text-sm text-gray-600 transition-opacity duration-200">
               Supported formats: CSV, Excel (.xlsx, .xls), JSON, TXT
             </p>
           </div>
           
           {/* File Information */}
           {selectedFile && (
-            <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 transition-all duration-300 shadow-md hover:shadow-lg animate-slideInUp">
-              <h3 className="font-semibold text-lg mb-4 text-gray-900 dark:text-gray-100 transform transition-all duration-200">File Details</h3>
+            <div className="mt-6 bg-gray-200 p-6 rounded-2xl border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg animate-slideInUp">
+              <h3 className="font-semibold text-lg mb-4 text-black transform transition-all duration-200">File Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg transition-all duration-200">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Name</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{selectedFile.name}</p>
+                <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
+                  <p className="text-sm text-black">Name</p>
+                  <p className="font-medium text-black truncate">{selectedFile.name}</p>
                 </div>
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg transition-all duration-200">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Size</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{formatFileSize(selectedFile.size)}</p>
+                <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
+                  <p className="text-sm text-black">Size</p>
+                  <p className="font-medium text-black">{formatFileSize(selectedFile.size)}</p>
                 </div>
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg transition-all duration-200">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Type</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{selectedFile.type || 'Unknown'}</p>
+                <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
+                  <p className="text-sm text-black">Type</p>
+                  <p className="font-medium text-black">{selectedFile.type || 'Unknown'}</p>
                 </div>
               </div>
             </div>
@@ -264,14 +264,14 @@ export default function Upload() {
 
           {/* Upload Progress */}
           {isUploading && (
-            <div className="mt-6 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 animate-slideInUp shadow-lg">
+            <div className="mt-6 bg-gray-200 p-6 rounded-2xl border border-gray-300 animate-slideInUp shadow-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Uploading...</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">{uploadProgress}%</span>
+                <span className="text-sm font-medium text-black">Uploading...</span>
+                <span className="text-sm text-black animate-pulse">{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out animate-pulse"
+                  className="bg-gray-600 h-2 rounded-full transition-all duration-300 ease-out animate-pulse"
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
@@ -280,12 +280,12 @@ export default function Upload() {
 
           {/* Success Message */}
           {isUploadComplete && (
-            <div className="mt-6 bg-green-50 dark:bg-green-950 p-6 rounded-2xl border border-green-200 dark:border-green-800 animate-slideInUp shadow-lg">
+            <div className="mt-6 bg-green-50 p-6 rounded-2xl border border-green-200 animate-slideInUp shadow-lg">
               <div className="flex items-center justify-center">
                 <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-green-700 dark:text-green-300 font-medium">Upload completed successfully!</span>
+                <span className="text-green-700 font-medium">Upload completed successfully!</span>
               </div>
             </div>
           )}
@@ -297,8 +297,8 @@ export default function Upload() {
               disabled={!selectedFile || isUploading}
               className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
                 selectedFile && !isUploading
-                  ? 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 hover:-translate-y-1'
-                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed scale-100'
+                  ? 'bg-gray-600 text-white hover:bg-gray-700 hover:-translate-y-1'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100'
               }`}
             >
               {isUploading ? (

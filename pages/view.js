@@ -68,7 +68,7 @@ export default function View() {
     if (savedDarkMode !== null) {
       setDarkMode(JSON.parse(savedDarkMode));
     } else {
-      setDarkMode(prefersDark);
+      setDarkMode(false); // Default to light mode instead of system preference
     }
   }, []);
 
@@ -109,7 +109,7 @@ export default function View() {
   });
 
   return (
-    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
+    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
       {/* Navigation Bar */}
       <nav className="flex justify-center pt-8 pb-4">
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
@@ -133,7 +133,7 @@ export default function View() {
 
       {/* Page Header */}
       <div className="px-8 py-4">
-        <h1 className="text-3xl font-bold text-center transform transition-all duration-300">View Your Data</h1>
+        <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">View Your Data</h1>
         <p className="text-center text-gray-600 dark:text-gray-400 mt-2 transition-opacity duration-200">
           Manage and explore your uploaded datasets
         </p>
@@ -144,62 +144,62 @@ export default function View() {
         
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 transition-all duration-300 shadow-md animate-slideInUp">
+          <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md animate-slideInUp">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 counter-animation">{files.length}</h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Total Files</p>
+                <h3 className="text-2xl font-bold text-black counter-animation">{files.length}</h3>
+                <p className="text-black text-sm">Total Files</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
             </div>
           </div>
           
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 transition-all duration-300 shadow-md animate-slideInUp" style={{ animationDelay: '0.1s' }}>
+          <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md animate-slideInUp" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-green-600 dark:text-green-400 counter-animation">
+                <h3 className="text-2xl font-bold text-green-600 counter-animation">
                   {files.filter(file => file.isActive).length}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Active Files</p>
+                <p className="text-black text-sm">Active Files</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
           </div>
           
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 transition-all duration-300 shadow-md animate-slideInUp" style={{ animationDelay: '0.2s' }}>
+          <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md animate-slideInUp" style={{ animationDelay: '0.2s' }}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-red-600 dark:text-red-400 counter-animation">
+                <h3 className="text-2xl font-bold text-red-600 counter-animation">
                   {files.filter(file => !file.isActive).length}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Inactive Files</p>
+                <p className="text-black text-sm">Inactive Files</p>
               </div>
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
           </div>
           
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 transition-all duration-300 shadow-md animate-slideInUp" style={{ animationDelay: '0.3s' }}>
+          <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md animate-slideInUp" style={{ animationDelay: '0.3s' }}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-purple-600 dark:text-purple-400 counter-animation">
+                <h3 className="text-2xl font-bold text-purple-600 counter-animation">
                   {files.reduce((total, file) => total + parseFloat(file.size), 0).toFixed(1)} MB
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Total Size</p>
+                <p className="text-black text-sm">Total Size</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-8 6v8m4-8v8M5 4h14l-1 14H6L5 4z" />
                 </svg>
               </div>
@@ -211,7 +211,7 @@ export default function View() {
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex-1">
             <div className="relative group">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 transition-all duration-200 group-focus-within:text-blue-500 group-focus-within:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-600 transition-all duration-200 group-focus-within:text-gray-800 group-focus-within:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -219,14 +219,14 @@ export default function View() {
                 placeholder="Search files..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg transform focus:scale-[1.02]"
+                className="w-full pl-10 pr-4 py-3 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg transform focus:scale-[1.02] text-black placeholder-gray-600"
               />
             </div>
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg transform hover:scale-105 focus:scale-105"
+            className="px-4 py-3 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg transform hover:scale-105 focus:scale-105 text-black"
           >
             <option value="all">All Files</option>
             <option value="active">Active Only</option>
@@ -235,40 +235,40 @@ export default function View() {
         </div>
         
         {/* Files Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl animate-slideInUp">
+        <div className="bg-gray-200 rounded-2xl border border-gray-300 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl animate-slideInUp">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700 transition-colors duration-300">
+              <thead className="bg-gray-300 transition-colors duration-300">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100 transition-colors duration-200">File</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100 transition-colors duration-200">Size</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100 transition-colors duration-200">Type</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100 transition-colors duration-200">Modified</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100 transition-colors duration-200">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-100 transition-colors duration-200">Actions</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">File</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Size</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Type</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Modified</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+              <tbody className="divide-y divide-gray-300">
                 {filteredFiles.map((file, index) => (
                   <tr 
                     key={file.id} 
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 group hover:shadow-md animate-slideInUp"
+                    className="hover:bg-gray-300 transition-all duration-200 group hover:shadow-md animate-slideInUp"
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+                      <div className="text-sm font-medium text-black group-hover:text-gray-800 transition-colors duration-200">
                         {file.name}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors duration-200">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black group-hover:text-gray-800 transition-colors duration-200">
                       {file.size}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 transition-all duration-200 group-hover:scale-105 group-hover:bg-gray-200 dark:group-hover:bg-gray-500">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 transition-all duration-200 group-hover:scale-105 group-hover:bg-gray-50">
                         {file.type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors duration-200">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black group-hover:text-gray-800 transition-colors duration-200">
                       {new Date(file.timestamp).toLocaleDateString('en-GB', {
                         day: '2-digit',
                         month: '2-digit', 
@@ -280,8 +280,8 @@ export default function View() {
                         onClick={() => toggleFileStatus(file.id)}
                         className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
                           file.isActive
-                            ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800 hover:shadow-md'
-                            : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800 hover:shadow-md'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-md'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200 hover:shadow-md'
                         }`}
                       >
                         {file.isActive ? 'Active' : 'Inactive'}
@@ -291,13 +291,13 @@ export default function View() {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleViewFile(file)}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                          className="text-gray-600 hover:text-gray-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
                         >
                           View
                         </button>
                         <button
                           onClick={() => handleDeleteFile(file.id)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                          className="text-red-600 hover:text-red-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
                         >
                           Delete
                         </button>
@@ -311,10 +311,10 @@ export default function View() {
           
           {filteredFiles.length === 0 && (
             <div className="text-center py-12 animate-fadeIn">
-              <svg className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500 mb-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-12 h-12 mx-auto text-gray-600 mb-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p className="text-gray-500 dark:text-gray-400 text-lg">No files found matching your criteria</p>
+              <p className="text-black text-lg">No files found matching your criteria</p>
             </div>
           )}
         </div>

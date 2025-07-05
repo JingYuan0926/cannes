@@ -34,7 +34,7 @@ export default function Analyse() {
     if (savedDarkMode !== null) {
       setDarkMode(JSON.parse(savedDarkMode));
     } else {
-      setDarkMode(prefersDark);
+      setDarkMode(false); // Default to light mode instead of system preference
     }
   }, []);
 
@@ -171,13 +171,13 @@ export default function Analyse() {
   };
 
   const getUserAvatar = () => (
-    <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md transform transition-all duration-200 hover:scale-110 hover:shadow-lg">
+    <div className="w-8 h-8 bg-gray-600 dark:bg-gray-500 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md transform transition-all duration-200 hover:scale-110 hover:shadow-lg">
       U
     </div>
   );
 
   const getAIAvatar = () => (
-    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md transform transition-all duration-200 hover:scale-110 hover:shadow-lg">
+    <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md transform transition-all duration-200 hover:scale-110 hover:shadow-lg">
       <svg className="w-4 h-4 transform transition-transform duration-200 hover:rotate-12" fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V7H2V9H3V15H2V17H3V21C3 22.1 3.89 23 5 23H19C20.1 23 21 22.1 21 21V17H22V15H21V9H22V7H21ZM19 9V15H5V9H19ZM9 11V13H7V11H9ZM13 11V13H11V11H13ZM17 11V13H15V11H17Z"/>
       </svg>
@@ -187,7 +187,7 @@ export default function Analyse() {
   const TypingIndicator = () => (
     <div className="flex items-start space-x-3 mb-4 animate-fadeIn">
       {getAIAvatar()}
-      <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl rounded-bl-md px-4 py-3 transition-all duration-300 shadow-sm hover:shadow-md">
+      <div className="bg-gray-200 rounded-2xl rounded-bl-md px-4 py-3 transition-all duration-300 shadow-sm hover:shadow-md">
         <div className="flex space-x-1">
           <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
           <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -203,13 +203,13 @@ export default function Analyse() {
       <div className="flex flex-col max-w-xs lg:max-w-md">
         <div className={`px-4 py-3 rounded-2xl transition-all duration-300 group-hover:shadow-lg group-hover:scale-[1.02] ${
           isOwn
-            ? 'bg-blue-600 dark:bg-blue-500 text-white rounded-br-md shadow-md hover:bg-blue-700 dark:hover:bg-blue-600'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700'
+            ? 'bg-gray-600 text-white rounded-br-md shadow-md hover:bg-gray-700'
+            : 'bg-gray-200 text-black rounded-bl-md shadow-sm hover:bg-gray-300'
         }`}>
           <p className="text-sm leading-relaxed">{message.text}</p>
         </div>
         <div className={`flex items-center mt-1 ${isOwn ? 'justify-end' : 'justify-start'} opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-gray-600">
             {formatTimestamp(message.timestamp)}
           </span>
         </div>
@@ -218,7 +218,7 @@ export default function Analyse() {
   );
 
   return (
-    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
+    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
       {/* Navigation Bar */}
       <nav className="flex justify-center pt-8 pb-4">
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
@@ -242,16 +242,16 @@ export default function Analyse() {
 
       {/* Page Header */}
       <div className="px-8 py-4">
-        <h1 className="text-3xl font-bold text-center transform transition-all duration-300">Analyse Your Data</h1>
+        <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Analyse Your Data</h1>
       </div>
 
       {/* Main Layout */}
       <div className="flex min-h-[calc(100vh-180px)]">
         {/* Left Sidebar */}
-        <div className="w-64 bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 shadow-lg">
+        <div className="w-64 bg-gray-200 border-r border-gray-300 flex flex-col transition-all duration-300 shadow-lg">
           {/* Chat History */}
           <div className="flex-1 p-4">
-            <h3 className="font-medium text-sm mb-4 text-gray-700 dark:text-gray-300">Chat History</h3>
+            <h3 className="font-medium text-sm mb-4 text-black">Chat History</h3>
             <div className="space-y-2">
               {chats.map((chat) => (
                 <div
@@ -259,14 +259,16 @@ export default function Analyse() {
                   onClick={() => handleChatSelect(chat)}
                   className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
                     activeChat.id === chat.id
-                      ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-lg scale-[1.02]'
-                      : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      ? 'bg-gray-600 text-white shadow-lg scale-[1.02]'
+                      : 'hover:bg-gray-300 text-black'
                   }`}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{chat.name}</span>
                     {chat.messages.length > 0 && (
-                      <span className="text-xs opacity-75 bg-white/20 px-2 py-1 rounded-full transition-all duration-200 hover:bg-white/30">
+                      <span className={`text-xs opacity-75 px-2 py-1 rounded-full transition-all duration-200 ${
+                        activeChat.id === chat.id ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-400 hover:bg-gray-500'
+                      }`}>
                         {chat.messages.length}
                       </span>
                     )}
@@ -283,10 +285,10 @@ export default function Analyse() {
           </div>
           
           {/* New Chat Button */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-t border-gray-300">
             <button
               onClick={handleNewChat}
-              className="w-full py-3 rounded-lg bg-blue-600 dark:bg-blue-500 text-white font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+              className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
             >
               <svg className="w-4 h-4 transform transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -297,12 +299,12 @@ export default function Analyse() {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col bg-white dark:bg-gray-900">
+        <main className="flex-1 flex flex-col bg-white">
           {/* Chat Name Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 transition-all duration-300 shadow-sm">
+          <div className="p-4 border-b border-gray-300 bg-gray-200 transition-all duration-300 shadow-sm">
             <div className="flex items-center justify-between">
                               <div>
-                  <h2 className="text-xl font-semibold">{activeChat.name}</h2>
+                  <h2 className="text-xl font-semibold text-black">{activeChat.name}</h2>
                 </div>
             </div>
           </div>
@@ -312,31 +314,31 @@ export default function Analyse() {
             <div className="max-w-4xl mx-auto">
               {activeChat.messages.length === 0 ? (
                 <div className="text-center py-12 animate-fadeIn">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center transform transition-all duration-300 shadow-lg">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center transform transition-all duration-300 shadow-lg">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium mb-2">Start Your Analysis</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  <h3 className="text-lg font-medium mb-2 text-black">Start Your Analysis</h3>
+                  <p className="text-gray-600 mb-6">
                     Ask me anything about your data and I'll help you discover insights.
                   </p>
                   <div className="flex flex-wrap gap-3 justify-center">
                     <button 
                       onClick={() => handleSuggestionClick("Show me a summary")}
-                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                      className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                     >
                       📊 Show me a summary
                     </button>
                     <button 
                       onClick={() => handleSuggestionClick("Find trends")}
-                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                      className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                     >
                       📈 Find trends
                     </button>
                     <button 
                       onClick={() => handleSuggestionClick("Create visualization")}
-                      className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                      className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                     >
                       📈 Create visualization
                     </button>
@@ -361,13 +363,13 @@ export default function Analyse() {
           {/* Input Area */}
           <div className="p-8 pt-0">
             <div className="relative max-w-4xl mx-auto">
-              <div className="relative bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 transition-all duration-300 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md">
+              <div className="relative bg-gray-200 rounded-2xl border border-gray-300 transition-all duration-300 focus-within:border-gray-500 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md">
                 <textarea
                   ref={textareaRef}
                   value={message}
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
-                  className="w-full min-h-12 max-h-32 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-200"
+                  className="w-full min-h-12 max-h-32 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-gray-600 text-black transition-all duration-200"
                   placeholder="Ask your AI data analyst a question about your data"
                   rows="1"
                 />
@@ -375,7 +377,7 @@ export default function Analyse() {
                   <button 
                     onClick={handleSendMessage}
                     disabled={!message.trim()}
-                    className="w-8 h-8 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
+                    className="w-8 h-8 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
                   >
                     <svg className="w-4 h-4 transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
@@ -383,7 +385,7 @@ export default function Analyse() {
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center transition-opacity duration-200">
+              <p className="text-xs text-gray-600 mt-2 text-center transition-opacity duration-200">
                 Press Enter to send, Shift+Enter for new line
               </p>
             </div>
