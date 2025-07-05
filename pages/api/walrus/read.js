@@ -1,34 +1,5 @@
-import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
-import { WalrusClient, RetryableWalrusClientError } from '@mysten/walrus';
-
-// Global client instances for reading
-let suiClient;
-let walrusClient;
-let initialized = false;
-
-/**
- * Initialize Walrus clients for reading
- */
-const initializeWalrusRead = async () => {
-  if (initialized) return;
-  
-  // Create SUI client with Walrus extension
-  suiClient = new SuiClient({
-    url: getFullnodeUrl('testnet'),
-    network: 'testnet',
-  }).$extend(
-    WalrusClient.experimental_asClientExtension({
-      storageNodeClientOptions: {
-        timeout: 60_000,
-      },
-    }),
-  );
-  
-  walrusClient = suiClient.walrus;
-  initialized = true;
-  
-  console.log('Walrus read client initialized successfully');
-};
+// Simple HTTP API proxy for Walrus reading
+const WALRUS_AGGREGATOR = process.env.WALRUS_AGGREGATOR_URL || 'https://aggregator.walrus-testnet.walrus.space';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -42,16 +13,24 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Blob ID must be a non-empty string' });
     }
 
-    // Initialize if not already done
-    await initializeWalrusRead();
-
     console.log('Reading from Walrus:', blobId);
     
-    // Read blob using Walrus client
-    const blob = await walrusClient.readBlob({ blobId });
+    // Make HTTP GET request to Walrus aggregator
+    const response = await fetch(`${WALRUS_AGGREGATOR}/v1/blobs/${encodeURIComponent(blobId)}`);
     
-    // Convert Uint8Array back to text
-    const text = new TextDecoder().decode(blob);
+    if (!response.ok) {
+      if (response.status === 404) {
+        return res.status(404).json({ 
+          error: 'Blob not found. Please check the blob ID and try again.' 
+        });
+      }
+      
+      const errorText = await response.text();
+      throw new Error(`Walrus aggregator error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    // Get the text content
+    const text = await response.text();
     
     console.log('Text read successfully from Walrus:', text.length, 'characters');
     
@@ -60,24 +39,18 @@ export default async function handler(req, res) {
       text: text,
       blobId: blobId,
       length: text.length,
-      bytes: blob.length,
+      bytes: new TextEncoder().encode(text).length,
     });
 
   } catch (error) {
     console.error('Failed to read from Walrus:', error);
     
-    // Handle specific network/certificate errors
+    // Handle specific network errors
     if (error.message.includes('Failed to fetch') || 
         error.message.includes('ERR_CERT_DATE_INVALID') ||
         error.message.includes('ERR_CONNECTION_REFUSED')) {
       return res.status(500).json({ 
-        error: 'Network connectivity issues with Walrus storage nodes. This may be due to SSL certificate problems or CORS restrictions.' 
-      });
-    }
-    
-    if (error instanceof RetryableWalrusClientError) {
-      return res.status(500).json({ 
-        error: 'Temporary network issue with Walrus nodes. Please try again.' 
+        error: 'Network connectivity issues with Walrus aggregator. Please try again later.' 
       });
     }
     
