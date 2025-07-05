@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { readFW, readFWDirect, blobExists } from '../utils/readFromWalrus';
+import { readFWDirect } from '../utils/readFromWalrus';
 
 export default function WalrusStorePage() {
   const [textToStore, setTextToStore] = useState('');
@@ -9,7 +9,6 @@ export default function WalrusStorePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('Walrus HTTP API ready');
-  const [useDirectAPI, setUseDirectAPI] = useState(false);
 
   const handleStoreText = async () => {
     if (!textToStore.trim()) {
@@ -60,41 +59,12 @@ export default function WalrusStorePage() {
     setStatus('Reading text from Walrus...');
 
     try {
-      let text;
-      if (useDirectAPI) {
-        // Use direct HTTP API
-        text = await readFWDirect(blobIdToRead);
-        setStatus(`Text read successfully using direct HTTP API from blob: ${blobIdToRead}`);
-      } else {
-        // Use API route
-        text = await readFW(blobIdToRead);
-        setStatus(`Text read successfully using API route from blob: ${blobIdToRead}`);
-      }
-
+      // Use direct HTTP API
+      const text = await readFWDirect(blobIdToRead);
+      setStatus(`Text read successfully from blob: ${blobIdToRead}`);
       setReadData(text);
     } catch (err) {
       setError(`Failed to read text: ${err.message}`);
-      setStatus('');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCheckBlobExists = async () => {
-    if (!blobIdToRead.trim()) {
-      setError('Please enter a blob ID to check');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-    setStatus('Checking if blob exists...');
-
-    try {
-      const exists = await blobExists(blobIdToRead);
-      setStatus(`Blob ${blobIdToRead} ${exists ? 'exists' : 'does not exist'} on Walrus`);
-    } catch (err) {
-      setError(`Failed to check blob existence: ${err.message}`);
       setStatus('');
     } finally {
       setIsLoading(false);
@@ -232,60 +202,18 @@ export default function WalrusStorePage() {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="Enter blob ID to read... (try: OFrKO0ofGc4inX8roHHaAB-pDHuUiIA08PW4N2B2gFk)"
                 />
-              </div>
-              
-              {/* API Method Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  API Method:
-                </label>
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="apiMethod"
-                      checked={!useDirectAPI}
-                      onChange={() => setUseDirectAPI(false)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">Via API Route</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="apiMethod"
-                      checked={useDirectAPI}
-                      onChange={() => setUseDirectAPI(true)}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">Direct HTTP API</span>
-                  </label>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {useDirectAPI 
-                    ? 'Makes direct requests to Walrus aggregators' 
-                    : 'Uses Next.js API route as proxy to Walrus aggregators'
-                  }
+                <p className="text-xs text-blue-600 mt-1">
+                  Using direct HTTP API to Walrus aggregators
                 </p>
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={handleReadText}
-                  disabled={isLoading || !blobIdToRead.trim()}
-                  className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Reading from Walrus...' : 'Read Text from Walrus'}
-                </button>
-                
-                <button
-                  onClick={handleCheckBlobExists}
-                  disabled={isLoading || !blobIdToRead.trim()}
-                  className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Checking...' : 'Check if Blob Exists'}
-                </button>
-              </div>
+              <button
+                onClick={handleReadText}
+                disabled={isLoading || !blobIdToRead.trim()}
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Reading from Walrus...' : 'Read Text from Walrus'}
+              </button>
             </div>
           </div>
 
@@ -312,12 +240,12 @@ export default function WalrusStorePage() {
             </div>
           )}
 
-          {/* HTTP API Routes Info */}
+          {/* HTTP API Usage */}
           <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">HTTP API Routes</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">HTTP API Usage</h3>
             <div className="text-sm text-gray-700 space-y-1">
               <p><code className="bg-gray-200 px-2 py-1 rounded">POST /api/walrus/write</code> - Write text to Walrus (proxies to publisher)</p>
-              <p><code className="bg-gray-200 px-2 py-1 rounded">GET /api/walrus/read?blobId=...</code> - Read text from Walrus (proxies to aggregator)</p>
+              <p><code className="bg-gray-200 px-2 py-1 rounded">Direct HTTP API</code> - Read text from Walrus (direct to aggregators)</p>
             </div>
           </div>
 
@@ -336,18 +264,9 @@ export default function WalrusStorePage() {
   })
 })`}
               </pre>
-              <p><strong>Read Text via {useDirectAPI ? 'Direct HTTP API' : 'API Route'}:</strong></p>
+              <p><strong>Read Text via Direct HTTP API:</strong></p>
               <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">
-{useDirectAPI 
-  ? `fetch('https://aggregator.walrus-testnet.walrus.space/v1/blobs/YOUR_BLOB_ID')`
-  : `fetch('/api/walrus/read?blobId=YOUR_BLOB_ID')`
-}
-              </pre>
-              <p><strong>Check Blob Existence (HEAD request):</strong></p>
-              <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">
-{`fetch('https://aggregator.walrus-testnet.walrus.space/v1/blobs/YOUR_BLOB_ID', {
-  method: 'HEAD'
-})`}
+{`fetch('https://aggregator.walrus-testnet.walrus.space/v1/blobs/YOUR_BLOB_ID')`}
               </pre>
               <p><strong>Read by Object ID:</strong></p>
               <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">
@@ -364,9 +283,6 @@ export default function WalrusStorePage() {
               <li>2. Optional: Set environment variables for custom endpoints:</li>
               <li className="ml-4">
                 <code className="bg-blue-100 px-1 rounded">WALRUS_PUBLISHER_URL</code> (default: testnet publisher)
-              </li>
-              <li className="ml-4">
-                <code className="bg-blue-100 px-1 rounded">WALRUS_AGGREGATOR_URL</code> (server-side, default: testnet aggregator)
               </li>
               <li className="ml-4">
                 <code className="bg-blue-100 px-1 rounded">NEXT_PUBLIC_WALRUS_AGGREGATOR_URL</code> (client-side, default: testnet aggregator)
