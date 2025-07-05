@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import rehypeRaw from 'rehype-raw';
 
 export default function Chat() {
   const [userInput, setUserInput] = useState('');
@@ -20,10 +24,10 @@ export default function Chat() {
       if (files.length > 0 && !sampleDataReady) {
         // Upload files and get sample data ready
         const formData = new FormData();
-        formData.append('prompt', userInput);
         files.forEach((file) => {
           formData.append('files', file);
         });
+        formData.append('prompt', userInput);
         
         const res = await fetch('/api/chatbot', {
           method: 'POST',
@@ -141,7 +145,19 @@ export default function Chat() {
                 {msg.role === 'user' ? 'You' : 'AI'}:
               </b>{' '}
               {msg.role === 'assistant'
-                ? <span className="ai-response" dangerouslySetInnerHTML={{ __html: msg.content }} />
+                ? (
+                    (() => { console.log('AI content:', JSON.stringify(msg.content)); return null; })(),
+                    <div className="react-markdown">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkBreaks]}
+                        rehypePlugins={[rehypeRaw]}
+                        skipHtml={true}
+                        style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                  )
                 : <span>{msg.content}</span>
               }
             </div>
