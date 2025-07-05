@@ -139,128 +139,132 @@ export default function AnalyzePage() {
     }
   };
 
-  // Render insights in a formatted way
-  const renderInsights = (insights) => {
-    if (!insights) return null;
+  // Render simplified insights
+  const renderSimpleInsights = (insights) => {
+    if (!insights || !insights.ai_insights) return null;
+
+    const allInsights = Object.values(insights.ai_insights);
+    const keyFindings = [];
+    const recommendations = [];
+    const actualInsights = [];
+
+    allInsights.forEach((category, index) => {
+      // Handle the nested structure: category.insights contains JSON strings
+      if (category && category.insights && Array.isArray(category.insights)) {
+        category.insights.forEach(insightString => {
+          if (typeof insightString === 'string') {
+            try {
+              // Remove markdown code block formatting if present
+              let cleanJson = insightString;
+              if (cleanJson.includes('```json')) {
+                cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+              }
+              
+              // Parse the JSON string
+              const parsedInsight = JSON.parse(cleanJson);
+              
+              // Extract data from parsed object
+              if (parsedInsight.insights && Array.isArray(parsedInsight.insights)) {
+                actualInsights.push(...parsedInsight.insights);
+              }
+              
+              if (parsedInsight.key_findings && Array.isArray(parsedInsight.key_findings)) {
+                keyFindings.push(...parsedInsight.key_findings);
+              }
+              
+              if (parsedInsight.recommendations && Array.isArray(parsedInsight.recommendations)) {
+                recommendations.push(...parsedInsight.recommendations);
+              }
+            } catch (e) {
+              console.warn('Could not parse insight JSON:', insightString);
+            }
+          }
+        });
+      }
+    });
+
+    // Filter and deduplicate meaningful content
+    const getUniqueFiltered = (arr) => {
+      const filtered = arr.filter(item => 
+        item && 
+        typeof item === 'string' &&
+        item !== "AI analysis completed" && 
+        !item.includes("Review the insights provided") &&
+        item.length > 30
+      );
+      // Remove duplicates
+      return [...new Set(filtered)];
+    };
+
+    const filteredInsights = getUniqueFiltered(actualInsights);
+    const filteredFindings = getUniqueFiltered(keyFindings);
+    const filteredRecommendations = getUniqueFiltered(recommendations);
 
     return (
-      <div className="insights-container">
-        {insights.ai_insights && (
-          <div className="ai-insights">
-            <h3>🤖 AI Insights</h3>
-            {Object.entries(insights.ai_insights).map(([category, data]) => (
-              <div key={category} className="insight-category">
-                <h4>{category.replace('_', ' ').toUpperCase()}</h4>
-                {data.insights && (
-                  <ul>
-                    {data.insights.map((insight, idx) => (
-                      <li key={idx}>{insight}</li>
-                    ))}
-                  </ul>
-                )}
-                {data.key_findings && data.key_findings.length > 0 && (
-                  <div>
-                    <strong>Key Findings:</strong>
-                    <ul>
-                      {data.key_findings.map((finding, idx) => (
-                        <li key={idx}>{finding}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {data.recommendations && data.recommendations.length > 0 && (
-                  <div>
-                    <strong>Recommendations:</strong>
-                    <ul>
-                      {data.recommendations.map((rec, idx) => (
-                        <li key={idx}>{rec}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ))}
+      <div className="simple-insights">
+        {filteredInsights.length > 0 && (
+          <div className="insight-section">
+            <h3>🧠 AI Insights</h3>
+            <ul>
+              {filteredInsights.slice(0, 8).map((insight, idx) => (
+                <li key={idx}>{insight}</li>
+              ))}
+            </ul>
           </div>
         )}
 
-        {insights.dataset_summary && (
-          <div className="dataset-summary">
-            <h3>📊 Dataset Summary</h3>
-            <p><strong>Shape:</strong> {insights.dataset_summary.shape?.[0]} rows × {insights.dataset_summary.shape?.[1]} columns</p>
-            <p><strong>Columns:</strong> {insights.dataset_summary.columns?.join(', ')}</p>
-          </div>
-        )}
-
-        {insights.key_findings && insights.key_findings.length > 0 && (
-          <div className="key-findings">
+        {filteredFindings.length > 0 && (
+          <div className="insight-section">
             <h3>🔍 Key Findings</h3>
             <ul>
-              {insights.key_findings.map((finding, idx) => (
+              {filteredFindings.slice(0, 6).map((finding, idx) => (
                 <li key={idx}>{finding}</li>
               ))}
             </ul>
+          </div>
+        )}
+        
+        {filteredRecommendations.length > 0 && (
+          <div className="insight-section">
+            <h3>💡 Recommendations</h3>
+            <ul>
+              {filteredRecommendations.slice(0, 6).map((rec, idx) => (
+                <li key={idx}>{rec}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {filteredInsights.length === 0 && filteredFindings.length === 0 && filteredRecommendations.length === 0 && (
+          <div className="no-insights">
+            <p>🤖 Analysis in progress - detailed insights will appear here once processing is complete.</p>
           </div>
         )}
       </div>
     );
   };
 
-  // Render ML analysis results
+  // Render ML analysis results (simplified)
   const renderMLResults = (mlData) => {
     if (!mlData) return null;
 
-    console.log('ML Data Structure:', mlData); // Debug log
-
-    // Handle the actual data structure from analysis service
     const results = mlData.results || mlData;
     const analyses = results.analyses || [];
-    const analyticsummary = results.analytics_summary || {};
-    const overallInsights = results.overall_insights || {};
 
     return (
       <div className="ml-results">
         <h2>🤖 Machine Learning Analysis</h2>
         
-        {/* Analytics Summary */}
-        <div className="analytics-summary">
-          <h3>📊 Analysis Summary</h3>
-          <p><strong>Analysis ID:</strong> {mlData.analysis_id || 'N/A'}</p>
-          <p><strong>Status:</strong> {mlData.message || 'Unknown'}</p>
-          <p><strong>Total Analyses Performed:</strong> {analyses.length || 0}</p>
-          <p><strong>Completed At:</strong> {results.completed_at || 'N/A'}</p>
-        </div>
-
-        {/* Analysis Results */}
         {analyses && analyses.length > 0 ? (
           <div className="analyses">
-            <h3>🔬 Analysis Results</h3>
             {analyses.map((analysisItem, idx) => (
               <div key={idx} className="analysis-item">
-                <h4>
-                  {analysisItem.algorithm} ({analysisItem.analysis_type})
-                  <span style={{ 
-                    fontSize: '12px', 
-                    backgroundColor: '#e3f2fd', 
-                    padding: '2px 8px', 
-                    borderRadius: '12px',
-                    marginLeft: '10px'
-                  }}>
-                    Priority: {analysisItem.config?.priority || 'N/A'}
-                  </span>
-                </h4>
+                <h3>{analysisItem.algorithm} - {analysisItem.analysis_type}</h3>
                 
-                {/* Analysis Config */}
-                {analysisItem.config && (
-                  <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-                    <strong>Analysis Purpose:</strong> {analysisItem.config.expected_insights || 'N/A'}<br/>
-                    <strong>Justification:</strong> {analysisItem.config.justification || 'N/A'}
-                  </div>
-                )}
-
                 {/* Analysis Insights */}
                 {analysisItem.insights && analysisItem.insights.length > 0 && (
-                  <div style={{ marginBottom: '15px' }}>
-                    <h5>💡 Key Insights:</h5>
+                  <div className="ml-insights">
+                    <h4>💡 Insights:</h4>
                     <ul>
                       {analysisItem.insights.map((insight, insightIdx) => (
                         <li key={insightIdx}>{insight}</li>
@@ -269,38 +273,19 @@ export default function AnalyzePage() {
                   </div>
                 )}
 
-                {/* Analysis Results */}
-                {analysisItem.results && (
-                  <div style={{ marginBottom: '15px' }}>
-                    <h5>📈 Results:</h5>
-                    <div className="analysis-results">
-                      {typeof analysisItem.results === 'object' ? (
-                        <pre>{JSON.stringify(analysisItem.results, null, 2)}</pre>
-                      ) : (
-                        <p>{analysisItem.results}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 {/* Visualizations/Graphs */}
                 {analysisItem.graphs && analysisItem.graphs.length > 0 && (
                   <div className="ml-visualizations">
-                    <h5>📊 Visualizations:</h5>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '20px' }}>
-                      {analysisItem.graphs.map((graph, graphIdx) => (
-                        <div key={graphIdx} style={{ 
-                          border: '1px solid #ddd', 
-                          borderRadius: '8px', 
-                          padding: '15px',
-                          backgroundColor: 'white'
-                        }}>
-                          <h6>{graph.title || `Chart ${graphIdx + 1}`}</h6>
-                          <p style={{ color: '#666', fontSize: '12px' }}>Type: {graph.type}</p>
+                    <div className="charts-grid">
+                      {analysisItem.graphs
+                        .filter(graph => !graph.title || !graph.title.toLowerCase().includes('solution distribution'))
+                        .map((graph, graphIdx) => (
+                        <div key={graphIdx} className="chart-container">
+                          <h4>{graph.title || `Chart ${graphIdx + 1}`}</h4>
                           
                           {/* Render Plotly Chart */}
                           {graph.data && (
-                            <div style={{ width: '100%', height: '400px' }}>
+                            <div className="chart-wrapper">
                               {Plot && (() => {
                                 try {
                                   const chartData = JSON.parse(graph.data);
@@ -310,8 +295,8 @@ export default function AnalyzePage() {
                                       layout={{
                                         ...chartData.layout,
                                         width: undefined,
-                                        height: 350,
-                                        margin: { t: 30, r: 20, b: 40, l: 60 }
+                                        height: 400,
+                                        margin: { t: 40, r: 20, b: 50, l: 60 }
                                       }}
                                       config={{ 
                                         displayModeBar: true,
@@ -325,17 +310,8 @@ export default function AnalyzePage() {
                                 } catch (err) {
                                   console.error('Error parsing ML chart data:', err);
                                   return (
-                                    <div style={{ 
-                                      padding: '20px', 
-                                      textAlign: 'center', 
-                                      backgroundColor: '#fff3cd',
-                                      border: '1px dashed #ffeeba',
-                                      borderRadius: '4px',
-                                      color: '#856404'
-                                    }}>
-                                      ⚠️ Chart data could not be displayed
-                                      <br />
-                                      <small>Check console for details</small>
+                                    <div className="chart-error">
+                                      ⚠️ Chart could not be displayed
                                     </div>
                                   );
                                 }
@@ -351,53 +327,9 @@ export default function AnalyzePage() {
             ))}
           </div>
         ) : (
-          <div style={{ 
-            padding: '20px', 
-            textAlign: 'center', 
-            backgroundColor: '#fff3cd', 
-            border: '1px solid #ffeeba',
-            borderRadius: '8px',
-            color: '#856404'
-          }}>
-            <h4>⚠️ No ML Analyses Performed</h4>
-            <p>The dataset may not have enough data or suitable features for machine learning analysis.</p>
-            <p>Try uploading a larger dataset with more numerical features.</p>
-          </div>
-        )}
-
-        {/* Overall Insights */}
-        {overallInsights && Object.keys(overallInsights).length > 0 && (
-          <div className="overall-insights">
-            <h3>🎯 Overall Insights</h3>
-            
-            {overallInsights.conclusions && overallInsights.conclusions.length > 0 && (
-              <div style={{ marginBottom: '15px' }}>
-                <h4>📋 Conclusions:</h4>
-                <ul>
-                  {overallInsights.conclusions.map((conclusion, idx) => (
-                    <li key={idx}>{conclusion}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {overallInsights.recommendations && overallInsights.recommendations.length > 0 && (
-              <div style={{ marginBottom: '15px' }}>
-                <h4>💡 Recommendations:</h4>
-                <ul>
-                  {overallInsights.recommendations.map((rec, idx) => (
-                    <li key={idx}>{rec}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {overallInsights.strategy && (
-              <div style={{ marginBottom: '15px' }}>
-                <h4>🎯 Strategy:</h4>
-                <p>{overallInsights.strategy}</p>
-              </div>
-            )}
+          <div className="no-ml-results">
+            <h4>⚠️ No ML Analyses Available</h4>
+            <p>The dataset may not have suitable features for machine learning analysis.</p>
           </div>
         )}
       </div>
@@ -405,137 +337,92 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="analyze-page">
       <h1>🚀 AI-Powered Data Analysis Pipeline</h1>
       
-      <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
+      <div className="service-status-section">
         <h2>Service Status</h2>
-        <button onClick={checkServices} style={{ marginBottom: '10px', padding: '8px 16px' }}>
+        <button onClick={checkServices} className="check-services-btn">
           Check Services
         </button>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+        <div className="services-grid">
           {Object.entries(serviceStatus).map(([name, status]) => (
-            <div key={name} style={{ 
-              padding: '10px', 
-              border: `2px solid ${status.healthy ? '#4CAF50' : '#f44336'}`,
-              borderRadius: '4px',
-              backgroundColor: status.healthy ? '#e8f5e8' : '#ffeaea'
-            }}>
+            <div key={name} className={`service-card ${status.healthy ? 'healthy' : 'down'}`}>
               <strong>{name.toUpperCase()}</strong><br />
               {status.healthy ? '✅ Healthy' : '❌ Down'}<br />
               {status.status && <small>{status.status}</small>}
-              {status.error && <small style={{ color: 'red' }}>{status.error}</small>}
+              {status.error && <small className="error-text">{status.error}</small>}
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
+      <div className="upload-section">
         <h2>Upload & Analyze Data</h2>
-        <div style={{ marginBottom: '15px' }}>
+        <div className="file-input-container">
           <input 
             type="file" 
             accept=".csv,.xlsx,.json"
             onChange={(e) => setFile(e.target.files[0])}
-            style={{ marginBottom: '10px' }}
+            className="file-input"
           />
-          {file && <p>Selected: {file.name}</p>}
+          {file && <p className="file-selected">Selected: {file.name}</p>}
         </div>
         
-        <div style={{ marginBottom: '15px' }}>
+        <div className="prompt-container">
           <textarea 
             placeholder="Enter your analysis goals (e.g., 'Find transaction patterns', 'Predict customer behavior', etc.)"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={3}
-            style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
+            className="prompt-textarea"
           />
         </div>
         
         <button 
           onClick={handleAnalyze} 
           disabled={loading || !file}
-          style={{ 
-            padding: '12px 24px', 
-            fontSize: '16px', 
-            backgroundColor: loading ? '#ccc' : '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}
+          className="analyze-btn"
         >
           {loading ? `${currentStep || 'Analyzing...'}` : 'Analyze Data'}
         </button>
       </div>
 
       {error && (
-        <div style={{ 
-          padding: '20px', 
-          backgroundColor: '#ffeaea', 
-          border: '1px solid #f44336', 
-          borderRadius: '8px',
-          marginBottom: '20px'
-        }}>
-          <h3 style={{ color: '#f44336' }}>❌ Error</h3>
+        <div className="error-section">
+          <h3>❌ Error</h3>
           <p>{error}</p>
         </div>
       )}
 
       {results && (
-        <div>
+        <div className="results-section">
           {/* EDA Results */}
           {results.eda?.analysis && (
-            <div style={{ marginBottom: '40px' }}>
-              <h2>📈 Exploratory Data Analysis (EDA)</h2>
+            <div className="eda-section">
+              <h2>📈 Exploratory Data Analysis</h2>
               
-              {/* Dataset Info */}
-              {results.eda.analysis.dataset_info && (
-                <div style={{ 
-                  padding: '15px', 
-                  backgroundColor: '#f8f9fa', 
-                  borderRadius: '8px',
-                  marginBottom: '20px'
-                }}>
-                  <h3>Dataset Information</h3>
-                  <p><strong>Shape:</strong> {results.eda.analysis.dataset_info.shape?.[0]} rows × {results.eda.analysis.dataset_info.shape?.[1]} columns</p>
-                  <p><strong>Columns:</strong> {results.eda.analysis.dataset_info.columns?.join(', ')}</p>
-                </div>
-              )}
-
-              {/* Visualizations */}
+              {/* Visualizations Only */}
               {results.eda.analysis.visualizations && results.eda.analysis.visualizations.length > 0 && (
-                <div>
-                  <h3>📊 Generated Visualizations</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(600px, 1fr))', gap: '20px' }}>
+                <div className="visualizations-section">
+                  <div className="charts-grid">
                     {results.eda.analysis.visualizations.map((chart, index) => (
-                      <div key={index} style={{ 
-                        border: '1px solid #ddd', 
-                        borderRadius: '8px', 
-                        padding: '20px',
-                        backgroundColor: 'white'
-                      }}>
-                        <h4>{chart.title}</h4>
-                        <p style={{ color: '#666', fontSize: '14px' }}>{chart.description}</p>
-                        <div style={{ 
-                          display: 'inline-block', 
-                          padding: '4px 8px', 
-                          backgroundColor: '#e3f2fd', 
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          marginBottom: '15px'
-                        }}>
+                      <div key={index} className="chart-container">
+                        <h3>{chart.title}</h3>
+                        <p className="chart-description">{chart.description}</p>
+                        <div className="chart-badge">
                           {chart.category} • {chart.chart_type}
                         </div>
                         
                         {chart.chart_json && (
-                          <div style={{ minHeight: '400px' }}>
+                          <div className="chart-wrapper">
                             {Plot ? (
                               <Plot
                                 data={JSON.parse(chart.chart_json).data}
                                 layout={{
                                   ...JSON.parse(chart.chart_json).layout,
                                   autosize: true,
+                                  height: 400,
                                   margin: { l: 50, r: 50, t: 50, b: 50 }
                                 }}
                                 config={{ displayModeBar: true, responsive: true }}
@@ -543,13 +430,7 @@ export default function AnalyzePage() {
                                 onError={(err) => console.error('Plotly error:', err)}
                               />
                             ) : (
-                              <div style={{ 
-                                padding: '20px', 
-                                textAlign: 'center', 
-                                backgroundColor: '#f8f9fa',
-                                border: '1px dashed #ddd',
-                                borderRadius: '4px'
-                              }}>
+                              <div className="chart-loading">
                                 📊 Loading chart...
                               </div>
                             )}
@@ -561,17 +442,10 @@ export default function AnalyzePage() {
                 </div>
               )}
 
-              {/* EDA Insights */}
+              {/* Simplified EDA Insights */}
               {results.eda.analysis.insights && (
-                <div style={{ marginTop: '30px' }}>
-                  <h3>💡 EDA Insights</h3>
-                  <div style={{ 
-                    padding: '20px', 
-                    backgroundColor: '#f8f9fa', 
-                    borderRadius: '8px' 
-                  }}>
-                    {renderInsights(results.eda.analysis.insights)}
-                  </div>
+                <div className="insights-section">
+                  {renderSimpleInsights(results.eda.analysis.insights)}
                 </div>
               )}
             </div>
@@ -579,12 +453,7 @@ export default function AnalyzePage() {
 
           {/* ML Analysis Results */}
           {results.ml && (
-            <div style={{ 
-              marginTop: '40px',
-              padding: '20px', 
-              backgroundColor: '#f8f9fa', 
-              borderRadius: '8px' 
-            }}>
+            <div className="ml-section">
               {renderMLResults(results.ml)}
             </div>
           )}
@@ -592,55 +461,256 @@ export default function AnalyzePage() {
       )}
 
       <style jsx>{`
-        .insights-container {
+        .analyze-page {
+          padding: 20px;
+          max-width: 1200px;
+          margin: 0 auto;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        .insight-category {
-          margin-bottom: 20px;
+
+        .service-status-section {
+          margin-bottom: 30px;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          background: #f8f9fa;
+        }
+
+        .check-services-btn {
+          margin-bottom: 15px;
+          padding: 8px 16px;
+          background: #007bff;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .services-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 10px;
+        }
+
+        .service-card {
           padding: 15px;
-          border-left: 4px solid #007bff;
-          background: white;
-          border-radius: 0 8px 8px 0;
+          border-radius: 8px;
+          text-align: center;
         }
-        .insight-category h4 {
-          margin-top: 0;
-          color: #007bff;
-          font-size: 16px;
+
+        .service-card.healthy {
+          border: 2px solid #4CAF50;
+          background: #e8f5e8;
         }
-        .insight-category ul {
-          margin: 10px 0;
-          padding-left: 20px;
+
+        .service-card.down {
+          border: 2px solid #f44336;
+          background: #ffeaea;
         }
-        .insight-category li {
-          margin-bottom: 8px;
-          line-height: 1.5;
+
+        .error-text {
+          color: #f44336;
         }
-        .analysis-item {
-          margin-bottom: 20px;
-          padding: 15px;
+
+        .upload-section {
+          margin-bottom: 30px;
+          padding: 20px;
           border: 1px solid #ddd;
           border-radius: 8px;
           background: white;
         }
-        .analysis-results {
-          background: #f8f9fa;
+
+        .file-input {
+          margin-bottom: 10px;
+        }
+
+        .file-selected {
+          color: #28a745;
+          font-weight: 500;
+        }
+
+        .prompt-textarea {
+          width: 100%;
           padding: 10px;
           border-radius: 4px;
-          font-size: 12px;
-          overflow-x: auto;
+          border: 1px solid #ccc;
+          margin-bottom: 15px;
+          font-family: inherit;
         }
-        .ml-visualization {
-          margin-top: 10px;
-          padding: 10px;
-          background: #e8f5e8;
+
+        .analyze-btn {
+          padding: 12px 24px;
+          font-size: 16px;
+          background: #007bff;
+          color: white;
+          border: none;
           border-radius: 4px;
+          cursor: pointer;
         }
-        .dataset-summary, .key-findings, .analytics-summary, .overall-insights {
+
+        .analyze-btn:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+        }
+
+        .error-section {
+          padding: 20px;
+          background: #ffeaea;
+          border: 1px solid #f44336;
+          border-radius: 8px;
           margin-bottom: 20px;
         }
-        .dataset-summary h3, .key-findings h3, .analytics-summary h3, .overall-insights h3 {
-          margin-bottom: 15px;
+
+        .error-section h3 {
+          color: #f44336;
+          margin-top: 0;
+        }
+
+        .eda-section {
+          margin-bottom: 40px;
+        }
+
+        .charts-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+          gap: 30px;
+          margin: 30px 0;
+        }
+
+        .chart-container {
+          border: 1px solid #ddd;
+          border-radius: 12px;
+          padding: 20px;
+          background: white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .chart-container h3, .chart-container h4 {
+          margin-top: 0;
           color: #333;
+        }
+
+        .chart-description {
+          color: #666;
+          font-size: 14px;
+          margin-bottom: 10px;
+        }
+
+        .chart-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          background: #e3f2fd;
+          border-radius: 16px;
+          font-size: 12px;
+          color: #1976d2;
+          margin-bottom: 15px;
+        }
+
+        .chart-wrapper {
+          min-height: 400px;
+          width: 100%;
+        }
+
+        .chart-loading {
+          padding: 20px;
+          text-align: center;
+          background: #f8f9fa;
+          border: 1px dashed #ddd;
+          border-radius: 4px;
+          color: #666;
+        }
+
+        .chart-error {
+          padding: 20px;
+          text-align: center;
+          background: #fff3cd;
+          border: 1px dashed #ffeeba;
+          border-radius: 4px;
+          color: #856404;
+        }
+
+        .insights-section {
+          margin-top: 30px;
+          padding: 20px;
+          background: #f8f9fa;
+          border-radius: 8px;
+        }
+
+        .simple-insights .insight-section {
+          margin-bottom: 25px;
+        }
+
+        .simple-insights h3 {
+          color: #007bff;
+          margin-bottom: 15px;
+        }
+
+        .simple-insights ul {
+          list-style: none;
+          padding: 0;
+        }
+
+        .simple-insights li {
+          padding: 8px 0;
+          border-bottom: 1px solid #e9ecef;
+          line-height: 1.5;
+        }
+
+        .simple-insights li:last-child {
+          border-bottom: none;
+        }
+
+        .ml-section {
+          margin-top: 40px;
+          padding: 20px;
+          background: #f8f9fa;
+          border-radius: 8px;
+        }
+
+        .analysis-item {
+          margin-bottom: 30px;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          background: white;
+        }
+
+        .ml-insights {
+          margin-bottom: 20px;
+        }
+
+        .ml-insights h4 {
+          color: #28a745;
+          margin-bottom: 10px;
+        }
+
+        .ml-insights ul {
+          list-style: none;
+          padding: 0;
+        }
+
+        .ml-insights li {
+          padding: 5px 0;
+          line-height: 1.4;
+        }
+
+        .no-ml-results {
+          padding: 20px;
+          text-align: center;
+          background: #fff3cd;
+          border: 1px solid #ffeeba;
+          border-radius: 8px;
+          color: #856404;
+        }
+
+        .no-insights {
+          padding: 15px;
+          text-align: center;
+          background: #e3f2fd;
+          border: 1px solid #bbdefb;
+          border-radius: 8px;
+          color: #1565c0;
+          font-style: italic;
         }
       `}</style>
     </div>
