@@ -109,22 +109,22 @@ export default function View() {
   });
 
   return (
-    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
+    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 transition-colors duration-300`}>
       {/* Navigation Bar */}
       <nav className="flex justify-center pt-8 pb-4">
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Analyse
             </div>
           </Link>
           <Link href="/upload">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Upload
             </div>
           </Link>
           <Link href="/view">
-            <div className="px-6 py-2 rounded-full bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
+            <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
               View
             </div>
           </Link>
@@ -233,11 +233,11 @@ export default function View() {
             <option value="inactive">Inactive Only</option>
           </select>
         </div>
-        
-        {/* Files Table */}
+          
+          {/* Files Table */}
         <div className="bg-gray-200 rounded-2xl border border-gray-300 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl animate-slideInUp">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+            <div className="overflow-x-auto">
+              <table className="w-full">
               <thead className="bg-gray-300 transition-colors duration-300">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">File</th>
@@ -246,12 +246,12 @@ export default function View() {
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Modified</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200">Actions</th>
-                </tr>
-              </thead>
+                  </tr>
+                </thead>
               <tbody className="divide-y divide-gray-300">
                 {filteredFiles.map((file, index) => (
-                  <tr 
-                    key={file.id} 
+                    <tr 
+                      key={file.id} 
                     className="hover:bg-gray-300 transition-all duration-200 group hover:shadow-md animate-slideInUp"
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
@@ -274,19 +274,19 @@ export default function View() {
                         month: '2-digit', 
                         year: 'numeric'
                       })}
-                    </td>
+                      </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <button
+                        <button
                         onClick={() => toggleFileStatus(file.id)}
                         className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
-                          file.isActive
+                            file.isActive
                             ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-md'
                             : 'bg-red-100 text-red-800 hover:bg-red-200 hover:shadow-md'
-                        }`}
-                      >
-                        {file.isActive ? 'Active' : 'Inactive'}
-                      </button>
-                    </td>
+                          }`}
+                        >
+                          {file.isActive ? 'Active' : 'Inactive'}
+                        </button>
+                      </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex space-x-2">
                         <button
@@ -303,10 +303,10 @@ export default function View() {
                         </button>
                       </div>
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
           </div>
           
           {filteredFiles.length === 0 && (
