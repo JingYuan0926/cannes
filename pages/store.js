@@ -7,29 +7,9 @@ export default function WalrusStorePage() {
   const [readData, setReadData] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [signerAddress, setSignerAddress] = useState('');
-  const [status, setStatus] = useState('');
-
-  useEffect(() => {
-    // Initialize and get signer address when component mounts
-    const initStore = async () => {
-      try {
-        const response = await fetch('/api/walrus/signer');
-        const result = await response.json();
-        
-        if (response.ok && result.signerAddress) {
-          setSignerAddress(result.signerAddress);
-          setStatus('Walrus store initialized successfully');
-        } else {
-          throw new Error(result.error || 'Failed to get signer address');
-        }
-      } catch (err) {
-        setError(`Failed to initialize: ${err.message}`);
-      }
-    };
-
-    initStore();
-  }, []);
+  const [status, setStatus] = useState('Walrus HTTP API ready');
+  const [epochs, setEpochs] = useState(1);
+  const [deletable, setDeletable] = useState(false);
 
   const handleStoreText = async () => {
     if (!textToStore.trim()) {
@@ -49,8 +29,8 @@ export default function WalrusStorePage() {
         },
         body: JSON.stringify({
           text: textToStore,
-          epochs: 3,
-          deletable: false,
+          epochs: epochs,
+          deletable: deletable,
         }),
       });
 
@@ -115,14 +95,7 @@ export default function WalrusStorePage() {
           {/* Status Section */}
           <div className="mb-6 p-4 bg-blue-50 rounded-lg">
             <h2 className="text-lg font-semibold text-blue-900 mb-2">Status</h2>
-            {signerAddress && (
-              <p className="text-sm text-blue-700 mb-2">
-                <strong>Signer Address:</strong> {signerAddress}
-              </p>
-            )}
-            {status && (
-              <p className="text-sm text-blue-700">{status}</p>
-            )}
+            <p className="text-sm text-blue-700">{status}</p>
           </div>
 
           {/* Error Display */}
@@ -140,17 +113,18 @@ export default function WalrusStorePage() {
             </div>
           )}
 
-          {/* API Architecture Info */}
+          {/* HTTP API Architecture Info */}
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-800 mb-2">✅ Server-Side API Architecture</h3>
+            <h3 className="text-lg font-semibold text-green-800 mb-2">✅ HTTP API Architecture</h3>
             <p className="text-sm text-green-700 mb-2">
-              Using Next.js API routes for optimal performance and reliability:
+              Using Walrus HTTP API for simple and reliable storage:
             </p>
             <ul className="text-sm text-green-700 list-disc list-inside space-y-1">
-              <li>Server-side Walrus SDK execution (no browser limitations)</li>
-              <li>Faster operations with reduced network requests</li>
-              <li>Better error handling and retry logic</li>
-              <li>No CORS or SSL certificate issues</li>
+              <li>No SDK dependencies or complex setup required</li>
+              <li>Direct HTTP requests to public Walrus publishers/aggregators</li>
+              <li>No keypair management or seed phrases needed</li>
+              <li>Works seamlessly across all browsers and environments</li>
+              <li>Automatic fallback to multiple public endpoints</li>
             </ul>
           </div>
 
@@ -173,6 +147,55 @@ export default function WalrusStorePage() {
                   Characters: {textToStore.length} | Bytes: {new TextEncoder().encode(textToStore).length}
                 </p>
               </div>
+              
+              {/* Storage Options */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Storage Epochs:
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={epochs}
+                    onChange={(e) => setEpochs(parseInt(e.target.value) || 1)}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Number of epochs to store (1 epoch ≈ 1 day)
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Storage Type:
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="deletable"
+                        checked={!deletable}
+                        onChange={() => setDeletable(false)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm">Permanent</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="deletable"
+                        checked={deletable}
+                        onChange={() => setDeletable(true)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm">Deletable</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
               <button
                 onClick={handleStoreText}
                 disabled={isLoading || !textToStore.trim()}
@@ -190,12 +213,28 @@ export default function WalrusStorePage() {
               <p className="text-sm text-green-700 break-all mb-2">
                 <strong>Blob ID:</strong> {storedBlobId}
               </p>
-              <button
-                onClick={() => setBlobIdToRead(storedBlobId)}
-                className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-              >
-                Use this ID to read
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setBlobIdToRead(storedBlobId)}
+                  className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                >
+                  Use this ID to read
+                </button>
+                <button
+                  onClick={() => navigator.clipboard.writeText(storedBlobId)}
+                  className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                >
+                  Copy Blob ID
+                </button>
+                <a
+                  href={`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${storedBlobId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700"
+                >
+                  View on Walrus
+                </a>
+              </div>
             </div>
           )}
 
@@ -248,35 +287,46 @@ export default function WalrusStorePage() {
             </div>
           )}
 
-          {/* API Routes Info */}
+          {/* HTTP API Routes Info */}
           <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">API Routes</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">HTTP API Routes</h3>
             <div className="text-sm text-gray-700 space-y-1">
-              <p><code className="bg-gray-200 px-2 py-1 rounded">POST /api/walrus/write</code> - Write text to Walrus</p>
-              <p><code className="bg-gray-200 px-2 py-1 rounded">GET /api/walrus/read?blobId=...</code> - Read text from Walrus</p>
-              <p><code className="bg-gray-200 px-2 py-1 rounded">GET /api/walrus/signer</code> - Get signer address</p>
+              <p><code className="bg-gray-200 px-2 py-1 rounded">POST /api/walrus/write</code> - Write text to Walrus (proxies to publisher)</p>
+              <p><code className="bg-gray-200 px-2 py-1 rounded">GET /api/walrus/read?blobId=...</code> - Read text from Walrus (proxies to aggregator)</p>
             </div>
           </div>
 
-          {/* Direct API Usage Examples */}
+          {/* Direct HTTP API Usage Examples */}
           <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Direct API Usage</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Direct HTTP API Usage</h3>
             <div className="text-sm text-gray-700 space-y-2">
-              <p><strong>Write Text:</strong></p>
+              <p><strong>Write Text via API Route:</strong></p>
               <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">
 {`fetch('/api/walrus/write', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ text: 'Hello Walrus!', epochs: 3, deletable: false })
+  body: JSON.stringify({ 
+    text: 'Hello Walrus!', 
+    epochs: ${epochs}, 
+    deletable: ${deletable} 
+  })
 })`}
               </pre>
-              <p><strong>Read Text:</strong></p>
+              <p><strong>Read Text via API Route:</strong></p>
               <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">
 {`fetch('/api/walrus/read?blobId=YOUR_BLOB_ID')`}
               </pre>
-              <p><strong>Get Signer:</strong></p>
+              <p><strong>Direct Walrus Publisher (PUT):</strong></p>
               <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">
-{`fetch('/api/walrus/signer')`}
+{`fetch('https://publisher.walrus-testnet.walrus.space/v1/blobs?epochs=${epochs}', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'text/plain' },
+  body: 'Hello Walrus!'
+})`}
+              </pre>
+              <p><strong>Direct Walrus Aggregator (GET):</strong></p>
+              <pre className="bg-gray-200 p-2 rounded text-xs overflow-x-auto">
+{`fetch('https://aggregator.walrus-testnet.walrus.space/v1/blobs/YOUR_BLOB_ID')`}
               </pre>
             </div>
           </div>
@@ -285,12 +335,30 @@ export default function WalrusStorePage() {
           <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h3 className="text-lg font-semibold text-blue-800 mb-2">Setup Instructions:</h3>
             <ol className="text-sm text-blue-700 space-y-1">
-              <li>1. Install dependencies: <code className="bg-blue-100 px-1 rounded">npm install @mysten/walrus @mysten/sui</code></li>
-              <li>2. Set environment variable: <code className="bg-blue-100 px-1 rounded">NEXT_PUBLIC_WALRUS_SEED_PHRASE="your seed phrase"</code></li>
-              <li>3. Ensure your account has SUI tokens for gas fees and WAL tokens for storage</li>
-              <li>4. This demo uses Sui testnet - make sure to use testnet tokens</li>
-              <li>5. API routes handle all Walrus operations server-side for optimal performance</li>
+              <li>1. No SDK dependencies required - uses simple HTTP requests</li>
+              <li>2. Optional: Set environment variables for custom endpoints:</li>
+              <li className="ml-4">
+                <code className="bg-blue-100 px-1 rounded">WALRUS_PUBLISHER_URL</code> (default: testnet publisher)
+              </li>
+              <li className="ml-4">
+                <code className="bg-blue-100 px-1 rounded">NEXT_PUBLIC_WALRUS_AGGREGATOR_URL</code> (default: testnet aggregator)
+              </li>
+              <li>3. Uses public Walrus testnet endpoints - no tokens required for reading</li>
+              <li>4. Writing may require WAL tokens depending on the publisher</li>
+              <li>5. HTTP API handles all operations with automatic endpoint selection</li>
             </ol>
+          </div>
+
+          {/* Public Endpoints Info */}
+          <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Public Endpoints</h3>
+            <div className="text-sm text-yellow-700 space-y-1">
+              <p><strong>Default Publisher:</strong> https://publisher.walrus-testnet.walrus.space</p>
+              <p><strong>Default Aggregator:</strong> https://aggregator.walrus-testnet.walrus.space</p>
+              <p className="text-xs mt-2">
+                Multiple public endpoints available for redundancy. The API automatically handles failover.
+              </p>
+            </div>
           </div>
         </div>
       </div>
