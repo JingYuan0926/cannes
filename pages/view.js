@@ -1,54 +1,18 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { readFW, readContentWithType, parseCSV, detectFileType, downloadFile } from "../utils/readFromWalrus";
 
 export default function View() {
-  const [files, setFiles] = useState([
-    {
-      id: 1,
-      name: "Sales_Data_Q4_2024.csv",
-      timestamp: "4 July 2025 00:00:00",
-      size: "2.4 MB",
-      type: "CSV",
-      isActive: true,
-    },
-    {
-      id: 2,
-      name: "Customer_Analytics.xlsx",
-      timestamp: "4 July 2025 01:00:00",
-      size: "5.7 MB",
-      type: "Excel",
-      isActive: false,
-    },
-    {
-      id: 3,
-      name: "Marketing_Metrics.json",
-      timestamp: "4 July 2025 02:00:00",
-      size: "1.2 MB",
-      type: "JSON",
-      isActive: true,
-    },
-    {
-      id: 4,
-      name: "Product_Performance.csv",
-      timestamp: "3 July 2025 18:30:00",
-      size: "3.8 MB",
-      type: "CSV",
-      isActive: true,
-    },
-    {
-      id: 5,
-      name: "User_Behavior.txt",
-      timestamp: "3 July 2025 15:45:00",
-      size: "890 KB",
-      type: "Text",
-      isActive: false,
-    },
-  ]);
+  const [files, setFiles] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [viewingFile, setViewingFile] = useState(null);
+  const [fileContent, setFileContent] = useState(null);
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [contentError, setContentError] = useState('');
   const dropdownRef = useRef(null);
 
   const filterOptions = [
@@ -56,6 +20,36 @@ export default function View() {
     { value: "active", label: "Active Only" },
     { value: "inactive", label: "Inactive Only" }
   ];
+
+  // Load files from localStorage on mount
+  useEffect(() => {
+    const loadFiles = () => {
+      try {
+        const storedFiles = JSON.parse(localStorage.getItem('walrusFiles') || '[]');
+        setFiles(storedFiles);
+      } catch (error) {
+        console.error('Failed to load files from localStorage:', error);
+        setFiles([]);
+      }
+    };
+    
+    loadFiles();
+    
+    // Listen for storage changes (when files are uploaded)
+    const handleStorageChange = () => {
+      loadFiles();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events from the upload page
+    window.addEventListener('walrusFileUploaded', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('walrusFileUploaded', handleStorageChange);
+    };
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -72,18 +66,89 @@ export default function View() {
   }, []);
 
   const toggleFileStatus = (id) => {
-    setFiles(files.map(file => 
+    const updatedFiles = files.map(file => 
       file.id === id ? { ...file, isActive: !file.isActive } : file
-    ));
+    );
+    setFiles(updatedFiles);
+    // Update localStorage
+    localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
   };
 
-  const handleViewFile = (file) => {
-    console.log("Viewing file:", file.name);
+  const handleViewFile = async (file) => {
+    if (!file.blobId) {
+      setContentError('No Blob ID available for this file');
+      return;
+    }
+
+    setViewingFile(file);
+    setIsLoadingContent(true);
+    setContentError('');
+    setFileContent(null);
+
+    try {
+      // Use enhanced read function with content type detection
+      const result = await readContentWithType(file.blobId);
+      
+      // Detect file type and add additional metadata
+      let fileType = detectFileType(result.content, result.contentType, result.blobId);
+      
+      const contentData = {
+        ...result,
+        fileType,
+      };
+
+      // Parse CSV data if it's a CSV file
+      if (fileType.type === 'csv' && result.isText) {
+        try {
+          contentData.csvData = parseCSV(result.content);
+        } catch (csvError) {
+          console.warn('Failed to parse CSV:', csvError);
+          contentData.csvData = null;
+        }
+      }
+
+      // Try to parse JSON if it's JSON content
+      if (fileType.type === 'json' && result.isText) {
+        try {
+          contentData.jsonData = JSON.parse(result.content);
+        } catch (jsonError) {
+          console.warn('Failed to parse JSON:', jsonError);
+          contentData.jsonData = null;
+        }
+      }
+
+      setFileContent(contentData);
+    } catch (error) {
+      setContentError(`Failed to load file content: ${error.message}`);
+    } finally {
+      setIsLoadingContent(false);
+    }
   };
 
   const handleDeleteFile = (id) => {
-    if (confirm("Are you sure you want to delete this file?")) {
-      setFiles(files.filter(file => file.id !== id));
+    if (confirm("Are you sure you want to delete this file from your local list? (This won't delete it from Walrus)")) {
+      const updatedFiles = files.filter(file => file.id !== id);
+      setFiles(updatedFiles);
+      localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
+      
+      // Close file content view if this file was being viewed
+      if (viewingFile && viewingFile.id === id) {
+        setViewingFile(null);
+        setFileContent(null);
+      }
+    }
+  };
+
+  const handleDownloadFile = async (file) => {
+    if (!file.blobId) {
+      setContentError('No Blob ID available for download');
+      return;
+    }
+
+    try {
+      await downloadFile(file.blobId, file.name);
+    } catch (error) {
+      setContentError(`Failed to download file: ${error.message}`);
     }
   };
 
@@ -225,7 +290,10 @@ export default function View() {
           >
             <div>
               <h3 className="text-2xl font-bold text-purple-600">
-                {files.reduce((total, file) => total + parseFloat(file.size), 0).toFixed(1)} MB
+                {files.length > 0 
+                  ? (files.reduce((total, file) => total + (file.originalSize || 0), 0) / (1024 * 1024)).toFixed(1) + ' MB'
+                  : '0 MB'
+                }
               </h3>
               <p className="text-black text-sm">Total Size</p>
             </div>
@@ -374,9 +442,15 @@ export default function View() {
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleViewFile(file)}
-                          className="text-gray-600 hover:text-gray-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                          className="text-blue-600 hover:text-blue-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
                         >
                           View
+                        </button>
+                        <button
+                          onClick={() => handleDownloadFile(file)}
+                          className="text-green-600 hover:text-green-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                        >
+                          Download
                         </button>
                         <button
                           onClick={() => handleDeleteFile(file.id)}
@@ -402,11 +476,196 @@ export default function View() {
               <svg className="w-12 h-12 mx-auto text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p className="text-black text-lg">No files found matching your criteria</p>
+              <p className="text-black text-lg mb-2">
+                {files.length === 0 ? "No files uploaded yet" : "No files found matching your criteria"}
+              </p>
+              {files.length === 0 && (
+                <div className="mt-4">
+                  <Link href="/upload">
+                    <button className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200">
+                      Upload Your First File
+                    </button>
+                  </Link>
+                </div>
+              )}
             </motion.div>
           )}
         </motion.div>
+
+        {/* Error Display */}
+        {contentError && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg"
+          >
+            <div className="flex justify-between items-start">
+              <p className="text-red-700 text-sm">{contentError}</p>
+              <button
+                onClick={() => setContentError('')}
+                className="text-red-500 hover:text-red-700 ml-2"
+              >
+                ×
+              </button>
+            </div>
+          </motion.div>
+        )}
       </motion.main>
+
+      {/* File Content Modal */}
+      <AnimatePresence>
+        {viewingFile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => {
+              setViewingFile(null);
+              setFileContent(null);
+              setContentError('');
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{viewingFile.name}</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Blob ID: {viewingFile.blobId}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setViewingFile(null);
+                      setFileContent(null);
+                      setContentError('');
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 overflow-y-auto max-h-[70vh]">
+                {isLoadingContent ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="text-gray-600 mt-2">Loading file content...</p>
+                  </div>
+                ) : fileContent ? (
+                  <div>
+                    {/* File Type Info */}
+                    <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <strong>Type:</strong> {fileContent.fileType?.displayName || 'Unknown'} • 
+                        <strong> Size:</strong> {Math.round(fileContent.bytes / 1024)} KB • 
+                        <strong> Content-Type:</strong> {fileContent.contentType}
+                      </p>
+                    </div>
+
+                    {/* Render Content Based on Type */}
+                    {fileContent.fileType?.type === 'csv' && fileContent.csvData ? (
+                      <div>
+                        <h4 className="font-semibold mb-2">CSV Data ({fileContent.csvData.length} rows):</h4>
+                        <div className="overflow-x-auto max-h-96 border rounded">
+                          <table className="min-w-full text-sm">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                {Object.keys(fileContent.csvData[0] || {}).map((header) => (
+                                  <th key={header} className="px-3 py-2 text-left font-medium border-b">
+                                    {header}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {fileContent.csvData.slice(0, 50).map((row, index) => (
+                                <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                  {Object.values(row).map((cell, cellIndex) => (
+                                    <td key={cellIndex} className="px-3 py-2 border-b">
+                                      {cell}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {fileContent.csvData.length > 50 && (
+                            <p className="text-xs text-gray-500 p-2">
+                              Showing first 50 rows of {fileContent.csvData.length} total rows
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : fileContent.fileType?.type === 'json' && fileContent.jsonData ? (
+                      <div>
+                        <h4 className="font-semibold mb-2">JSON Data:</h4>
+                        <pre className="text-sm bg-gray-50 p-4 rounded border overflow-auto max-h-96">
+                          {JSON.stringify(fileContent.jsonData, null, 2)}
+                        </pre>
+                      </div>
+                    ) : fileContent.isText ? (
+                      <div>
+                        <h4 className="font-semibold mb-2">Text Content:</h4>
+                        <pre className="text-sm bg-gray-50 p-4 rounded border overflow-auto max-h-96 whitespace-pre-wrap">
+                          {fileContent.content}
+                        </pre>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600 mb-4">Binary file - cannot preview</p>
+                        <button
+                          onClick={() => handleDownloadFile(viewingFile)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Download File
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600">Failed to load file content</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              {fileContent && (
+                <div className="p-6 border-t border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <button
+                      onClick={() => navigator.clipboard.writeText(viewingFile.blobId)}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                    >
+                      Copy Blob ID
+                    </button>
+                    <button
+                      onClick={() => handleDownloadFile(viewingFile)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Download File
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

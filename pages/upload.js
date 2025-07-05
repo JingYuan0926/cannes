@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { uploadFile } from "../utils/writeToWalrus";
 
 export default function Upload() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -8,12 +9,17 @@ export default function Upload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadComplete, setIsUploadComplete] = useState(false);
+  const [uploadedBlobId, setUploadedBlobId] = useState(null);
+  const [uploadError, setUploadError] = useState('');
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
       setSelectedFile(file);
       setIsUploadComplete(false);
+      setUploadedBlobId(null);
+      setUploadError('');
+      setUploadProgress(0);
     }
   };
 
@@ -34,30 +40,67 @@ export default function Upload() {
     if (file) {
       setSelectedFile(file);
       setIsUploadComplete(false);
+      setUploadedBlobId(null);
+      setUploadError('');
+      setUploadProgress(0);
     }
   };
 
-  const handleUpload = () => {
-    if (selectedFile) {
-      setIsUploading(true);
-      setUploadProgress(0);
-      setIsUploadComplete(false);
-      
-      // Simulate upload progress
-      const interval = setInterval(() => {
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+    setIsUploadComplete(false);
+    setUploadError('');
+    setUploadedBlobId(null);
+    
+    try {
+      // Simulate upload progress for UI feedback
+      const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setIsUploading(false);
-            setIsUploadComplete(true);
-            setTimeout(() => {
-              alert('File uploaded successfully!');
-            }, 500);
-            return 100;
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90; // Keep at 90% until actual upload completes
           }
-          return prev + 10;
+          return prev + 15;
         });
-      }, 200);
+      }, 100);
+
+      // Upload file to Walrus
+      const result = await uploadFile(selectedFile, {
+        epochs: 1,
+        deletable: true
+      });
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      // Store file metadata in localStorage for view.js
+      const fileMetadata = {
+        id: Date.now(),
+        name: selectedFile.name,
+        size: formatFileSize(selectedFile.size),
+        type: selectedFile.type || 'Unknown',
+        blobId: result.blobId,
+        timestamp: new Date().toISOString(),
+        isActive: true,
+        originalSize: selectedFile.size
+      };
+      
+      const existingFiles = JSON.parse(localStorage.getItem('walrusFiles') || '[]');
+      const updatedFiles = [fileMetadata, ...existingFiles];
+      localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
+      
+      setUploadedBlobId(result.blobId);
+      setIsUploadComplete(true);
+      setIsUploading(false);
+      
+    } catch (error) {
+      console.error('Upload failed:', error);
+      setUploadError(error.message || 'Upload failed. Please try again.');
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -139,7 +182,11 @@ export default function Upload() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 flex flex-col items-center justify-center px-8 min-h-0 overflow-y-auto"
+        className={`flex-1 flex flex-col items-center px-8 min-h-0 overflow-y-auto ${
+          isUploadComplete || selectedFile || uploadError 
+            ? 'justify-start pt-8' 
+            : 'justify-center'
+        }`}
       >
         <div className="max-w-2xl w-full">
           
@@ -240,6 +287,9 @@ export default function Upload() {
                     onClick={() => {
                       setSelectedFile(null);
                       setIsUploadComplete(false);
+                      setUploadedBlobId(null);
+                      setUploadError('');
+                      setUploadProgress(0);
                     }}
                     className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
@@ -309,19 +359,67 @@ export default function Upload() {
             </motion.div>
           )}
 
-          {/* Success Message */}
-          {isUploadComplete && (
+          {/* Error Message */}
+          {uploadError && (
             <motion.div 
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-6 bg-green-50 p-6 rounded-2xl border border-green-200 shadow-lg"
+              className="mt-6 bg-red-50 p-6 rounded-2xl border border-red-200 shadow-lg"
             >
-              <div className="flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-green-700 font-medium">Upload completed successfully!</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <svg className="w-6 h-6 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-red-700 font-medium">{uploadError}</span>
+                </div>
+                <button
+                  onClick={() => setUploadError('')}
+                  className="text-red-500 hover:text-red-700 ml-2"
+                >
+                  ×
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Success Message */}
+          {isUploadComplete && uploadedBlobId && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="mt-6 bg-green-50 p-4 rounded-2xl border border-green-200 shadow-lg"
+            >
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-green-700 font-medium">Upload completed successfully!</span>
+                </div>
+                <div className="bg-green-100 p-3 rounded-lg">
+                  <p className="text-sm text-green-700 mb-2">
+                    <strong>Blob ID:</strong>
+                  </p>
+                  <p className="text-xs text-green-600 font-mono break-all bg-white p-2 rounded">
+                    {uploadedBlobId}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-center mt-4">
+                  <button
+                    onClick={() => navigator.clipboard.writeText(uploadedBlobId)}
+                    className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                  >
+                    Copy Blob ID
+                  </button>
+                  <Link href="/view">
+                    <button className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+                      View Files
+                    </button>
+                  </Link>
+                </div>
               </div>
             </motion.div>
           )}
