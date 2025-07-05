@@ -37,3 +37,12 @@ body {
 .ai-response strong {
   font-weight: bold;
 }
+.ai-response a {
+  color: #4fc3f7;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+.ai-response a:hover {
+  color: #81d4fa;
+  cursor: pointer;
+}
