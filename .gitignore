@@ -44,3 +44,9 @@ package-lock.json
 /eda/images
 /eda/plots
 /analysis/results
+
+package-lock.json
+
+venv/
+
+__pycache__

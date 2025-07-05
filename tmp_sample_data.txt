@@ -1,0 +1,43 @@
+
+Chart Description
+
+The chart is a line graph showing the average sales price of houses sold in the U.S. (y-axis) by year (x-axis) from 1963 to 2023, based on official economic data. The y-axis values range from around $0.02M in 1963 to nearly $0.5M by 2022.
+
+
+
+Trend
+
+In 1963, the average U.S. home sold for approximately $19,375 (or $0.019M).
+
+By 1980, the price reached around $76,400 ($0.076M).
+
+In 2000, it climbed to $207,000 ($0.207M).
+
+In 2022, it peaked at $525,000 ($0.525M).
+
+This marks a 27× increase over 60 years — an exceptionally strong long-term price appreciation.
+
+
+
+Insight
+
+U.S. housing prices have grown consistently and steeply, especially after 2000, reflecting rising demand, inflation, limited supply, and post-2008 recovery dynamics.
+
+The sharpest price accelerations occurred in the early 2000s and again in the post-2020 housing boom, likely influenced by low interest rates and pandemic-driven market shifts.
+
+
+
+
+
+
+Power BI Desktop
+Average of ASPUS by Year
+0.0M
+0.1M
+0.2M
+0.3M
+0.4M
+0.5M
+Year
+Average of ASPUS
+19601970198019902000201020202030
