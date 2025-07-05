@@ -1,0 +1,3 @@
+uagents>=0.12.0
+uagents-core
+requests 
