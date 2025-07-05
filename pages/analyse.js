@@ -218,9 +218,9 @@ export default function Analyse() {
   );
 
   return (
-    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 transition-colors duration-300`}>
+    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 transition-colors duration-300 overflow-hidden`}>
       {/* Navigation Bar */}
-      <nav className="flex justify-center pt-8 pb-4">
+      <nav className="flex justify-center pt-8 pb-4 animate-slideInUp">
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
             <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
@@ -241,27 +241,29 @@ export default function Analyse() {
       </nav>
 
       {/* Page Header */}
-      <div className="px-8 py-4">
+      <div className="px-8 py-4 animate-slideInUp" style={{ animationDelay: '0.1s' }}>
         <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Analyse Your Data</h1>
+        <p className="text-center text-gray-600 mt-2">Chat with our AI to analyze and understand your data better</p>
       </div>
 
       {/* Main Layout */}
-      <div className="flex min-h-[calc(100vh-180px)]">
+      <div className="flex h-[calc(100vh-180px)] animate-slideInUp" style={{ animationDelay: '0.2s' }}>
         {/* Left Sidebar */}
-        <div className="w-64 bg-gray-200 border-r border-gray-300 flex flex-col transition-all duration-300 shadow-lg">
+        <div className="w-64 bg-white flex flex-col transition-all duration-300 shadow-lg animate-slideInUp" style={{ animationDelay: '0.3s' }}>
           {/* Chat History */}
-          <div className="flex-1 p-4">
+          <div className="h-[calc(100vh-280px)] p-4">
             <h3 className="font-medium text-sm mb-4 text-black">Chat History</h3>
             <div className="space-y-2">
-              {chats.map((chat) => (
+              {chats.map((chat, index) => (
                 <div
                   key={chat.id}
                   onClick={() => handleChatSelect(chat)}
-                  className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md active:scale-95 ${
+                  className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md active:scale-95 animate-slideInUp ${
                     activeChat.id === chat.id
                       ? 'bg-gray-600 text-white shadow-lg scale-[1.02]'
                       : 'hover:bg-gray-300 text-black'
                   }`}
+                  style={{ animationDelay: `${0.4 + index * 0.1}s` }}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{chat.name}</span>
@@ -285,7 +287,7 @@ export default function Analyse() {
           </div>
           
           {/* New Chat Button */}
-          <div className="p-4 border-t border-gray-300">
+          <div className="p-4">
             <button
               onClick={handleNewChat}
               className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
@@ -299,18 +301,18 @@ export default function Analyse() {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col bg-white">
+        <main className="flex-1 flex flex-col bg-white animate-slideInUp" style={{ animationDelay: '0.4s' }}>
           {/* Chat Name Header */}
-          <div className="p-4 border-b border-gray-300 bg-gray-200 transition-all duration-300 shadow-sm">
+          <div className="p-4 bg-white transition-all duration-300 animate-slideInUp" style={{ animationDelay: '0.5s' }}>
             <div className="flex items-center justify-between">
-                              <div>
-                  <h2 className="text-xl font-semibold text-black">{activeChat.name}</h2>
-                </div>
+              <div>
+                <h2 className="text-xl font-semibold text-black">{activeChat.name}</h2>
+              </div>
             </div>
           </div>
           
           {/* Chat Area */}
-          <div className="flex-1 p-8 overflow-y-auto">
+          <div className="h-[calc(100vh-280px)] p-8 overflow-y-auto">
             <div className="max-w-4xl mx-auto">
               {activeChat.messages.length === 0 ? (
                 <div className="text-center py-12 animate-fadeIn">
@@ -363,13 +365,13 @@ export default function Analyse() {
           {/* Input Area */}
           <div className="p-8 pt-0">
             <div className="relative max-w-4xl mx-auto">
-              <div className="relative bg-gray-200 rounded-2xl border border-gray-300 transition-all duration-300 focus-within:border-gray-500 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md">
+              <div className="relative bg-gray-200 rounded-2xl transition-all duration-300 focus-within:border-gray-500 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md">
                 <textarea
                   ref={textareaRef}
                   value={message}
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
-                  className="w-full min-h-12 max-h-32 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-gray-600 text-black transition-all duration-200"
+                  className="w-full h-12 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-gray-600 text-black transition-all duration-200 overflow-hidden"
                   placeholder="Ask your AI data analyst a question about your data"
                   rows="1"
                 />

@@ -103,9 +103,9 @@ export default function Upload() {
   };
 
   return (
-    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 transition-colors duration-300`}>
+    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 transition-colors duration-300 overflow-hidden`}>
       {/* Navigation Bar */}
-      <nav className="flex justify-center pt-8 pb-4">
+      <nav className="flex justify-center pt-8 pb-4 animate-slideInUp">
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
             <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
@@ -126,7 +126,7 @@ export default function Upload() {
       </nav>
 
       {/* Page Header */}
-      <div className="px-8 py-4">
+      <div className="px-8 py-4 animate-slideInUp" style={{ animationDelay: '0.1s' }}>
         <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Upload Your Data</h1>
         <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
           Upload your datasets to start analyzing and discovering insights
@@ -134,18 +134,19 @@ export default function Upload() {
       </div>
 
       {/* Main Content */}
-      <main className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-8">
+      <main className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-8 animate-slideInUp" style={{ animationDelay: '0.2s' }}>
         <div className="max-w-2xl w-full">
           
           {/* File Upload Area */}
           <div
-            className={`border-2 rounded-2xl p-12 text-center transition-all duration-300 transform hover:scale-[1.02] ${
+            className={`border-2 rounded-2xl p-12 text-center transition-all duration-300 transform hover:scale-[1.02] animate-slideInUp ${
               selectedFile
                 ? 'border-solid border-green-500 bg-green-50 scale-[1.02] shadow-lg'
                 : isDragging
                 ? 'border-dashed border-gray-500 bg-gray-200 scale-[1.05] shadow-2xl animate-pulse'
                 : 'border-dashed border-gray-300 hover:border-gray-400 bg-gray-200 shadow-md hover:shadow-xl'
             }`}
+            style={{ animationDelay: '0.3s' }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -235,7 +236,7 @@ export default function Upload() {
           </div>
 
           {/* Supported file types */}
-          <div className="mt-4 text-center">
+          <div className="mt-4 text-center animate-slideInUp" style={{ animationDelay: '0.4s' }}>
             <p className="text-sm text-gray-600 transition-opacity duration-200">
               Supported formats: CSV, Excel (.xlsx, .xls), JSON, TXT
             </p>

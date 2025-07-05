@@ -109,9 +109,9 @@ export default function View() {
   });
 
   return (
-    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 transition-colors duration-300`}>
+    <div className={`${geistSans.className} ${geistMono.className} min-h-screen font-[family-name:var(--font-geist-sans)] bg-white text-gray-900 transition-colors duration-300 overflow-hidden`}>
       {/* Navigation Bar */}
-      <nav className="flex justify-center pt-8 pb-4">
+      <nav className="flex justify-center pt-8 pb-4 animate-slideInUp">
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
             <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
@@ -132,15 +132,15 @@ export default function View() {
       </nav>
 
       {/* Page Header */}
-      <div className="px-8 py-4">
+      <div className="px-8 py-4 animate-slideInUp" style={{ animationDelay: '0.1s' }}>
         <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">View Your Data</h1>
-        <p className="text-center text-gray-600 dark:text-gray-400 mt-2 transition-opacity duration-200">
+        <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
           Manage and explore your uploaded datasets
         </p>
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-8">
+      <main className="max-w-7xl mx-auto px-8 py-8 animate-slideInUp" style={{ animationDelay: '0.2s' }}>
         
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -208,7 +208,7 @@ export default function View() {
         </div>
 
         {/* Search and Filter */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-6 animate-slideInUp" style={{ animationDelay: '0.6s' }}>
           <div className="flex-1">
             <div className="relative group">
               <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-600 transition-all duration-200 group-focus-within:text-gray-800 group-focus-within:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,7 +302,7 @@ export default function View() {
                           Delete
                         </button>
                       </div>
-                    </td>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -352,6 +352,7 @@ export default function View() {
             opacity: 1;
             transform: scale(1);
           }
+
         }
 
         .animate-fadeIn {
