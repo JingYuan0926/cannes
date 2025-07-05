@@ -244,6 +244,68 @@ export default function AnalyzePage() {
     );
   };
 
+  // Render TEE attestation information
+  const renderTEEAttestation = (mlData) => {
+    if (!mlData || !mlData.results || !mlData.results.tee_attestation) return null;
+
+    const attestation = mlData.results.tee_attestation;
+    
+    return (
+      <div className="tee-attestation-section">
+        <h3>🔐 TEE Attestation</h3>
+        <div className="attestation-details">
+          <div className="attestation-status">
+            {attestation.tee_attested ? (
+              <div className="attestation-success">
+                <span className="status-icon">✅</span>
+                <strong>TEE Verified</strong>
+                <p>This analysis was executed and signed in a Trusted Execution Environment</p>
+              </div>
+            ) : (
+              <div className="attestation-failed">
+                <span className="status-icon">⚠️</span>
+                <strong>TEE Unavailable</strong>
+                <p>Analysis completed but TEE attestation failed: {attestation.error}</p>
+              </div>
+            )}
+          </div>
+          
+          {attestation.tee_attested && (
+            <div className="attestation-metadata">
+              <div className="metadata-grid">
+                <div className="metadata-item">
+                  <label>ROFL App ID:</label>
+                  <code className="app-id">{attestation.rofl_app_id}</code>
+                </div>
+                <div className="metadata-item">
+                  <label>Results Hash:</label>
+                  <code className="hash">{attestation.results_hash.substring(0, 16)}...</code>
+                </div>
+                <div className="metadata-item">
+                  <label>Signature Algorithm:</label>
+                  <span>{attestation.signature_algorithm}</span>
+                </div>
+                <div className="metadata-item">
+                  <label>Timestamp:</label>
+                  <span>{new Date(attestation.timestamp).toLocaleString()}</span>
+                </div>
+              </div>
+              
+              <div className="verification-info">
+                <h4>🔍 Verification Details</h4>
+                <p>
+                  <strong>Integrity:</strong> The results hash ensures data hasn't been tampered with<br/>
+                  <strong>Authenticity:</strong> The signing key proves this came from the TEE<br/>
+                  <strong>Non-repudiation:</strong> The ROFL app ID provides cryptographic proof of origin
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Render ML analysis results (simplified)
   const renderMLResults = (mlData) => {
     if (!mlData) return null;
@@ -254,6 +316,9 @@ export default function AnalyzePage() {
     return (
       <div className="ml-results">
         <h2>🤖 Machine Learning Analysis</h2>
+        
+        {/* TEE Attestation Section */}
+        {renderTEEAttestation(mlData)}
         
         {analyses && analyses.length > 0 ? (
           <div className="analyses">
@@ -711,6 +776,69 @@ export default function AnalyzePage() {
           border-radius: 8px;
           color: #1565c0;
           font-style: italic;
+        }
+
+        .tee-attestation-section {
+          margin-bottom: 20px;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          background: white;
+        }
+
+        .attestation-details {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .attestation-status {
+          flex: 1;
+        }
+
+        .attestation-success {
+          color: #28a745;
+        }
+
+        .attestation-failed {
+          color: #f44336;
+        }
+
+        .status-icon {
+          font-size: 24px;
+          margin-right: 10px;
+        }
+
+        .attestation-metadata {
+          flex: 1;
+          margin-left: 20px;
+        }
+
+        .metadata-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }
+
+        .metadata-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .app-id, .hash {
+          background: #f8f9fa;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-family: monospace;
+        }
+
+        .verification-info {
+          margin-top: 20px;
+          padding: 10px;
+          background: #f8f9fa;
+          border: 1px solid #ddd;
+          border-radius: 8px;
         }
       `}</style>
     </div>
