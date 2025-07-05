@@ -315,7 +315,7 @@ export default function Upload() {
                 </div>
                 <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
                   <p className="text-sm text-black">Type</p>
-                  <p className="font-medium text-black">{selectedFiles[0].type || 'Unknown'}</p>
+                  <p className="font-medium text-black truncate overflow-hidden whitespace-nowrap max-w-full" style={{display: 'block'}}>{selectedFiles[0].type || 'Unknown'}</p>
                 </div>
               </div>
             </motion.div>
