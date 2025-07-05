@@ -148,13 +148,6 @@ export default async function handler(req, res) {
             ;Overloading users with technical terms or irrelevant numeric dumps
             ;Mentioning any raw data, source files, or external systems.
             Your tone is professional, confident, and trustworthy — always delivering high-value insights with respect for data privacy.
-             When formatting your answers, always:
-            - Use proper bullet points or sub-bullets for multi-part explanations.
-            - Apply clear section headings with consistent styling (e.g., bold or colored).
-            - Limit bolding to actual headers or highlight keywords only.
-            - Add spacing between sections to reduce blockiness.
-            - Optionally use icons or shaded boxes to separate different types of content (e.g., data points vs insights).
-            - Indicate headings that should stand out (e.g., by using larger font or special Markdown).
             Here is the data you should use to answer my questions:\n\n${sampleData}`
       }
     ];

@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 
 export default function Chat() {
   const [userInput, setUserInput] = useState('');
@@ -9,7 +7,6 @@ export default function Chat() {
   const [sampleDataReady, setSampleDataReady] = useState(false);
   const [conversation, setConversation] = useState([]); // [{role: 'user'|'assistant', content: string}]
   const [sessionId, setSessionId] = useState(''); // Store sessionId for follow-up requests
-  const [csvFile, setCsvFile] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,37 +73,6 @@ export default function Chat() {
     }
   };
 
-  const handleCsvChange = (e) => {
-    const file = e.target.files[0];
-    setCsvFile(file);
-  };
-
-  const handleCsvUpload = async () => {
-    if (!csvFile) {
-      setConversation((prev) => [...prev, { role: 'assistant', content: 'Please choose a file first.' }]);
-      return;
-    }
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', csvFile);
-      
-      const res = await fetch('/api/chatbot', {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res.ok) throw new Error(`Error: ${res.status}`);
-      const result = await res.json();
-      setConversation((prev) => [...prev, { role: 'assistant', content: result.message || 'Analysis Finished!' }]);
-      setCsvFile(null);
-    } catch (err) {
-      console.error('Error:', err);
-      setConversation((prev) => [...prev, { role: 'assistant', content: 'Something went wrong.' }]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', color: '#ddd', backgroundColor: '#121212' }}>
       <form onSubmit={handleSubmit} style={{ marginBottom: '20px' }}>
@@ -114,7 +80,7 @@ export default function Chat() {
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           rows="4"
-          placeholder="Ask a data question or upload sample data..."
+          placeholder={sampleDataReady ? "Ask a data question..." : "Ask a data question or upload sample data..."}
           style={{
             width: '100%',
             padding: '10px',
@@ -125,101 +91,39 @@ export default function Chat() {
             resize: 'vertical',
           }}
         />
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: '10px', gap: '16px' }}>
-          <label htmlFor="csv-upload" style={{
-            backgroundColor: '#222',
+        <input
+          type="file"
+          accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          multiple
+          onChange={e => setFiles(Array.from(e.target.files))}
+          style={{ marginTop: '10px', marginBottom: '10px', color: '#eee' }}
+          disabled={sampleDataReady}
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            marginTop: '10px',
+            padding: '10px 20px',
+            backgroundColor: '#3366cc',
             color: '#fff',
-            padding: '8px 16px',
+            border: 'none',
             borderRadius: '6px',
-            cursor: 'pointer',
-            border: '1px solid #444',
-            fontWeight: 'bold',
-          }}>
-            Choose File
-            <input
-              id="csv-upload"
-              type="file"
-              accept=".csv"
-              onChange={handleCsvChange}
-              style={{ display: 'none' }}
-            />
-          </label>
-          <span style={{ color: '#ccc', fontSize: '14px' }}>{csvFile ? csvFile.name : 'No file chosen'}</span>
-          <button
-            type="button"
-            onClick={handleCsvUpload}
-            disabled={loading}
-            style={{
-              padding: '10px 24px',
-              backgroundColor: '#3366cc',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontWeight: 'bold',
-            }}
-          >
-            {loading ? 'Uploading...' : 'Run Analysis'}
-          </button>
-        </div>
+            cursor: loading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {loading ? 'Analyzing...' : sampleDataReady ? 'Send' : 'Run Analysis'}
+        </button>
       </form>
       {conversation.length > 0 && (
         <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' }}>
           {conversation.map((msg, idx) => (
             <div key={idx} style={{ marginBottom: '10px' }}>
-              <b style={{ color: msg.role === 'user' ? '#6cf' : '#9f6' }}>{msg.role === 'user' ? 'You' : 'AI'}:</b>{' '}
-              {msg.role === 'assistant'
-                ? (
-                    <div className="chat-markdown-response">
-                      <div className="chat-markdown">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {msg.content}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  )
-                : msg.content}
+              <b style={{ color: msg.role === 'user' ? '#6cf' : '#9f6' }}>{msg.role === 'user' ? 'You' : 'AI'}:</b> {msg.content}
             </div>
           ))}
         </div>
       )}
-      <style jsx>{`
-        .chat-markdown-response {
-          margin-top: 8px;
-          margin-bottom: 8px;
-          white-space: normal;
-        }
-        .chat-markdown h1 {
-          font-size: 2rem;
-          font-weight: bold;
-          text-decoration: underline;
-          margin: 1.2em 0 0.6em 0;
-          color: #7ecfff;
-        }
-        .chat-markdown h2 {
-          font-size: 1.5rem;
-          font-weight: bold;
-          text-decoration: underline;
-          margin: 1em 0 0.5em 0;
-          color: #7ecfff;
-        }
-        .chat-markdown h3 {
-          font-size: 1.2rem;
-          font-weight: bold;
-          margin: 0.8em 0 0.4em 0;
-          color: #7ecfff;
-        }
-        .chat-markdown ul {
-          margin: 0.5em 0 0.5em 1.5em;
-          padding-left: 1.2em;
-        }
-        .chat-markdown li {
-          margin-bottom: 0.3em;
-        }
-        .chat-markdown p {
-          margin: 0.5em 0;
-        }
-      `}</style>
     </div>
   );
 }
