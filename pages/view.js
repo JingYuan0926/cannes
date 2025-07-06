@@ -245,6 +245,11 @@ export default function View() {
               View
             </div>
           </Link>
+          <Link href="/subscribe">
+            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+              Subscribe
+            </div>
+          </Link>
         </div>
         <div className="absolute right-8 top-8">
           <WalletConnect />
