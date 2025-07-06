@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
 import { readContentWithType } from "../utils/readFromWalrus";
+import WalletConnect from '../components/WalletConnect';
 
 export default function Analyse() {
   const [chats, setChats] = useState([]);
@@ -267,8 +268,6 @@ export default function Analyse() {
     }
   };
 
-
-
   const handleSendMessage = () => {
     sendMessage(message);
     setMessage("");
@@ -398,7 +397,7 @@ export default function Analyse() {
   };
 
   return (
-    <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex">
+    <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
       <style jsx>{`
         .react-markdown a {
           color: #4fc3f7 !important;
@@ -409,148 +408,170 @@ export default function Analyse() {
           color: #81d4fa !important;
         }
       `}</style>
-      
-             {/* Full Height Chat History Sidebar */}
-       <AnimatePresence>
-         {sidebarVisible && (
-           <motion.div 
-             variants={containerVariants}
-             initial={{ opacity: 0, x: -264 }}
-             animate={{ opacity: 1, x: 0 }}
-             exit={{ opacity: 0, x: -264 }}
-             transition={{ duration: 0.3, ease: "easeOut" }}
-             className="w-64 bg-white flex flex-col transition-all duration-300 shadow-lg h-full"
-           >
-        {/* Chat History */}
-        <div className="flex-1 min-h-0 flex flex-col">
-          <h3 className="font-medium text-sm p-4 pb-2 text-black">Chat History</h3>
-          <div className="flex-1 px-4 pb-4 overflow-y-auto">
-            <div className="space-y-2">
-              {chats.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-gray-500 mb-4">No chats yet</p>
-                  <p className="text-xs text-gray-400">Start a conversation to create your first chat</p>
-                </div>
-              ) : (
-                chats.map((chat, index) => (
-                  <motion.div
-                    key={chat.id}
-                    variants={itemVariants}
-                    onClick={() => handleChatSelect(chat)}
-                    className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.01] hover:shadow-md active:scale-95 ${
-                      activeChat?.id === chat.id
-                        ? 'bg-gray-600 text-white shadow-lg scale-[1.01]'
-                        : 'hover:bg-gray-300 text-black'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium truncate flex-1 mr-2">{chat.name}</span>
-                      {chat.messages.length > 0 && (
-                        <span className={`text-xs opacity-75 px-2 py-1 rounded-full transition-all duration-200 flex-shrink-0 ${
-                          activeChat?.id === chat.id ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-400 hover:bg-gray-500'
-                        }`}>
-                          {chat.messages.length}
-                        </span>
-                      )}
-                    </div>
-                    {chat.messages.length > 0 && (
-                      <p className="text-xs opacity-75 mt-1 truncate">
-                        {chat.messages[chat.messages.length - 1].text}
-                      </p>
-                    )}
-                  </motion.div>
-                ))
-              )}
+      {/* Navigation Bar */}
+      <motion.nav 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="relative flex justify-center pt-8 pb-4 px-8 flex-shrink-0"
+      >
+        <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
+          <Link href="/analyse">
+            <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
+              Analyse
             </div>
-          </div>
+          </Link>
+          <Link href="/upload">
+            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+              Upload
+            </div>
+          </Link>
+          <Link href="/view">
+            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+              View
+            </div>
+          </Link>
+          <Link href="/subscribe">
+            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+              Subscribe
+            </div>
+          </Link>
         </div>
-        
-        {/* New Chat Button */}
-        <motion.div 
-          variants={itemVariants}
-          className="p-4 flex-shrink-0"
-        >
-          <button
-            onClick={handleNewChat}
-            className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-95 shadow-md hover:shadow-lg"
-          >
-            <svg className="w-4 h-4 transform transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Chat
-          </button>
-                 </motion.div>
-       </motion.div>
-           )}
-       </AnimatePresence>
+        <div className="absolute right-8 top-8">
+          <WalletConnect />
+        </div>
+      </motion.nav>
 
-       {/* Right Side Content */}
-      <div className="flex-1 flex flex-col min-h-0">
-                 {/* Navigation Bar */}
-         <motion.nav 
-           initial={{ opacity: 0, y: -20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ duration: 0.4, ease: "easeOut" }}
-           className="flex justify-between items-center pt-8 pb-4 px-8 flex-shrink-0"
-         >
-           {/* Sidebar Toggle Button */}
-           <button
-             onClick={toggleSidebar}
-             className="p-3 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center"
-             title={sidebarVisible ? "Hide Chat History" : "Show Chat History"}
-           >
-             {sidebarVisible ? (
-               <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-               </svg>
-             ) : (
-               <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-               </svg>
-             )}
-           </button>
-           
-           <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
-            <Link href="/analyse">
-              <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
-                Analyse
-              </div>
-            </Link>
-            <Link href="/upload">
-              <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
-                Upload
-              </div>
-            </Link>
-            <Link href="/view">
-              <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
-                View
-              </div>
-            </Link>
-          </div>
-          
-          {/* Spacer for centering */}
-          <div className="w-9 h-9"></div>
-        </motion.nav>
+      {/* Page Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+        className="px-8 py-4 flex-shrink-0"
+      >
+        <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Analyse Your Data</h1>
+        <p className="text-center text-gray-600 mt-2">Chat with our AI to analyze and understand your data better</p>
+      </motion.div>
 
-        {/* Page Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
-          className="px-8 py-4 flex-shrink-0"
-        >
-          <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Analyse Your Data</h1>
-          <p className="text-center text-gray-600 mt-2">Chat with our AI to analyze and understand your data better</p>
-        </motion.div>
+      {/* Main Layout */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+        className="flex flex-1 min-h-0 relative"
+      >
+        {/* Full Height Chat History Sidebar */}
+        <AnimatePresence>
+          {sidebarVisible && (
+            <motion.div 
+              variants={containerVariants}
+              initial={{ opacity: 0, x: -264 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -264 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="absolute left-0 top-0 bottom-0 w-64 bg-white flex flex-col transition-all duration-300 shadow-xl border-r-2 border-gray-300 z-20"
+            >
+              {/* Sidebar Header with Close Button */}
+              <div className="flex items-center justify-between p-4 pb-2 border-b border-gray-200">
+                <h3 className="font-medium text-sm text-black">Chat History</h3>
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center"
+                  title="Hide Chat History"
+                >
+                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Chat History */}
+              <div className="flex-1 min-h-0 flex flex-col">
+                <div className="flex-1 px-4 pb-4 overflow-y-auto">
+                  <div className="space-y-2">
+                    {chats.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-gray-500 mb-4">No chats yet</p>
+                        <p className="text-xs text-gray-400">Start a conversation to create your first chat</p>
+                      </div>
+                    ) : (
+                      chats.map((chat, index) => (
+                        <motion.div
+                          key={chat.id}
+                          variants={itemVariants}
+                          onClick={() => handleChatSelect(chat)}
+                          className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.01] hover:shadow-md active:scale-95 ${
+                            activeChat?.id === chat.id
+                              ? 'bg-gray-600 text-white shadow-lg scale-[1.01]'
+                              : 'hover:bg-gray-300 text-black'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium truncate flex-1 mr-2">{chat.name}</span>
+                            {chat.messages.length > 0 && (
+                              <span className={`text-xs opacity-75 px-2 py-1 rounded-full transition-all duration-200 flex-shrink-0 ${
+                                activeChat?.id === chat.id ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-400 hover:bg-gray-500'
+                              }`}>
+                                {chat.messages.length}
+                              </span>
+                            )}
+                          </div>
+                          {chat.messages.length > 0 && (
+                            <p className="text-xs opacity-75 mt-1 truncate">
+                              {chat.messages[chat.messages.length - 1].text}
+                            </p>
+                          )}
+                        </motion.div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* New Chat Button */}
+              <motion.div 
+                variants={itemVariants}
+                className="p-4 flex-shrink-0"
+              >
+                <button
+                  onClick={handleNewChat}
+                  className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-95 shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-4 h-4 transform transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  New Chat
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Content */}
         <motion.main 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 }}
-          className="flex-1 flex flex-col bg-white min-h-0"
+          className="flex-1 flex flex-col bg-white min-h-0 w-full"
         >
-
+          {/* Sidebar Toggle Button */}
+          <div className="p-4 flex justify-start">
+            <button
+              onClick={toggleSidebar}
+              className="p-3 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center z-10"
+              title={sidebarVisible ? "Hide Chat History" : "Show Chat History"}
+            >
+              {sidebarVisible ? (
+                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              )}
+            </button>
+          </div>
           
           {/* Chat Area */}
           <div className="flex-1 p-8 overflow-y-auto min-h-0">
@@ -562,7 +583,6 @@ export default function Analyse() {
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="text-center py-12"
                 >
-
                   <h3 className="text-lg font-medium mb-2 text-black mt-4">Start Your Analysis</h3>
                   <p className="text-gray-600 mb-4">
                     Ask me anything about your data and I'll help you discover insights.
@@ -667,7 +687,7 @@ export default function Analyse() {
                     disabled={!message.trim() || activeFiles.length === 0}
                     className="w-8 h-8 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
                   >
-                    <svg className="w-4 h-4Removed  transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
                     </svg>
                   </button>
@@ -681,7 +701,7 @@ export default function Analyse() {
             </div>
           </motion.div>
         </motion.main>
-      </div>
+      </motion.div>
     </div>
   );
 }
