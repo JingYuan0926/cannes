@@ -166,7 +166,10 @@ Here's a brief overview of important directories in our repository:
 ## Sponsor Integration & Technical Contributions
 
 # Walrus 
+https://walruscan.com/testnet/blob/-GiYJQxw-QW2_XhGc0NFcB6OoKdxWUf8neI_fEVrn5U
 
+# Artificial Superintelligence Alliance
+https://agentverse.ai/agents/details/agent1qg869zt362lj4e60n5z6mvkmjmztnd2vu6k8ud3ee4fl4rrwea7ucqvhrqh/profile
 
 ---
 
