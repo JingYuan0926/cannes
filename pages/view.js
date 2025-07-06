@@ -6,6 +6,7 @@ import WalletConnect from '../components/WalletConnect';
 
 export default function View() {
   const [files, setFiles] = useState([]);
+  const [analysisReports, setAnalysisReports] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -15,6 +16,7 @@ export default function View() {
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [contentError, setContentError] = useState('');
   const [deleteConfirmFile, setDeleteConfirmFile] = useState(null);
+  const [deleteConfirmReport, setDeleteConfirmReport] = useState(null);
   const dropdownRef = useRef(null);
 
   const filterOptions = [
@@ -25,7 +27,7 @@ export default function View() {
     { value: "not_analyzed", label: "Not Analyzed" }
   ];
 
-  // Load files from localStorage on mount
+  // Load files and analysis reports from localStorage on mount
   useEffect(() => {
     const loadFiles = () => {
       try {
@@ -47,12 +49,24 @@ export default function View() {
         setFiles([]);
       }
     };
+
+    const loadAnalysisReports = () => {
+      try {
+        const storedReports = JSON.parse(localStorage.getItem('analysisReports') || '[]');
+        setAnalysisReports(storedReports);
+      } catch (error) {
+        console.error('Failed to load analysis reports from localStorage:', error);
+        setAnalysisReports([]);
+      }
+    };
     
     loadFiles();
+    loadAnalysisReports();
     
     // Listen for storage changes (when files are uploaded)
     const handleStorageChange = () => {
       loadFiles();
+      loadAnalysisReports();
     };
     
     window.addEventListener('storage', handleStorageChange);
@@ -163,6 +177,24 @@ export default function View() {
 
   const cancelDeleteFile = () => {
     setDeleteConfirmFile(null);
+  };
+
+  const handleDeleteReport = (id) => {
+    const reportToDelete = analysisReports.find(report => report.id === id);
+    setDeleteConfirmReport(reportToDelete);
+  };
+
+  const confirmDeleteReport = () => {
+    if (deleteConfirmReport) {
+      const updatedReports = analysisReports.filter(report => report.id !== deleteConfirmReport.id);
+      setAnalysisReports(updatedReports);
+      localStorage.setItem('analysisReports', JSON.stringify(updatedReports));
+      setDeleteConfirmReport(null);
+    }
+  };
+
+  const cancelDeleteReport = () => {
+    setDeleteConfirmReport(null);
   };
 
   const handleDownloadFile = async (file) => {
@@ -314,9 +346,9 @@ export default function View() {
           >
             <div>
               <h3 className="text-2xl font-bold text-blue-600">
-                {files.filter(file => file.hasAnalysis).length}
+                {analysisReports.length}
               </h3>
-              <p className="text-black text-sm">Analyzed Files</p>
+              <p className="text-black text-sm">Analysis Reports</p>
             </div>
           </motion.div>
           
@@ -552,7 +584,7 @@ export default function View() {
           <div className="p-6 border-b border-gray-300 bg-gray-300">
             <h2 className="text-xl font-semibold text-black flex items-center gap-2">
               📊 Analysis Reports
-              <span className="text-sm font-normal text-gray-600">({files.filter(file => file.hasAnalysis).length} reports)</span>
+              <span className="text-sm font-normal text-gray-600">({analysisReports.length} reports)</span>
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -563,13 +595,14 @@ export default function View() {
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-1/4">Analysis Goal</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Analyzed Date</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Pipeline Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-32">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-300">
-                {files.filter(file => file.hasAnalysis).map((file, index) => (
+                {analysisReports.map((report, index) => (
                   <motion.tr 
-                    key={`analysis-${file.id}`}
+                    key={`analysis-${report.id}`}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -577,58 +610,83 @@ export default function View() {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-black group-hover:text-gray-800 transition-colors duration-200">
-                        {file.name}
+                        {report.fileName}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-black group-hover:text-gray-800 transition-colors duration-200 max-w-xs truncate">
-                        {file.analysisGoal || 'No goal specified'}
+                        {report.analysisGoal || 'No goal specified'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-black group-hover:text-gray-800 transition-colors duration-200">
-                      {file.lastAnalyzed ? new Date(file.lastAnalyzed).toLocaleDateString('en-GB', {
+                      {new Date(report.timestamp).toLocaleDateString('en-GB', {
                         day: '2-digit',
                         month: '2-digit', 
                         year: 'numeric'
-                      }) : 'Unknown'}
+                      })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col space-y-1">
-                        {file.analysisResults && (
+                        {report.analysisResults && (
                           <>
                             <div className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${file.analysisResults.etl ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <div className={`w-2 h-2 rounded-full ${report.analysisResults.etl ? 'bg-green-500' : 'bg-red-500'}`}></div>
                               <span className="text-xs text-gray-600">ETL</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${file.analysisResults.eda ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <div className={`w-2 h-2 rounded-full ${report.analysisResults.eda ? 'bg-green-500' : 'bg-red-500'}`}></div>
                               <span className="text-xs text-gray-600">EDA</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${file.analysisResults.ml ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <div className={`w-2 h-2 rounded-full ${report.analysisResults.ml ? 'bg-green-500' : 'bg-red-500'}`}></div>
                               <span className="text-xs text-gray-600">ML</span>
                             </div>
                           </>
                         )}
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                          report.status === 'completed'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-md'
+                            : report.status === 'failed'
+                            ? 'bg-red-100 text-red-800 hover:bg-red-200 hover:shadow-md'
+                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:shadow-md'
+                        }`}
+                      >
+                        {report.status || 'Unknown'}
+                      </button>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => handleViewFile(file)}
+                          onClick={() => {
+                            // Create a mock file object for viewing
+                            const mockFile = {
+                              id: report.id,
+                              name: report.fileName,
+                              blobId: report.fileBlobId,
+                              hasAnalysis: true,
+                              analysisGoal: report.analysisGoal,
+                              analysisResults: report.analysisResults,
+                              lastAnalyzed: report.timestamp
+                            };
+                            handleViewFile(mockFile);
+                          }}
                           className="text-blue-600 hover:text-blue-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
                         >
                           View Report
                         </button>
                         <button
                           onClick={() => {
-                            if (file.analysisResults) {
-                              const dataStr = JSON.stringify(file.analysisResults, null, 2);
+                            if (report.analysisResults) {
+                              const dataStr = JSON.stringify(report.analysisResults, null, 2);
                               const dataBlob = new Blob([dataStr], {type: 'application/json'});
                               const url = URL.createObjectURL(dataBlob);
                               const link = document.createElement('a');
                               link.href = url;
-                              link.download = `analysis-${file.name.split('.')[0]}-${new Date().toISOString().split('T')[0]}.json`;
+                              link.download = `analysis-${report.fileName.split('.')[0]}-${new Date().toISOString().split('T')[0]}.json`;
                               link.click();
                               URL.revokeObjectURL(url);
                             }
@@ -636,6 +694,12 @@ export default function View() {
                           className="text-green-600 hover:text-green-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
                         >
                           Export
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReport(report.id)}
+                          className="text-red-600 hover:text-red-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>
@@ -645,7 +709,7 @@ export default function View() {
             </table>
           </div>
           
-          {files.filter(file => file.hasAnalysis).length === 0 && (
+          {analysisReports.length === 0 && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -992,6 +1056,60 @@ export default function View() {
                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                   >
                     Delete
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Report Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmReport && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={cancelDeleteReport}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-lg max-w-md w-full overflow-hidden shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-lg font-semibold text-black">Delete Analysis Report</h3>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 bg-white">
+                <p className="text-gray-700 mb-4">
+                  Are you sure you want to delete the analysis report for <strong>{deleteConfirmReport.fileName}</strong>?
+                </p>
+                <p className="text-sm text-gray-600">
+                  This will permanently remove the analysis report and cannot be undone.
+                </p>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-gray-200 bg-gray-50">
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={cancelDeleteReport}
+                    className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteReport}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                  >
+                    Delete Report
                   </button>
                 </div>
               </div>

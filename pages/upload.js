@@ -260,6 +260,8 @@ export default function Upload() {
     setAnalysisError('');
     
     let completed = 0;
+    let lastFileMetadata = null;
+    
     try {
       // First upload the file
       for (const file of selectedFiles) {
@@ -300,6 +302,7 @@ export default function Upload() {
         localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
         
         setUploadedBlobId(result.blobId);
+        lastFileMetadata = fileMetadata; // Store reference for analysis
         completed++;
       }
       
@@ -307,14 +310,82 @@ export default function Upload() {
       setIsUploading(false);
       setUploadProgress(0);
       
-      // Now start the analysis
-      await handleAnalyzeData();
+      // Now start the analysis with the file data
+      if (lastFileMetadata) {
+        await handleAnalyzeDataWithFile(lastFileMetadata);
+      }
       
     } catch (error) {
       console.error('Upload failed:', error);
       setUploadError(error.message || 'Upload failed. Please try again.');
       setIsUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  // Handle analysis with file data passed directly
+  const handleAnalyzeDataWithFile = async (fileMetadata) => {
+    if (!analysisGoal.trim()) {
+      setAnalysisError('Please enter an analysis goal');
+      return;
+    }
+
+    setShowAnalysisModal(true);
+    setIsAnalyzing(true);
+    setAnalysisError('');
+    setAnalysisResults(null);
+
+    try {
+      // For demo purposes, we'll create sample data if no analysis data exists
+      // In a real implementation, you'd read the actual file content from Walrus
+      const analysisData = fileMetadata.analysisData || [
+        { name: 'Sample Data', value: 100, category: 'A' },
+        { name: 'Demo Entry', value: 200, category: 'B' }
+      ];
+
+      const results = await runAnalysisPipeline({ analysisData }, analysisGoal);
+      
+      // Store analysis results with the file
+      const updatedFile = {
+        ...fileMetadata,
+        analysisResults: results,
+        analysisGoal: analysisGoal,
+        hasAnalysis: true,
+        lastAnalyzed: new Date().toISOString()
+      };
+
+      // Update localStorage with analysis results
+      const storedFiles = JSON.parse(localStorage.getItem('walrusFiles') || '[]');
+      const updatedFiles = storedFiles.map(file => 
+        file.blobId === fileMetadata.blobId ? updatedFile : file
+      );
+
+      localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
+      
+      // Also store analysis report separately
+      const analysisReport = {
+        id: Date.now() + Math.random(),
+        fileName: fileMetadata.name,
+        fileBlobId: fileMetadata.blobId,
+        analysisGoal: analysisGoal,
+        analysisResults: results,
+        timestamp: new Date().toISOString(),
+        status: 'completed'
+      };
+
+      const existingReports = JSON.parse(localStorage.getItem('analysisReports') || '[]');
+      const updatedReports = [analysisReport, ...existingReports];
+      localStorage.setItem('analysisReports', JSON.stringify(updatedReports));
+      
+      setAnalysisResults(results);
+      setAnalysisStep('Analysis complete!');
+      
+      // Keep modal open to show results instead of auto-closing
+      setIsAnalyzing(false);
+
+    } catch (error) {
+      setAnalysisError(error.message);
+      setIsAnalyzing(false);
     }
   };
 
@@ -339,35 +410,7 @@ export default function Upload() {
         throw new Error('Uploaded file not found');
       }
 
-      // For demo purposes, we'll create sample data if no analysis data exists
-      // In a real implementation, you'd read the actual file content
-      const analysisData = uploadedFile.analysisData || [
-        { name: 'Sample Data', value: 100, category: 'A' },
-        { name: 'Demo Entry', value: 200, category: 'B' }
-      ];
-
-      const results = await runAnalysisPipeline({ analysisData }, analysisGoal);
-      
-      // Store analysis results with the file
-      const updatedFile = {
-        ...uploadedFile,
-        analysisResults: results,
-        analysisGoal: analysisGoal,
-        hasAnalysis: true,
-        lastAnalyzed: new Date().toISOString()
-      };
-
-      const updatedFiles = storedFiles.map(file => 
-        file.blobId === uploadedBlobId ? updatedFile : file
-      );
-
-      localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
-      
-      setAnalysisResults(results);
-      setAnalysisStep('Analysis complete!');
-      
-      // Keep modal open to show results instead of auto-closing
-      setIsAnalyzing(false);
+      await handleAnalyzeDataWithFile(uploadedFile);
 
     } catch (error) {
       setAnalysisError(error.message);
@@ -505,7 +548,7 @@ export default function Upload() {
                       {selectedFiles.map(file => file.name).join(', ')}
                     </p>
                     <p className="text-sm text-black">
-                      Ready to upload
+                      {formatFileSize(selectedFiles[0].size)} • Ready to upload
                     </p>
                   </motion.div>
                 ) : (
@@ -568,31 +611,7 @@ export default function Upload() {
             </div>
           </motion.div>
 
-          {/* File Information */}
-          {selectedFiles.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-6 bg-gray-200 p-6 rounded-2xl border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg"
-            >
-              <h3 className="font-semibold text-lg mb-4 text-black transform transition-all duration-200">File Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
-                  <p className="text-sm text-black">Name</p>
-                  <p className="font-medium text-black truncate">{selectedFiles[0].name}</p>
-                </div>
-                <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
-                  <p className="text-sm text-black">Size</p>
-                  <p className="font-medium text-black">{formatFileSize(selectedFiles[0].size)}</p>
-                </div>
-                <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
-                  <p className="text-sm text-black">Type</p>
-                  <p className="font-medium text-black truncate overflow-hidden whitespace-nowrap max-w-full" style={{display: 'block'}}>{selectedFiles[0].type || 'Unknown'}</p>
-                </div>
-              </div>
-            </motion.div>
-          )}
+
 
           {/* Analysis Goal Input */}
           {selectedFiles.length > 0 && (
@@ -864,23 +883,64 @@ export default function Upload() {
                       )}
 
                       {/* AI Insights */}
-                      {analysisResults.eda?.analysis?.insights && (
+                      {(analysisResults.eda?.analysis?.insights || analysisResults.eda?.insights) && (
                         <div className="space-y-4">
                           <h3 className="text-xl font-semibold text-gray-800 border-b pb-2">🧠 AI Insights</h3>
                           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                             <div className="space-y-3">
-                              {Object.values(analysisResults.eda.analysis.insights.ai_insights || {}).map((category, idx) => (
-                                <div key={idx} className="bg-white p-3 rounded border">
-                                  <h4 className="font-medium text-blue-900 mb-2">Key Findings #{idx + 1}</h4>
-                                  {category.insights && Array.isArray(category.insights) && (
-                                    <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                                      {category.insights.slice(0, 3).map((insight, insightIdx) => (
-                                        <li key={insightIdx}>{typeof insight === 'string' ? insight : JSON.stringify(insight)}</li>
-                                      ))}
-                                    </ul>
-                                  )}
-                                </div>
-                              ))}
+                              {(() => {
+                                const insights = analysisResults.eda?.analysis?.insights || analysisResults.eda?.insights;
+                                
+                                // Handle different insight structures
+                                if (insights?.ai_insights) {
+                                  return Object.values(insights.ai_insights).map((category, idx) => (
+                                    <div key={idx} className="bg-white p-3 rounded border">
+                                      <h4 className="font-medium text-blue-900 mb-2">Key Findings #{idx + 1}</h4>
+                                      {category.insights && Array.isArray(category.insights) && (
+                                        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                          {category.insights.slice(0, 3).map((insight, insightIdx) => (
+                                            <li key={insightIdx}>{typeof insight === 'string' ? insight : JSON.stringify(insight)}</li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </div>
+                                  ));
+                                } else if (insights?.insights && Array.isArray(insights.insights)) {
+                                  return (
+                                    <div className="bg-white p-3 rounded border">
+                                      <h4 className="font-medium text-blue-900 mb-2">Key Findings</h4>
+                                      <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                                        {insights.insights.slice(0, 5).map((insight, insightIdx) => (
+                                          <li key={insightIdx}>{typeof insight === 'string' ? insight : JSON.stringify(insight)}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  );
+                                } else if (typeof insights === 'object' && insights !== null) {
+                                  return Object.entries(insights).map(([key, value], idx) => (
+                                    <div key={idx} className="bg-white p-3 rounded border">
+                                      <h4 className="font-medium text-blue-900 mb-2">{key.replace(/_/g, ' ').toUpperCase()}</h4>
+                                      <div className="text-sm text-gray-700">
+                                        {Array.isArray(value) ? (
+                                          <ul className="list-disc list-inside space-y-1">
+                                            {value.slice(0, 3).map((item, itemIdx) => (
+                                              <li key={itemIdx}>{typeof item === 'string' ? item : JSON.stringify(item)}</li>
+                                            ))}
+                                          </ul>
+                                        ) : (
+                                          <p>{typeof value === 'string' ? value : JSON.stringify(value)}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ));
+                                }
+                                
+                                return (
+                                  <div className="bg-white p-3 rounded border">
+                                    <p className="text-sm text-gray-600">AI insights are being generated...</p>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -892,21 +952,33 @@ export default function Upload() {
                           <h3 className="text-xl font-semibold text-gray-800 border-b pb-2">🤖 Machine Learning Analysis</h3>
                           
                           {/* TEE Attestation */}
-                          {analysisResults.ml.results.tee_attestation && (
+                          {(analysisResults.ml?.results?.tee_attestation || analysisResults.ml?.tee_attestation) && (
                             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                               <h4 className="font-medium text-green-900 mb-2 flex items-center gap-2">
                                 🔐 TEE Attestation
-                                {analysisResults.ml.results.tee_attestation.tee_attested ? (
-                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Verified</span>
-                                ) : (
-                                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Unavailable</span>
-                                )}
+                                {(() => {
+                                  const teeAttestation = analysisResults.ml?.results?.tee_attestation || analysisResults.ml?.tee_attestation;
+                                  const isAttested = teeAttestation?.tee_attested || teeAttestation?.attested || teeAttestation?.verified;
+                                  
+                                  return isAttested ? (
+                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Verified</span>
+                                  ) : (
+                                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Unavailable</span>
+                                  );
+                                })()}
                               </h4>
                               <p className="text-sm text-green-700">
-                                {analysisResults.ml.results.tee_attestation.tee_attested 
-                                  ? "Analysis executed and signed in a Trusted Execution Environment"
-                                  : `TEE attestation failed: ${analysisResults.ml.results.tee_attestation.error}`
-                                }
+                                {(() => {
+                                  const teeAttestation = analysisResults.ml?.results?.tee_attestation || analysisResults.ml?.tee_attestation;
+                                  const isAttested = teeAttestation?.tee_attested || teeAttestation?.attested || teeAttestation?.verified;
+                                  
+                                  if (isAttested) {
+                                    return "Analysis executed and signed in a Trusted Execution Environment";
+                                  } else {
+                                    const error = teeAttestation?.error || teeAttestation?.message || "TEE service not available";
+                                    return `TEE attestation failed: ${error}`;
+                                  }
+                                })()}
                               </p>
                             </div>
                           )}
