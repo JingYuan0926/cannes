@@ -21,7 +21,7 @@ export default function View() {
   const dropdownRef = useRef(null);
 
   const filterOptions = [
-    { value: "all", label: "All Files" },
+    { value: "all", label: "All Items" },
     { value: "active", label: "Active Only" },
     { value: "inactive", label: "Inactive Only" },
     { value: "analyzed", label: "Analyzed Only" },
@@ -185,6 +185,15 @@ export default function View() {
     setDeleteConfirmReport(reportToDelete);
   };
 
+  const toggleReportStatus = (id) => {
+    const updatedReports = analysisReports.map(report => 
+      report.id === id ? { ...report, isActive: !report.isActive } : report
+    );
+    setAnalysisReports(updatedReports);
+    // Update localStorage
+    localStorage.setItem('analysisReports', JSON.stringify(updatedReports));
+  };
+
   const confirmDeleteReport = () => {
     if (deleteConfirmReport) {
       const updatedReports = analysisReports.filter(report => report.id !== deleteConfirmReport.id);
@@ -249,6 +258,16 @@ export default function View() {
                          (filterStatus === "inactive" && !file.isActive) ||
                          (filterStatus === "analyzed" && file.hasAnalysis) ||
                          (filterStatus === "not_analyzed" && !file.hasAnalysis);
+    return matchesSearch && matchesFilter;
+  });
+
+  const filteredReports = analysisReports.filter(report => {
+    const matchesSearch = report.fileName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === "all" || 
+                         (filterStatus === "active" && report.isActive) ||
+                         (filterStatus === "inactive" && !report.isActive) ||
+                         (filterStatus === "analyzed" && true) || // all reports are analyzed
+                         (filterStatus === "not_analyzed" && false); // no reports are not analyzed
     return matchesSearch && matchesFilter;
   });
 
@@ -381,6 +400,14 @@ export default function View() {
                 {analysisReports.length}
               </h3>
               <p className="text-black text-sm">Analysis Reports</p>
+              <div className="mt-2 flex space-x-2 text-xs">
+                <span className="text-green-600">
+                  {analysisReports.filter(report => report.isActive).length} active
+                </span>
+                <span className="text-red-600">
+                  {analysisReports.filter(report => !report.isActive).length} inactive
+                </span>
+              </div>
             </div>
           </motion.div>
           
@@ -616,23 +643,24 @@ export default function View() {
           <div className="p-6 border-b border-gray-300 bg-gray-300">
             <h2 className="text-xl font-semibold text-black flex items-center gap-2">
               📊 Analysis Reports
-              <span className="text-sm font-normal text-gray-600">({analysisReports.length} reports)</span>
+              <span className="text-sm font-normal text-gray-600">({filteredReports.length} reports)</span>
             </h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px]">
+            <table className="w-full min-w-[1000px]">
               <thead className="bg-gray-300 transition-colors duration-300">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-1/4">File Name</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-1/4">Analysis Goal</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-1/5">File Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-1/5">Analysis Goal</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Analyzed Date</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Pipeline Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Completion Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Active Status</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-32">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-300">
-                {analysisReports.map((report, index) => (
+                {filteredReports.map((report, index) => (
                   <motion.tr 
                     key={`analysis-${report.id}`}
                     initial={{ opacity: 0, x: -20 }}
@@ -693,6 +721,18 @@ export default function View() {
                         }`}
                       >
                         {report.status || 'Unknown'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => toggleReportStatus(report.id)}
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                          report.isActive
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-md'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200 hover:shadow-md'
+                        }`}
+                      >
+                        {report.isActive ? 'Active' : 'Inactive'}
                       </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -756,22 +796,28 @@ export default function View() {
             </table>
           </div>
           
-          {analysisReports.length === 0 && (
+          {filteredReports.length === 0 && (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="text-center py-12"
             >
-              <p className="text-black text-lg mb-2">No analysis reports available</p>
-              <p className="text-gray-600 text-sm mb-4">Upload and analyze files to see reports here</p>
-              <div className="mt-4">
-                <Link href="/upload">
-                  <button className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200">
-                    Upload & Analyze Files
-                  </button>
-                </Link>
-              </div>
+              <p className="text-black text-lg mb-2">
+                {analysisReports.length === 0 ? "No analysis reports available" : "No reports found matching your criteria"}
+              </p>
+              {analysisReports.length === 0 && (
+                <p className="text-gray-600 text-sm mb-4">Upload and analyze files to see reports here</p>
+              )}
+              {analysisReports.length === 0 && (
+                <div className="mt-4">
+                  <Link href="/upload">
+                    <button className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200">
+                      Upload & Analyze Files
+                    </button>
+                  </Link>
+                </div>
+              )}
             </motion.div>
           )}
         </motion.div>

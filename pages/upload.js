@@ -686,7 +686,8 @@ export default function Upload() {
         analysisResultsBlobId: analysisUploadResult.blobId, // Reference to Walrus-stored results
         timestamp: new Date().toISOString(),
         status: 'completed',
-        resultSize: Math.round(analysisBlob.size / 1024) + ' KB' // Show size for reference
+        resultSize: Math.round(analysisBlob.size / 1024) + ' KB', // Show size for reference
+        isActive: true // Default to active for new reports
       };
 
       const existingReports = JSON.parse(localStorage.getItem('analysisReports') || '[]');
