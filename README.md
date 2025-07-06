@@ -152,13 +152,25 @@ Here's a brief overview of important directories in our repository:
   - **`_app.js`**: App wrapper and global configuration
 
 - **`/styles`**
-  - **`globals.css`**: Global styles including ReactMarkdown formatting
+  - **`globals.css`**: Global CSS Styles
 
 - **`/public`**
   - Static assets and icons for the application
 
 - **`/package.json`**
   - Project dependencies including OpenAI, document processing libraries, and UI components
+ 
+- **`/asa`**
+   -  Framework for uAgent locally and hosted on the Agentverse
+ 
+- **`/smartcontract`**
+   - Smart contract on the Oasis Sapphire testnet
+ 
+- **`/analysis`**
+  - Keygen + App Identifier + Attestation
+ 
+- **`/secret`**
+  - Secret stored in ROFL
 
 ---
 
