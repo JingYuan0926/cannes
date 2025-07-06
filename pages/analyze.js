@@ -75,6 +75,102 @@ export default function AnalyzePage() {
     }
   };
 
+  // Check individual service health
+  const checkServiceHealth = async (serviceName, url) => {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        timeout: 5000
+      });
+      const data = await response.json();
+      return { healthy: true, status: data.status };
+    } catch (err) {
+      return { healthy: false, error: err.message };
+    }
+  };
+
+  // Retry mechanism for failed requests
+  const fetchWithRetry = async (url, options = {}, timeout = 30000, maxRetries = 2) => {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+      try {
+        if (attempt > 1) {
+          log(`Retry attempt ${attempt - 1}/${maxRetries} for ${url}`, 'info');
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+        }
+        
+        return await fetchWithTimeout(url, options, timeout);
+      } catch (error) {
+        lastError = error;
+        log(`Attempt ${attempt} failed: ${error.message}`, 'error');
+        
+        // If connection was reset or empty response, check service health
+        if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_RESET') || error.message.includes('ERR_EMPTY_RESPONSE')) {
+          log(`Connection issue detected, checking service health...`, 'info');
+          const serviceUrl = url.replace(/\/[^\/]*$/, ''); // Remove endpoint path
+          const healthCheck = await checkServiceHealth('service', serviceUrl);
+          
+          if (!healthCheck.healthy) {
+            log(`Service appears to be down: ${healthCheck.error}`, 'error');
+            // Add longer wait for service recovery
+            if (attempt < maxRetries + 1) {
+              log(`Waiting 5 seconds for service recovery...`, 'info');
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+          }
+        }
+        
+        if (attempt === maxRetries + 1) {
+          throw lastError;
+        }
+      }
+    }
+    
+    throw lastError;
+  };
+
+  // Get helpful error message and recovery suggestions
+  const getErrorMessage = (error, step) => {
+    const baseMessage = error.message || 'Unknown error occurred';
+    
+    if (baseMessage.includes('Failed to fetch') || baseMessage.includes('ERR_CONNECTION_RESET') || baseMessage.includes('ERR_EMPTY_RESPONSE')) {
+      return {
+        message: `${step} service connection failed`,
+        details: `The ${step.toLowerCase()} service appears to be temporarily unavailable. This can happen when processing large datasets.`,
+        suggestions: [
+          'Try with a smaller dataset first',
+          'Wait a moment and try again',
+          'Check if all Docker services are running',
+          'Consider restarting the services if the problem persists'
+        ]
+      };
+    }
+    
+    if (baseMessage.includes('timeout') || baseMessage.includes('Request timed out')) {
+      return {
+        message: `${step} service timed out`,
+        details: `The ${step.toLowerCase()} service is taking too long to process your data.`,
+        suggestions: [
+          'Try with a smaller dataset',
+          'The service may be processing a large dataset - please wait',
+          'Consider increasing timeout settings'
+        ]
+      };
+    }
+    
+    return {
+      message: `${step} failed: ${baseMessage}`,
+      details: 'An unexpected error occurred during processing.',
+      suggestions: [
+        'Try again with the same data',
+        'Check the debug logs for more details',
+        'Verify your data format is correct'
+      ]
+    };
+  };
+
   // Handle file upload and analysis
   const handleAnalyze = async () => {
     if (!file) return;
@@ -96,7 +192,7 @@ export default function AnalyzePage() {
       setCurrentStep('Processing data...');
       log('Step 1: ETL Processing...', 'info');
       
-      const etlResponse = await fetchWithTimeout('http://localhost:3030/analyze', {
+      const etlResponse = await fetchWithRetry('http://localhost:3030/analyze', {
         method: 'POST',
         body: formData
       }, 30000);
@@ -108,7 +204,7 @@ export default function AnalyzePage() {
       setCurrentStep('Preprocessing data...');
       log('Step 2: Preprocessing...', 'info');
       
-      const preprocessResponse = await fetchWithTimeout('http://localhost:3031/preprocess', {
+      const preprocessResponse = await fetchWithRetry('http://localhost:3031/preprocess', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,7 +220,7 @@ export default function AnalyzePage() {
       setCurrentStep('Generating visualizations...');
       log('Step 3: EDA Analysis...', 'info');
       
-      const edaResponse = await fetchWithTimeout('http://localhost:3035/analyze', {
+      const edaResponse = await fetchWithRetry('http://localhost:3035/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -140,7 +236,7 @@ export default function AnalyzePage() {
       setCurrentStep('Running machine learning analysis...');
       log('Step 4: ML Analysis...', 'info');
       
-      const mlResponse = await fetchWithTimeout('http://localhost:3040/analyze', {
+      const mlResponse = await fetchWithRetry('http://localhost:3040/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -164,9 +260,18 @@ export default function AnalyzePage() {
       log('=== Full Pipeline Completed Successfully! ===', 'success');
 
     } catch (err) {
-      const errorMsg = err.message || 'Unknown error occurred';
-      setError(errorMsg);
-      log(`Pipeline Error: ${errorMsg}`, 'error');
+      const currentStepName = currentStep.includes('Processing') ? 'ETL' :
+                             currentStep.includes('Preprocessing') ? 'Preprocessing' :
+                             currentStep.includes('visualizations') ? 'EDA' :
+                             currentStep.includes('machine learning') ? 'Analysis' : 'Unknown';
+      
+      const errorInfo = getErrorMessage(err, currentStepName);
+      setError(errorInfo);
+      log(`Pipeline Error: ${errorInfo.message}`, 'error');
+      log(`Details: ${errorInfo.details}`, 'error');
+      errorInfo.suggestions.forEach(suggestion => {
+        log(`💡 Suggestion: ${suggestion}`, 'info');
+      });
       setCurrentStep('');
     } finally {
       setLoading(false);
@@ -621,22 +726,35 @@ export default function AnalyzePage() {
 
           {/* Error Section */}
           {error && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-              className="error-card"
-            >
-              <div className="error-content">
-                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <h3>Analysis Error</h3>
-                  <p>{error}</p>
-                </div>
+            <div style={{ 
+              backgroundColor: '#ffebee', 
+              padding: '20px', 
+              borderRadius: '8px', 
+              marginBottom: '20px',
+              border: '1px solid #ffcdd2'
+            }}>
+              <div>
+                <h3 style={{ color: '#c62828', marginBottom: '10px' }}>Analysis Error</h3>
+                <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '10px' }}>
+                  {typeof error === 'string' ? error : error.message}
+                </p>
+                {typeof error === 'object' && error.details && (
+                  <p style={{ color: '#666', marginBottom: '15px' }}>
+                    {error.details}
+                  </p>
+                )}
+                {typeof error === 'object' && error.suggestions && (
+                  <div>
+                    <h4 style={{ color: '#c62828', marginBottom: '8px' }}>Suggestions:</h4>
+                    <ul style={{ color: '#666', paddingLeft: '20px' }}>
+                      {error.suggestions.map((suggestion, index) => (
+                        <li key={index} style={{ marginBottom: '5px' }}>{suggestion}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Debug Logs Section */}
@@ -647,7 +765,15 @@ export default function AnalyzePage() {
               transition={{ duration: 0.4 }}
               className="debug-logs-card"
             >
-              <h2>🔍 Debug Logs</h2>
+              <div className="logs-header">
+                <h2>🔍 Debug Logs</h2>
+                <button 
+                  onClick={() => setLogs([])}
+                  className="clear-logs-btn"
+                >
+                  Clear Logs
+                </button>
+              </div>
               <div className="logs-container">
                 {logs.map((log, index) => (
                   <div key={index} className={`log-entry ${
@@ -1294,6 +1420,85 @@ export default function AnalyzePage() {
 
         .no-ml-results p {
           margin: 0;
+        }
+
+        .debug-logs-card {
+          background: #f9fafb;
+          border: 1px solid #e5e7eb;
+          border-radius: 1rem;
+          padding: 1.5rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .debug-logs-card h2 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-bottom: 1rem;
+          color: #1f2937;
+        }
+
+        .logs-container {
+          background: #1f2937;
+          border: 1px solid #374151;
+          border-radius: 0.5rem;
+          padding: 1rem;
+          max-height: 300px;
+          overflow-y: auto;
+          font-family: 'SF Mono', Monaco, monospace;
+          font-size: 0.75rem;
+          line-height: 1.4;
+        }
+
+        .log-entry {
+          padding: 0.25rem 0;
+          white-space: pre-wrap;
+        }
+
+        .log-error {
+          color: #fca5a5;
+        }
+
+        .log-success {
+          color: #86efac;
+        }
+
+        .log-info {
+          color: #93c5fd;
+          font-weight: 600;
+        }
+
+        .log-default {
+          color: #d1d5db;
+        }
+
+        .logs-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+        }
+
+        .logs-header h2 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin: 0;
+          color: #1f2937;
+        }
+
+        .clear-logs-btn {
+          background: #3b82f6;
+          color: white;
+          border: none;
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.25rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .clear-logs-btn:hover {
+          background: #2563eb;
+          transform: translateY(-1px);
         }
 
         @media (max-width: 768px) {
