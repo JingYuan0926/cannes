@@ -14,8 +14,6 @@ import {
   QueryClient,
 } from "@tanstack/react-query";
 
-import Header from '../components/Header';
-
 const config = getDefaultConfig({
   appName: 'Memest Cutest Platform',
   projectId: 'YOUR_PROJECT_ID', // Replace with your WalletConnect project ID
@@ -30,7 +28,6 @@ export default function App({ Component, pageProps }) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
-          <Header />
           <Component {...pageProps} />
         </RainbowKitProvider>
       </QueryClientProvider>
