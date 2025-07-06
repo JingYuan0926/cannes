@@ -14,6 +14,7 @@ export default function Analyse() {
   const [message, setMessage] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [activeFiles, setActiveFiles] = useState([]);
+  const [activeReports, setActiveReports] = useState([]);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const messagesEndRef = useRef(null);
@@ -23,7 +24,7 @@ export default function Analyse() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeChat?.messages, isAiTyping]);
 
-  // Load active files from localStorage
+  // Load active files and reports from localStorage
   useEffect(() => {
     const loadActiveFiles = () => {
       try {
@@ -38,11 +39,26 @@ export default function Analyse() {
       }
     };
     
+    const loadActiveReports = () => {
+      try {
+        const storedReports = JSON.parse(localStorage.getItem('analysisReports') || '[]');
+        console.log('All stored reports:', storedReports);
+        const activeReports = storedReports.filter(report => report.isActive);
+        console.log('Active reports found:', activeReports);
+        setActiveReports(activeReports);
+      } catch (error) {
+        console.error('Failed to load active reports:', error);
+        setActiveReports([]);
+      }
+    };
+    
     loadActiveFiles();
+    loadActiveReports();
     
     // Listen for storage changes
     const handleStorageChange = () => {
       loadActiveFiles();
+      loadActiveReports();
     };
     
     window.addEventListener('storage', handleStorageChange);
@@ -69,16 +85,17 @@ export default function Analyse() {
   };
 
   const loadActiveFilesContent = async () => {
-    if (activeFiles.length === 0) {
-      console.log('No active files to load');
+    if (activeFiles.length === 0 && activeReports.length === 0) {
+      console.log('No active files or reports to load');
       return '';
     }
 
-    console.log(`Loading content for ${activeFiles.length} active files:`, activeFiles);
+    console.log(`Loading content for ${activeFiles.length} active files and ${activeReports.length} active reports:`, { activeFiles, activeReports });
     setIsLoadingFiles(true);
     let combinedContent = '';
     
     try {
+      // Load active files
       for (const file of activeFiles) {
         try {
           console.log(`Loading content for file: ${file.name} (blobId: ${file.blobId})`);
@@ -123,8 +140,71 @@ export default function Analyse() {
           combinedContent += `\n\n--- File: ${file.name} ---\n[Error loading file: ${error.message}]`;
         }
       }
+      
+      // Load active reports
+      for (const report of activeReports) {
+        try {
+          console.log(`Loading analysis report for: ${report.fileName}`);
+          
+          // Load analysis results from Walrus or local storage
+          let analysisResults = null;
+          if (report.analysisResultsBlobId) {
+            try {
+              const response = await fetch(`https://publisher-devnet.walrus.space/v1/${report.analysisResultsBlobId}`);
+              if (response.ok) {
+                const analysisResultsJson = await response.text();
+                analysisResults = JSON.parse(analysisResultsJson);
+              }
+            } catch (error) {
+              console.error(`Failed to load analysis results from Walrus for ${report.fileName}:`, error);
+            }
+          }
+          
+          // Fallback to local storage
+          if (!analysisResults && report.analysisResults) {
+            analysisResults = report.analysisResults;
+          }
+          
+          if (analysisResults) {
+            // Create a summary of the analysis results
+            let reportSummary = `\n\n--- Analysis Report: ${report.fileName} ---\n`;
+            reportSummary += `Analysis Goal: ${report.analysisGoal}\n`;
+            reportSummary += `Analysis Date: ${new Date(report.timestamp).toLocaleString()}\n`;
+            reportSummary += `Status: ${report.status}\n\n`;
+            
+            // Add key insights from the analysis
+            if (analysisResults.ml?.aiInsights?.keyInsights) {
+              reportSummary += `Key Insights:\n${analysisResults.ml.aiInsights.keyInsights.join('\n')}\n\n`;
+            }
+            
+            // Add data summary
+            if (analysisResults.etl?.summary) {
+              reportSummary += `Data Summary:\n${JSON.stringify(analysisResults.etl.summary, null, 2)}\n\n`;
+            }
+            
+            // Add EDA summary
+            if (analysisResults.eda?.analysis?.summary) {
+              reportSummary += `EDA Summary:\n${JSON.stringify(analysisResults.eda.analysis.summary, null, 2)}\n\n`;
+            }
+            
+            // Add ML analysis summary
+            if (analysisResults.ml?.results?.summary) {
+              reportSummary += `ML Analysis Summary:\n${JSON.stringify(analysisResults.ml.results.summary, null, 2)}\n\n`;
+            }
+            
+            combinedContent += reportSummary;
+            console.log(`Added analysis report for ${report.fileName}, length: ${reportSummary.length}`);
+          } else {
+            combinedContent += `\n\n--- Analysis Report: ${report.fileName} ---\n[Error loading analysis results]`;
+            console.log(`Failed to load analysis results for ${report.fileName}`);
+          }
+        } catch (error) {
+          console.error(`Failed to load analysis report for ${report.fileName}:`, error);
+          combinedContent += `\n\n--- Analysis Report: ${report.fileName} ---\n[Error loading analysis report: ${error.message}]`;
+        }
+      }
     } catch (error) {
-      console.error('Error loading active files:', error);
+      console.error('Error loading active files and reports:', error);
     } finally {
       setIsLoadingFiles(false);
     }
@@ -596,31 +676,34 @@ export default function Analyse() {
                   <p className="text-slate-600 mb-3">
                     Ask me anything about your data and I'll help you discover insights.
                   </p>
-                  <div className="mb-4 p-3 bg-blue-100/80 backdrop-blur-sm rounded-lg border border-blue-200">
-                    <p className="text-sm text-slate-800">
-                      <strong>Active Files:</strong> {activeFiles.length} file{activeFiles.length !== 1 ? 's' : ''} ready for analysis
+                  <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      <strong>Active Data:</strong> {activeFiles.length} file{activeFiles.length !== 1 ? 's' : ''} and {activeReports.length} analysis report{activeReports.length !== 1 ? 's' : ''} ready for analysis
                     </p>
-                    {activeFiles.length === 0 && (
-                      <p className="text-sm text-slate-600 mt-2">
-                        No active files found. Upload files in the <Link href="/upload" className="text-blue-600 hover:underline">Upload</Link> section and mark them as active in the <Link href="/view" className="text-blue-600 hover:underline">View</Link> section.
+                    {activeFiles.length === 0 && activeReports.length === 0 && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        No active files or reports found. Upload files in the <Link href="/upload" className="text-blue-600 hover:underline">Upload</Link> section and mark them as active in the <Link href="/view" className="text-blue-600 hover:underline">View</Link> section.
                       </p>
                     )}
-                    {activeFiles.length > 0 && (
+                    {(activeFiles.length > 0 || activeReports.length > 0) && (
                       <div className="mt-2">
-                        <p className="text-xs text-slate-600">Ready to analyze:</p>
-                        <ul className="text-xs text-slate-600 mt-1">
-                          {activeFiles.slice(0, 3).map(file => (
-                            <li key={file.id} className="truncate">• {file.name}</li>
+                        <p className="text-xs text-gray-600">Ready to analyze:</p>
+                        <ul className="text-xs text-gray-600 mt-1">
+                          {activeFiles.slice(0, 2).map(file => (
+                            <li key={file.id} className="truncate">• File: {file.name}</li>
                           ))}
-                          {activeFiles.length > 3 && (
-                            <li className="text-slate-500">• ... and {activeFiles.length - 3} more</li>
+                          {activeReports.slice(0, 2).map(report => (
+                            <li key={report.id} className="truncate">• Report: {report.fileName}</li>
+                          ))}
+                          {(activeFiles.length + activeReports.length) > 4 && (
+                            <li className="text-gray-500">• ... and {(activeFiles.length + activeReports.length) - 4} more</li>
                           )}
                         </ul>
                       </div>
                     )}
                   </div>
-                  {activeFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-2 justify-center">
+                  {(activeFiles.length > 0 || activeReports.length > 0) && (
+                    <div className="flex flex-wrap gap-3 justify-center">
                       <button 
                         onClick={() => handleSuggestionClick("Provide a summary of my data")}
                         className="px-3 py-2 bg-blue-100 text-slate-800 rounded-lg hover:bg-blue-200 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
@@ -660,8 +743,8 @@ export default function Analyse() {
                       {getAIAvatar()}
                       <div className="bg-blue-100 rounded-2xl rounded-bl-md px-4 py-3 transition-all duration-300 shadow-sm">
                         <div className="flex items-center space-x-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                          <span className="text-sm text-slate-700">Loading active files...</span>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                          <span className="text-sm text-gray-700">Loading active files and reports...</span>
                         </div>
                       </div>
                     </motion.div>
@@ -686,15 +769,15 @@ export default function Analyse() {
                   value={message}
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
-                  className="w-full h-12 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-slate-500 text-slate-800 transition-all duration-200 overflow-hidden"
-                  placeholder={activeFiles.length > 0 ? "Ask me anything about your active files..." : "Upload and activate files to start analysis..."}
+                  className="w-full h-12 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-gray-600 text-black transition-all duration-200 overflow-hidden"
+                  placeholder={(activeFiles.length > 0 || activeReports.length > 0) ? "Ask me anything about your active files and reports..." : "Upload and activate files/reports to start analysis..."}
                   rows="1"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2">
                   <button 
                     onClick={handleSendMessage}
-                    disabled={!message.trim() || activeFiles.length === 0}
-                    className="w-8 h-8 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
+                    disabled={!message.trim() || (activeFiles.length === 0 && activeReports.length === 0)}
+                    className="w-8 h-8 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
                   >
                     <svg className="w-4 h-4 transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
@@ -702,10 +785,10 @@ export default function Analyse() {
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-slate-600 mt-2 text-center transition-opacity duration-200">
-                {activeFiles.length > 0 
+              <p className="text-xs text-gray-600 mt-2 text-center transition-opacity duration-200">
+                {(activeFiles.length > 0 || activeReports.length > 0)
                   ? "Press Enter to send, Shift+Enter for new line" 
-                  : "Upload and activate files to start analysis"}
+                  : "Upload and activate files/reports to start analysis"}
               </p>
             </div>
           </motion.div>

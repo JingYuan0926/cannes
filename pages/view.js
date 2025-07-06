@@ -7,6 +7,7 @@ import WalletConnect from '../components/WalletConnect';
 
 export default function View() {
   const [files, setFiles] = useState([]);
+  const [analysisReports, setAnalysisReports] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -16,15 +17,19 @@ export default function View() {
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [contentError, setContentError] = useState('');
   const [deleteConfirmFile, setDeleteConfirmFile] = useState(null);
+  const [deleteConfirmReport, setDeleteConfirmReport] = useState(null);
+  const [loadingAnalysisResults, setLoadingAnalysisResults] = useState(false);
   const dropdownRef = useRef(null);
 
   const filterOptions = [
-    { value: "all", label: "All Files" },
+    { value: "all", label: "All Items" },
     { value: "active", label: "Active Only" },
-    { value: "inactive", label: "Inactive Only" }
+    { value: "inactive", label: "Inactive Only" },
+    { value: "analyzed", label: "Analyzed Only" },
+    { value: "not_analyzed", label: "Not Analyzed" }
   ];
 
-  // Load files from localStorage on mount
+  // Load files and analysis reports from localStorage on mount
   useEffect(() => {
     const loadFiles = () => {
       try {
@@ -46,12 +51,24 @@ export default function View() {
         setFiles([]);
       }
     };
+
+    const loadAnalysisReports = () => {
+      try {
+        const storedReports = JSON.parse(localStorage.getItem('analysisReports') || '[]');
+        setAnalysisReports(storedReports);
+      } catch (error) {
+        console.error('Failed to load analysis reports from localStorage:', error);
+        setAnalysisReports([]);
+      }
+    };
     
     loadFiles();
+    loadAnalysisReports();
     
     // Listen for storage changes (when files are uploaded)
     const handleStorageChange = () => {
       loadFiles();
+      loadAnalysisReports();
     };
     
     window.addEventListener('storage', handleStorageChange);
@@ -234,6 +251,61 @@ export default function View() {
     setDeleteConfirmFile(null);
   };
 
+  const handleDeleteReport = (id) => {
+    const reportToDelete = analysisReports.find(report => report.id === id);
+    setDeleteConfirmReport(reportToDelete);
+  };
+
+  const toggleReportStatus = (id) => {
+    const updatedReports = analysisReports.map(report => 
+      report.id === id ? { ...report, isActive: !report.isActive } : report
+    );
+    setAnalysisReports(updatedReports);
+    // Update localStorage
+    localStorage.setItem('analysisReports', JSON.stringify(updatedReports));
+  };
+
+  const confirmDeleteReport = () => {
+    if (deleteConfirmReport) {
+      const updatedReports = analysisReports.filter(report => report.id !== deleteConfirmReport.id);
+      setAnalysisReports(updatedReports);
+      localStorage.setItem('analysisReports', JSON.stringify(updatedReports));
+      setDeleteConfirmReport(null);
+    }
+  };
+
+  const cancelDeleteReport = () => {
+    setDeleteConfirmReport(null);
+  };
+
+  // Load analysis results from Walrus
+  const loadAnalysisResultsFromWalrus = async (report) => {
+    if (!report.analysisResultsBlobId || typeof report.analysisResultsBlobId !== 'string' || !report.analysisResultsBlobId.trim()) {
+      setContentError('No valid analysis results Blob ID found for this report. The analysis may not have completed or was not saved correctly.');
+      return null;
+    }
+
+    setLoadingAnalysisResults(true);
+    try {
+      console.log(`Loading analysis results from Walrus: ${report.analysisResultsBlobId}`);
+      const url = `https://publisher-devnet.walrus.space/v1/${report.analysisResultsBlobId}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analysis results from Walrus. Status: ${response.status} ${response.statusText}. URL: ${url}`);
+      }
+      const analysisResultsJson = await response.text();
+      const analysisResults = JSON.parse(analysisResultsJson);
+      console.log('Analysis results loaded successfully from Walrus');
+      return analysisResults;
+    } catch (error) {
+      console.error('Failed to load analysis results from Walrus:', error);
+      setContentError(`Failed to load analysis results from Walrus.\n${error.message}\nPlease check your network connection, ensure the Walrus publisher is online, and that the analysis report is valid.`);
+      return null;
+    } finally {
+      setLoadingAnalysisResults(false);
+    }
+  };
+
   const handleDownloadFile = async (file) => {
     if (!file.blobId) {
       setContentError('No Blob ID available for download');
@@ -293,7 +365,19 @@ export default function View() {
     const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === "all" || 
                          (filterStatus === "active" && file.isActive) ||
-                         (filterStatus === "inactive" && !file.isActive);
+                         (filterStatus === "inactive" && !file.isActive) ||
+                         (filterStatus === "analyzed" && file.hasAnalysis) ||
+                         (filterStatus === "not_analyzed" && !file.hasAnalysis);
+    return matchesSearch && matchesFilter;
+  });
+
+  const filteredReports = analysisReports.filter(report => {
+    const matchesSearch = report.fileName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === "all" || 
+                         (filterStatus === "active" && report.isActive) ||
+                         (filterStatus === "inactive" && !report.isActive) ||
+                         (filterStatus === "analyzed" && true) || // all reports are analyzed
+                         (filterStatus === "not_analyzed" && false); // no reports are not analyzed
     return matchesSearch && matchesFilter;
   });
 
@@ -332,6 +416,16 @@ export default function View() {
       },
     },
   };
+
+  // --- Stats Calculation ---
+  const totalDatasets = files.length + analysisReports.length;
+  const uploadedFilesCount = files.length;
+  const analysisReportsCount = analysisReports.length;
+  const activeDatasets = files.filter(f => f.isActive).length + analysisReports.filter(r => r.isActive).length;
+  const inactiveDatasets = files.filter(f => !f.isActive).length + analysisReports.filter(r => !r.isActive).length;
+  const totalSizeMB = files.length > 0 
+    ? (files.reduce((total, file) => total + (file.originalSize || file.size || 0), 0) / (1024 * 1024)).toFixed(1)
+    : '0.0';
 
   return (
     <div className="h-screen font-montserrat bg-gradient-to-br from-blue-50 to-indigo-100 text-slate-900 transition-colors duration-300 overflow-hidden flex flex-col">
@@ -393,55 +487,55 @@ export default function View() {
         {/* Summary Stats */}
         <motion.div 
           variants={containerVariants}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8"
         >
+          {/* Total Datasets */}
           <motion.div 
             variants={statsVariants}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg"
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
           >
-            <div>
-              <h3 className="text-2xl font-bold text-slate-800">{files.length}</h3>
-              <p className="text-slate-600 text-sm">Total Files</p>
-            </div>
+            <h3 className="text-3xl font-extrabold text-black mb-1">{totalDatasets}</h3>
+            <p className="text-gray-700 text-sm font-medium">Total Datasets</p>
           </motion.div>
-          
+          {/* Uploaded Files */}
           <motion.div 
             variants={statsVariants}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg"
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
           >
-            <div>
-              <h3 className="text-2xl font-bold text-emerald-600">
-                {files.filter(file => file.isActive).length}
-              </h3>
-              <p className="text-slate-600 text-sm">Active Files</p>
-            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">{uploadedFilesCount}</h3>
+            <p className="text-gray-700 text-sm font-medium">Uploaded Files</p>
           </motion.div>
-          
+          {/* Analysis Reports */}
           <motion.div 
             variants={statsVariants}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg"
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
           >
-            <div>
-              <h3 className="text-2xl font-bold text-rose-600">
-                {files.filter(file => !file.isActive).length}
-              </h3>
-              <p className="text-slate-600 text-sm">Inactive Files</p>
-            </div>
+            <h3 className="text-2xl font-bold text-black mb-1">{analysisReportsCount}</h3>
+            <p className="text-gray-700 text-sm font-medium">Analysis Reports</p>
           </motion.div>
-          
+          {/* Active Datasets */}
           <motion.div 
             variants={statsVariants}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg"
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
           >
-            <div>
-              <h3 className="text-2xl font-bold text-slate-800">
-                {files.length > 0 
-                  ? (files.reduce((total, file) => total + (file.originalSize || 0), 0) / (1024 * 1024)).toFixed(1) + ' MB'
-                  : '0 MB'
-                }
-              </h3>
-              <p className="text-slate-600 text-sm">Total Size</p>
-            </div>
+            <h3 className="text-2xl font-bold text-green-600 mb-1">{activeDatasets}</h3>
+            <p className="text-gray-700 text-sm font-medium">Active Datasets</p>
+          </motion.div>
+          {/* Inactive Datasets */}
+          <motion.div 
+            variants={statsVariants}
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
+          >
+            <h3 className="text-2xl font-bold text-red-600 mb-1">{inactiveDatasets}</h3>
+            <p className="text-gray-700 text-sm font-medium">Inactive Datasets</p>
+          </motion.div>
+          {/* Total Size */}
+          <motion.div 
+            variants={statsVariants}
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
+          >
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalSizeMB} MB</h3>
+            <p className="text-gray-700 text-sm font-medium">Total Size</p>
           </motion.div>
         </motion.div>
 
@@ -524,22 +618,27 @@ export default function View() {
             </AnimatePresence>
           </div>
         </motion.div>
-          
-        {/* Files Table */}
+
+        {/* Uploaded Files Table */}
         <motion.div 
           variants={itemVariants}
-          className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-200 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl"
+          className="bg-gray-200 rounded-2xl border border-gray-300 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl mb-8"
         >
+          <div className="p-6 border-b border-gray-300 bg-gray-300">
+            <h2 className="text-xl font-semibold text-black flex items-center gap-2">
+              Uploaded Files
+              <span className="text-sm font-normal text-gray-600">({filteredFiles.length} files)</span>
+            </h2>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
               <thead className="bg-blue-100/80 backdrop-blur-sm transition-colors duration-300">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-1/3">File</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-20">Size</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-24">Modified</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-20">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-20">Security</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-32">Actions</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-1/3">File Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Size</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-24">Upload Date</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-32">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-blue-200">
@@ -552,14 +651,21 @@ export default function View() {
                     className="hover:bg-blue-50/50 transition-all duration-200 group hover:shadow-md"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-slate-800 group-hover:text-slate-900 transition-colors duration-200">
-                        {file.name}
+                      <div className="flex items-center">
+                        <div className="text-sm font-medium text-black group-hover:text-gray-800 transition-colors duration-200">
+                          {file.name}
+                        </div>
+                        {file.hasAnalysis && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            Analyzed
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 group-hover:text-slate-900 transition-colors duration-200">
                       {file.size}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black group-hover:text-gray-800 transition-colors duration-200">
                       {new Date(file.timestamp).toLocaleDateString('en-GB', {
                         day: '2-digit',
                         month: '2-digit', 
@@ -610,6 +716,12 @@ export default function View() {
                           View
                         </button>
                         <button
+                          onClick={() => handleViewFile(file)}
+                          className="text-blue-600 hover:text-blue-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                        >
+                          View
+                        </button>
+                        <button
                           onClick={() => handleDownloadFile(file)}
                           className="text-indigo-600 hover:text-indigo-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
                         >
@@ -644,6 +756,193 @@ export default function View() {
                   <Link href="/upload">
                     <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200">
                       Upload Your First File
+                    </button>
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </motion.div>
+
+        {/* Analysis Reports Table */}
+        <motion.div 
+          variants={itemVariants}
+          className="bg-gray-200 rounded-2xl border border-gray-300 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
+          <div className="p-6 border-b border-gray-300 bg-gray-300">
+            <h2 className="text-xl font-semibold text-black flex items-center gap-2">
+              Analysis Reports
+              <span className="text-sm font-normal text-gray-600">({filteredReports.length} reports)</span>
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1000px]">
+              <thead className="bg-gray-300 transition-colors duration-300">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-1/5">File Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-1/5">Analysis Goal</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Analyzed Date</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Pipeline Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Completion Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Active Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-32">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-300">
+                {filteredReports.map((report, index) => (
+                  <motion.tr 
+                    key={`analysis-${report.id}`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="hover:bg-gray-300 transition-all duration-200 group hover:shadow-md"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-black group-hover:text-gray-800 transition-colors duration-200">
+                        {report.fileName}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-black group-hover:text-gray-800 transition-colors duration-200 max-w-xs truncate">
+                        {report.analysisGoal || 'No goal specified'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black group-hover:text-gray-800 transition-colors duration-200">
+                      {new Date(report.timestamp).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit', 
+                        year: 'numeric'
+                      })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col space-y-1">
+                        {report.status === 'completed' && (
+                          <>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                              <span className="text-xs text-gray-600">ETL</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                              <span className="text-xs text-gray-600">EDA</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                              <span className="text-xs text-gray-600">ML</span>
+                            </div>
+                          </>
+                        )}
+                        {report.resultSize && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Results: {report.resultSize}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                          report.status === 'completed'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-md'
+                            : report.status === 'failed'
+                            ? 'bg-red-100 text-red-800 hover:bg-red-200 hover:shadow-md'
+                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:shadow-md'
+                        }`}
+                      >
+                        {report.status || 'Unknown'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => toggleReportStatus(report.id)}
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                          report.isActive
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-md'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200 hover:shadow-md'
+                        }`}
+                      >
+                        {report.isActive ? 'Active' : 'Inactive'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={async () => {
+                            // Load analysis results from Walrus
+                            const analysisResults = await loadAnalysisResultsFromWalrus(report);
+                            
+                            if (analysisResults) {
+                              // Create a mock file object for viewing
+                              const mockFile = {
+                                id: report.id,
+                                name: report.fileName,
+                                blobId: report.fileBlobId,
+                                hasAnalysis: true,
+                                analysisGoal: report.analysisGoal,
+                                analysisResults: analysisResults,
+                                lastAnalyzed: report.timestamp
+                              };
+                              handleViewFile(mockFile);
+                            }
+                          }}
+                          disabled={loadingAnalysisResults}
+                          className="text-blue-600 hover:text-blue-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingAnalysisResults ? 'Loading...' : 'View Report'}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            // Load analysis results from Walrus for export
+                            const analysisResults = await loadAnalysisResultsFromWalrus(report);
+                            
+                            if (analysisResults) {
+                              const dataStr = JSON.stringify(analysisResults, null, 2);
+                              const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                              const url = URL.createObjectURL(dataBlob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `analysis-${report.fileName.split('.')[0]}-${new Date().toISOString().split('T')[0]}.json`;
+                              link.click();
+                              URL.revokeObjectURL(url);
+                            }
+                          }}
+                          disabled={loadingAnalysisResults}
+                          className="text-green-600 hover:text-green-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingAnalysisResults ? 'Loading...' : 'Export'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReport(report.id)}
+                          className="text-red-600 hover:text-red-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {filteredReports.length === 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="text-center py-12"
+            >
+              <p className="text-black text-lg mb-2">
+                {analysisReports.length === 0 ? "No analysis reports available" : "No reports found matching your criteria"}
+              </p>
+              {analysisReports.length === 0 && (
+                <p className="text-gray-600 text-sm mb-4">Upload and analyze files to see reports here</p>
+              )}
+              {analysisReports.length === 0 && (
+                <div className="mt-4">
+                  <Link href="/upload">
+                    <button className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200">
+                      Upload & Analyze Files
                     </button>
                   </Link>
                 </div>
@@ -712,6 +1011,16 @@ export default function View() {
                         </svg>
                       </a>
                     </p>
+                    {viewingFile.hasAnalysis && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Analysis Available
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Goal: {viewingFile.analysisGoal}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => {
@@ -734,6 +1043,102 @@ export default function View() {
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="text-slate-600 mt-2">Loading file content...</p>
+                  </div>
+                ) : viewingFile.hasAnalysis ? (
+                  <div className="space-y-6">
+                    {/* Analysis Results Section */}
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Analysis Results
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="text-sm">
+                          <span className="font-medium text-blue-800">Goal:</span>
+                          <p className="text-blue-700 mt-1">{viewingFile.analysisGoal}</p>
+                        </div>
+                        <div className="text-sm">
+                          <span className="font-medium text-blue-800">Analyzed:</span>
+                          <p className="text-blue-700 mt-1">{new Date(viewingFile.lastAnalyzed).toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      {viewingFile.analysisResults && (
+                        <div className="space-y-3">
+                          <div className="text-sm">
+                            <span className="font-medium text-blue-800">Pipeline Results:</span>
+                            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                              <div className="bg-white p-2 rounded border">
+                                <strong>ETL:</strong> {viewingFile.analysisResults.etl ? '✓ Complete' : '✗ Failed'}
+                              </div>
+                              <div className="bg-white p-2 rounded border">
+                                <strong>Preprocessing:</strong> {viewingFile.analysisResults.preprocessing ? '✓ Complete' : '✗ Failed'}
+                              </div>
+                              <div className="bg-white p-2 rounded border">
+                                <strong>EDA:</strong> {viewingFile.analysisResults.eda ? '✓ Complete' : '✗ Failed'}
+                              </div>
+                              <div className="bg-white p-2 rounded border">
+                                <strong>ML Analysis:</strong> {viewingFile.analysisResults.ml ? '✓ Complete' : '✗ Failed'}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {viewingFile.analysisResults.eda?.analysis?.visualizations && (
+                            <div className="text-sm">
+                              <span className="font-medium text-blue-800">Visualizations Generated:</span>
+                              <p className="text-blue-700 mt-1">
+                                {viewingFile.analysisResults.eda.analysis.visualizations.length} charts created
+                              </p>
+                            </div>
+                          )}
+                          
+                          {viewingFile.analysisResults.ml?.results?.analyses && (
+                            <div className="text-sm">
+                              <span className="font-medium text-blue-800">ML Analyses:</span>
+                              <p className="text-blue-700 mt-1">
+                                {viewingFile.analysisResults.ml.results.analyses.length} algorithms applied
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="mt-4 pt-3 border-t border-blue-200">
+                        <p className="text-xs text-blue-600">
+                          💡 Complete analysis results with visualizations are available in the main analysis interface
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* File Content Section */}
+                    <div>
+                      <h4 className="font-semibold text-black mb-3 flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        File Content
+                      </h4>
+                      
+                      {fileContent ? (
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600 mb-3">
+                            <strong>Type:</strong> {fileContent.fileType?.displayName || 'Unknown'} • 
+                            <strong> Size:</strong> {Math.round(fileContent.bytes / 1024)} KB
+                          </p>
+                          <p className="text-xs text-gray-500">File content preview available - click "View File Content" button below</p>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleViewFile(viewingFile)}
+                          className="w-full py-2 px-4 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200"
+                        >
+                          Load File Content
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ) : fileContent ? (
                   <div>
@@ -894,6 +1299,60 @@ export default function View() {
                     className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                   >
                     Delete
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Report Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmReport && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={cancelDeleteReport}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-lg max-w-md w-full overflow-hidden shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-lg font-semibold text-black">Delete Analysis Report</h3>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 bg-white">
+                <p className="text-gray-700 mb-4">
+                  Are you sure you want to delete the analysis report for <strong>{deleteConfirmReport.fileName}</strong>?
+                </p>
+                <p className="text-sm text-gray-600">
+                  This will permanently remove the analysis report and cannot be undone.
+                </p>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-6 border-t border-gray-200 bg-gray-50">
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={cancelDeleteReport}
+                    className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteReport}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                  >
+                    Delete Report
                   </button>
                 </div>
               </div>
