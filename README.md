@@ -98,7 +98,6 @@ In short, our platform enables users to upload encrypted data, ask questions in 
 
 ## System Architecture High-Level Overview 🏗️
 
-![Architecture](https://github.com/JingYuan0926/cannes/blob/main/public/Architecture.svg?raw=true)
 
 The current architecture consists of a Next.js frontend, OpenAI API integration, and secure document processing pipeline. This setup provides two clear user pathways:
 
