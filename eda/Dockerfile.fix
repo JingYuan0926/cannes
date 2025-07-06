@@ -1,0 +1,13 @@
+FROM docker.io/derek2403/eda-service:latest
+
+# Install missing dependencies
+RUN pip install --no-cache-dir matplotlib seaborn plotly kaleido
+
+# Set matplotlib backend for headless operation
+ENV MPLBACKEND=Agg
+
+# Ensure the app directory is set
+WORKDIR /app
+
+# Start the application
+CMD ["python", "app.py"] 
