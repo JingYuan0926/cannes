@@ -1,0 +1,92 @@
+services:
+  etl:
+    image: docker.io/derek2403/etl-service:latest
+    ports:
+      - "3030:3030"
+    environment:
+      - FLASK_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3030
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3030/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  preprocessing:
+    image: docker.io/derek2403/preprocessing-service:latest
+    ports:
+      - "3031:3031"
+    environment:
+      - FLASK_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3031
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3031/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  eda:
+    image: docker.io/derek2403/eda-service:latest
+    ports:
+      - "3035:3035"
+    environment:
+      - FLASK_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3035
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3035/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  analysis:
+    image: docker.io/derek2403/ai-data-analysis:latest
+    ports:
+      - "3040:3040"
+    environment:
+      - FLASK_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3040
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3040/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  data:
+  results: 
