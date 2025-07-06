@@ -183,6 +183,17 @@ https://agentverse.ai/agents/details/agent1qg869zt362lj4e60n5z6mvkmjmztnd2vu6k8u
 
 ---
 
+## Technical Constraints
+
+1. **GPU TEE Support Limitations**  
+   Currently, our proof-of-concept model is based on OpenAI's model. This setup somewhat negates the confidentiality benefits of using a Trusted Execution Environment (TEE) since data may still be exposed. Once GPU support for TEE becomes available, we plan to transition to a TEE-hosted large language model (LLM) to enhance data confidentiality and ensure the platform’s privacy standards are met.
+
+2. **Port Forwarding and Attestation Report Issues**  
+   Due to constraints with the ROFL port, we are unable to provide an attestation report at this time. For demo purposes, we will be using localhost servers, which may cause the attestation report to fail. This issue will be resolved once support for port forwarding is restored, and we can obtain the necessary endpoints for our enclaves.
+
+3. **CSV File Upload Restrictions in Agentverse**  
+   At the moment, the Agentverse platform only supports text and image inputs, preventing users from directly uploading CSV files. As a result, users are required to paste raw data manually into the system. We aim to integrate CSV file upload functionality in future releases to streamline this process.
+
 ## How We Are Different 🌟
 
 Unlike traditional document analysis tools, our platform focuses on **conversational AI and privacy-first architecture** from the **user's perspective**. We're not just processing documents; we're creating an intelligent, secure, and accessible analysis experience. Here's how our **AI Agent Data Analyst** stands out:
