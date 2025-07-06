@@ -169,7 +169,7 @@ Here's a brief overview of important directories in our repository:
 - **`/analysis`**
   - Keygen + App Identifier + Attestation
  
-- **`/secret`**
+- **`/eda`**
   - Secret stored in ROFL
 
 ---
