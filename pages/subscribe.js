@@ -206,7 +206,11 @@ const Subscribe = () => {
 
   // Format date helper
   const formatDate = (timestamp) => {
-    return new Date(Number(timestamp) * 1000).toLocaleString();
+    const date = new Date(Number(timestamp) * 1000);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    return `${day}${month}${year}`;
   };
 
   // Update subscription data when contract data changes
@@ -220,6 +224,30 @@ const Subscribe = () => {
       });
     }
   }, [subscription, address]);
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut",
+      },
+    },
+  };
 
   return (
     <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
@@ -246,143 +274,248 @@ const Subscribe = () => {
               View
             </div>
           </Link>
+          <Link href="/subscribe">
+            <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
+              Subscribe
+            </div>
+          </Link>
         </div>
         <div className="absolute right-8 top-8">
           <WalletConnect />
         </div>
       </motion.nav>
 
+      {/* Page Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+        className="px-8 py-4 flex-shrink-0"
+      >
+        <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Subscription Management</h1>
+        <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
+          Manage your subscription and access premium features
+        </p>
+      </motion.div>
+
       {/* Main Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="min-h-full bg-gradient-to-br from-slate-50 to-blue-100 py-8 px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h1 className="text-4xl font-bold text-center text-gray-800 mb-8">
-                Subscription Management
-              </h1>
-              
-              {!isConnected ? (
-                <div className="text-center p-8 bg-gray-50 rounded-xl">
-                  <p className="text-gray-600 text-lg">
-                    Please connect your wallet to manage your subscription
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* Subscription Status */}
-                  <div className="mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-700 mb-4 pb-2 border-b-2 border-gray-200">
-                      Subscription Status
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
-                        <span className="font-semibold text-gray-600">Status:</span>
-                        <span className={`font-bold ${isActive ? 'text-green-600' : 'text-red-600'}`}>
-                          {isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
-                        <span className="font-semibold text-gray-600">Monthly Price:</span>
-                        <span className="font-medium text-gray-800">
-                          {monthlyPrice ? `${formatEther(monthlyPrice)} TEST` : 'Loading...'}
-                        </span>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
-                        <span className="font-semibold text-gray-600">Remaining Days:</span>
-                        <span className="font-medium text-gray-800">
-                          {remainingDays ? remainingDays.toString() : '0'} days
-                        </span>
-                      </div>
+      <motion.main 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex-1 flex flex-col items-center px-8 min-h-0 overflow-y-auto justify-start pt-8"
+      >
+        <div className="max-w-4xl w-full">
+          
+          {!isConnected ? (
+            <motion.div 
+              variants={itemVariants}
+              className="text-center p-8 bg-gray-200 rounded-2xl border border-gray-300 shadow-lg"
+            >
+              <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <h3 className="text-xl font-semibold text-black mb-2">Wallet Connection Required</h3>
+              <p className="text-gray-600 text-lg">
+                Please connect your wallet to manage your subscription
+              </p>
+            </motion.div>
+          ) : (
+            <>
+              {/* Subscription Status Cards */}
+              <motion.div 
+                variants={itemVariants}
+                className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+              >
+                <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-600 mb-1">Status</h3>
+                      <p className={`text-2xl font-bold ${isActive ? 'text-green-600' : 'text-red-600'}`}>
+                        {isActive ? 'Active' : 'Inactive'}
+                      </p>
                     </div>
-                  </div>
-
-                  {/* Subscription Details */}
-                  {subscriptionData && subscriptionData.subscriptionDate > 0 && (
-                    <div className="mb-8">
-                      <h2 className="text-2xl font-semibold text-gray-700 mb-4 pb-2 border-b-2 border-gray-200">
-                        Subscription Details
-                      </h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <span className="font-semibold text-gray-600 block mb-2">Subscription Date:</span>
-                          <span className="text-gray-800">{formatDate(subscriptionData.subscriptionDate)}</span>
-                        </div>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <span className="font-semibold text-gray-600 block mb-2">Expiry Date:</span>
-                          <span className="text-gray-800">{formatDate(subscriptionData.expiryDate)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="mb-8">
-                    <h2 className="text-2xl font-semibold text-gray-700 mb-4 pb-2 border-b-2 border-gray-200">
-                      Actions
-                    </h2>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <button
-                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-none"
-                        onClick={handleSubscribe}
-                        disabled={loading || isSubscribeLoading}
-                      >
-                        {loading || isSubscribeLoading ? (
-                          <div className="flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                            Processing...
-                          </div>
-                        ) : (
-                          isActive ? 'Renew Subscription' : 'Subscribe Now'
-                        )}
-                      </button>
-                      
-                      {isActive && (
-                        <button
-                          className="flex-1 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-none"
-                          onClick={handleCancel}
-                          disabled={loading || isCancelLoading}
-                        >
-                          {loading || isCancelLoading ? (
-                            <div className="flex items-center justify-center">
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                              Processing...
-                            </div>
-                          ) : (
-                            'Cancel Subscription'
-                          )}
-                        </button>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      isActive ? 'bg-green-100' : 'bg-red-100'
+                    }`}>
+                      {isActive ? (
+                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                       )}
                     </div>
                   </div>
-
-                  {/* Transaction Status */}
-                  {txStatus && (
-                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-blue-800 font-medium flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                        {txStatus}
+                </div>
+                
+                <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-600 mb-1">Monthly Price</h3>
+                      <p className="text-2xl font-bold text-black">
+                        0.01 TEST
                       </p>
                     </div>
-                  )}
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-600 mb-1">Remaining Days</h3>
+                      <p className="text-2xl font-bold text-black">
+                        {remainingDays ? remainingDays.toString() : '0'}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
 
-                  {/* Messages */}
-                  {error && (
-                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              {/* Subscription Details */}
+              {subscriptionData && subscriptionData.subscriptionDate > 0 && (
+                <motion.div 
+                  variants={itemVariants}
+                  className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg mb-8"
+                >
+                  <h3 className="text-lg font-semibold text-black mb-4">Subscription Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-300 p-4 rounded-lg">
+                      <span className="font-medium text-gray-600 block mb-2">Subscription Date</span>
+                      <span className="text-black">{formatDate(subscriptionData.subscriptionDate)}</span>
+                    </div>
+                    <div className="bg-gray-300 p-4 rounded-lg">
+                      <span className="font-medium text-gray-600 block mb-2">Expiry Date</span>
+                      <span className="text-black">{formatDate(subscriptionData.expiryDate)}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Action Buttons */}
+              <motion.div 
+                variants={itemVariants}
+                className="flex flex-col sm:flex-row gap-4 mb-8"
+              >
+                <button
+                  onClick={handleSubscribe}
+                  disabled={loading || isSubscribeLoading}
+                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
+                    loading || isSubscribeLoading
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100'
+                      : 'bg-gray-600 text-white hover:bg-gray-700 hover:-translate-y-1'
+                  }`}
+                >
+                  {loading || isSubscribeLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
+                      Processing...
+                    </div>
+                  ) : (
+                    isActive ? 'Renew Subscription' : 'Subscribe Now'
+                  )}
+                </button>
+                
+                {isActive && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={loading || isCancelLoading}
+                    className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
+                      loading || isCancelLoading
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100'
+                        : 'bg-red-600 text-white hover:bg-red-700 hover:-translate-y-1'
+                    }`}
+                  >
+                    {loading || isCancelLoading ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600 mr-2"></div>
+                        Processing...
+                      </div>
+                    ) : (
+                      'Cancel Subscription'
+                    )}
+                  </button>
+                )}
+              </motion.div>
+
+              {/* Status Messages */}
+              {txStatus && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl shadow-lg"
+                >
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+                    <p className="text-blue-800 font-medium">{txStatus}</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl shadow-lg"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <svg className="w-6 h-6 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                       <p className="text-red-800 font-medium">{error}</p>
                     </div>
-                  )}
-                  
-                  {success && (
-                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <button
+                      onClick={() => setError('')}
+                      className="text-red-500 hover:text-red-700 ml-2"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+              
+              {success && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl shadow-lg"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                       <p className="text-green-800 font-medium">{success}</p>
                     </div>
-                  )}
-                </>
+                    <button
+                      onClick={() => setSuccess('')}
+                      className="text-green-500 hover:text-green-700 ml-2"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </motion.div>
               )}
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      </div>
+      </motion.main>
     </div>
   );
 };
