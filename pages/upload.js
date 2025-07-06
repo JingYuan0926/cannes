@@ -1111,7 +1111,7 @@ export default function Upload() {
                           viewBox="0 0 24 24"
                         >
                           <path d="M6 2V8H6.01L6 8.01L10.5 12L6 15.99L6.01 16H6V22H18V16H17.99L18 15.99L13.5 12L18 8.01L17.99 8H18V2H6ZM16 4V6.5L12 10.5L8 6.5V4H16ZM8 17.5L12 13.5L16 17.5V20H8V17.5Z"/>
-                        </svg>
+                  </svg>
                       </motion.div>
                     </div>
                     
@@ -1310,8 +1310,8 @@ export default function Upload() {
                         </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
+                </div>
+              ) : (
                   <div className="p-8 space-y-4">
                     {/* Error Icon */}
                     <div className="flex justify-center">
@@ -1366,7 +1366,7 @@ export default function Upload() {
                     className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                   >
                     Complete Analysis
-                  </button>
+            </button>
                   <button
                     onClick={() => {
                       const dataStr = JSON.stringify(analysisResults, null, 2);
@@ -1384,7 +1384,7 @@ export default function Upload() {
                   </button>
                 </div>
               )}
-            </motion.div>
+          </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

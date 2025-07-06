@@ -307,6 +307,16 @@ export default function View() {
     },
   };
 
+  // --- Stats Calculation ---
+  const totalDatasets = files.length + analysisReports.length;
+  const uploadedFilesCount = files.length;
+  const analysisReportsCount = analysisReports.length;
+  const activeDatasets = files.filter(f => f.isActive).length + analysisReports.filter(r => r.isActive).length;
+  const inactiveDatasets = files.filter(f => !f.isActive).length + analysisReports.filter(r => !r.isActive).length;
+  const totalSizeMB = files.length > 0 
+    ? (files.reduce((total, file) => total + (file.originalSize || file.size || 0), 0) / (1024 * 1024)).toFixed(1)
+    : '0.0';
+
   return (
     <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
       {/* Navigation Bar */}
@@ -367,75 +377,55 @@ export default function View() {
         {/* Summary Stats */}
         <motion.div 
           variants={containerVariants}
-          className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8"
         >
+          {/* Total Datasets */}
           <motion.div 
             variants={statsVariants}
-            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
           >
-            <div>
-              <h3 className="text-2xl font-bold text-black">{files.length}</h3>
-              <p className="text-black text-sm">Total Files</p>
-            </div>
+            <h3 className="text-3xl font-extrabold text-black mb-1">{totalDatasets}</h3>
+            <p className="text-gray-700 text-sm font-medium">Total Datasets</p>
           </motion.div>
-          
+          {/* Uploaded Files */}
           <motion.div 
             variants={statsVariants}
-            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
           >
-            <div>
-              <h3 className="text-2xl font-bold text-green-600">
-                {files.filter(file => file.isActive).length}
-              </h3>
-              <p className="text-black text-sm">Active Files</p>
-            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">{uploadedFilesCount}</h3>
+            <p className="text-gray-700 text-sm font-medium">Uploaded Files</p>
           </motion.div>
-          
+          {/* Analysis Reports */}
           <motion.div 
             variants={statsVariants}
-            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
           >
-            <div>
-              <h3 className="text-2xl font-bold text-blue-600">
-                {analysisReports.length}
-              </h3>
-              <p className="text-black text-sm">Analysis Reports</p>
-              <div className="mt-2 flex space-x-2 text-xs">
-                <span className="text-green-600">
-                  {analysisReports.filter(report => report.isActive).length} active
-                </span>
-                <span className="text-red-600">
-                  {analysisReports.filter(report => !report.isActive).length} inactive
-                </span>
-              </div>
-            </div>
+            <h3 className="text-2xl font-bold text-black mb-1">{analysisReportsCount}</h3>
+            <p className="text-gray-700 text-sm font-medium">Analysis Reports</p>
           </motion.div>
-          
+          {/* Active Datasets */}
           <motion.div 
             variants={statsVariants}
-            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
           >
-            <div>
-              <h3 className="text-2xl font-bold text-red-600">
-                {files.filter(file => !file.isActive).length}
-              </h3>
-              <p className="text-black text-sm">Inactive Files</p>
-            </div>
+            <h3 className="text-2xl font-bold text-green-600 mb-1">{activeDatasets}</h3>
+            <p className="text-gray-700 text-sm font-medium">Active Datasets</p>
           </motion.div>
-          
+          {/* Inactive Datasets */}
           <motion.div 
             variants={statsVariants}
-            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
           >
-            <div>
-              <h3 className="text-2xl font-bold text-black">
-                {files.length > 0 
-                  ? (files.reduce((total, file) => total + (file.originalSize || 0), 0) / (1024 * 1024)).toFixed(1) + ' MB'
-                  : '0 MB'
-                }
-              </h3>
-              <p className="text-black text-sm">Total Size</p>
-            </div>
+            <h3 className="text-2xl font-bold text-red-600 mb-1">{inactiveDatasets}</h3>
+            <p className="text-gray-700 text-sm font-medium">Inactive Datasets</p>
+          </motion.div>
+          {/* Total Size */}
+          <motion.div 
+            variants={statsVariants}
+            className="bg-white rounded-2xl p-6 border border-gray-200 shadow-md flex flex-col items-center justify-center transition-all duration-300 hover:shadow-xl"
+          >
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">{totalSizeMB} MB</h3>
+            <p className="text-gray-700 text-sm font-medium">Total Size</p>
           </motion.div>
         </motion.div>
 
