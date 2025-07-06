@@ -334,7 +334,7 @@ export default function View() {
   };
 
   return (
-    <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
+    <div className="h-screen font-montserrat bg-gradient-to-br from-blue-50 to-indigo-100 text-slate-900 transition-colors duration-300 overflow-hidden flex flex-col">
       {/* Navigation Bar */}
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
@@ -342,24 +342,24 @@ export default function View() {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="relative flex justify-center pt-8 pb-4 px-8 flex-shrink-0"
       >
-        <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <div className="flex bg-white/80 backdrop-blur-sm rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl border border-blue-200">
           <Link href="/analyse">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Analyse
             </div>
           </Link>
           <Link href="/upload">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Upload
             </div>
           </Link>
           <Link href="/view">
-            <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
+            <div className="px-6 py-2 rounded-full bg-blue-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
               View
             </div>
           </Link>
           <Link href="/subscribe">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Subscribe
             </div>
           </Link>
@@ -376,8 +376,8 @@ export default function View() {
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
         className="px-8 py-4 flex-shrink-0"
       >
-        <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">View Your Data</h1>
-        <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
+        <h1 className="text-3xl font-bold text-center text-slate-800 transform transition-all duration-300">View Your Data</h1>
+        <p className="text-center text-slate-600 mt-2 transition-opacity duration-200">
           Manage and explore your uploaded datasets
         </p>
       </motion.div>
@@ -397,50 +397,50 @@ export default function View() {
         >
           <motion.div 
             variants={statsVariants}
-            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg"
           >
             <div>
-              <h3 className="text-2xl font-bold text-black">{files.length}</h3>
-              <p className="text-black text-sm">Total Files</p>
+              <h3 className="text-2xl font-bold text-slate-800">{files.length}</h3>
+              <p className="text-slate-600 text-sm">Total Files</p>
             </div>
           </motion.div>
           
           <motion.div 
             variants={statsVariants}
-            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg"
           >
             <div>
-              <h3 className="text-2xl font-bold text-green-600">
+              <h3 className="text-2xl font-bold text-emerald-600">
                 {files.filter(file => file.isActive).length}
               </h3>
-              <p className="text-black text-sm">Active Files</p>
+              <p className="text-slate-600 text-sm">Active Files</p>
             </div>
           </motion.div>
           
           <motion.div 
             variants={statsVariants}
-            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg"
           >
             <div>
-              <h3 className="text-2xl font-bold text-red-600">
+              <h3 className="text-2xl font-bold text-rose-600">
                 {files.filter(file => !file.isActive).length}
               </h3>
-              <p className="text-black text-sm">Inactive Files</p>
+              <p className="text-slate-600 text-sm">Inactive Files</p>
             </div>
           </motion.div>
           
           <motion.div 
             variants={statsVariants}
-            className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md"
+            className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg"
           >
             <div>
-              <h3 className="text-2xl font-bold text-black">
+              <h3 className="text-2xl font-bold text-slate-800">
                 {files.length > 0 
                   ? (files.reduce((total, file) => total + (file.originalSize || 0), 0) / (1024 * 1024)).toFixed(1) + ' MB'
                   : '0 MB'
                 }
               </h3>
-              <p className="text-black text-sm">Total Size</p>
+              <p className="text-slate-600 text-sm">Total Size</p>
             </div>
           </motion.div>
         </motion.div>
@@ -452,7 +452,7 @@ export default function View() {
         >
           <div className="flex-1">
             <div className="relative group">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -460,7 +460,7 @@ export default function View() {
                 placeholder="Search files..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg text-black placeholder-gray-600"
+                className="w-full pl-10 pr-4 py-2.5 bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg text-slate-800 placeholder-slate-500"
               />
             </div>
           </div>
@@ -469,7 +469,7 @@ export default function View() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center justify-between w-full sm:w-40 px-4 py-3 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg transform hover:scale-105 focus:scale-105 text-black"
+              className="flex items-center justify-between w-full sm:w-40 px-4 py-3 bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:shadow-md focus:shadow-lg transform hover:scale-105 focus:scale-105 text-slate-800"
             >
               <div className="flex items-center">
                 <span className="text-sm font-medium">
@@ -477,7 +477,7 @@ export default function View() {
                 </span>
               </div>
               <svg 
-                className={`w-4 h-4 text-gray-600 transition-transform duration-200 mr-1 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                className={`w-4 h-4 text-slate-500 transition-transform duration-200 mr-1 ${isDropdownOpen ? 'rotate-180' : ''}`}
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
@@ -493,7 +493,7 @@ export default function View() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.15, ease: "easeOut" }}
-                  className="absolute top-full left-0 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden z-50"
+                  className="absolute top-full left-0 w-full mt-1 bg-white/95 backdrop-blur-sm border border-blue-200 rounded-lg shadow-lg overflow-hidden z-50"
                 >
                   {filterOptions.map((option, index) => (
                     <motion.button
@@ -505,15 +505,15 @@ export default function View() {
                         setFilterStatus(option.value);
                         setIsDropdownOpen(false);
                       }}
-                      className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-all duration-200 flex items-center justify-between ${
+                      className={`w-full px-4 py-3 text-left hover:bg-blue-50 transition-all duration-200 flex items-center justify-between ${
                         filterStatus === option.value 
-                          ? 'bg-gray-100 border-l-4 border-gray-500' 
+                          ? 'bg-blue-100 border-l-4 border-blue-500' 
                           : 'border-l-4 border-transparent'
                       }`}
                     >
-                      <span className="text-sm font-medium text-gray-900">{option.label}</span>
+                      <span className="text-sm font-medium text-slate-800">{option.label}</span>
                       {filterStatus === option.value && (
-                        <svg className="w-4 h-4 text-gray-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-blue-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
@@ -528,35 +528,35 @@ export default function View() {
         {/* Files Table */}
         <motion.div 
           variants={itemVariants}
-          className="bg-gray-200 rounded-2xl border border-gray-300 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl"
+          className="bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-200 overflow-hidden transition-all duration-300 shadow-lg hover:shadow-xl"
         >
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
-              <thead className="bg-gray-300 transition-colors duration-300">
+              <thead className="bg-blue-100/80 backdrop-blur-sm transition-colors duration-300">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-1/3">File</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Size</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-24">Modified</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Security</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-32">Actions</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-1/3">File</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-20">Size</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-24">Modified</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-20">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-20">Security</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-colors duration-200 w-32">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-300">
+              <tbody className="divide-y divide-blue-200">
                 {filteredFiles.map((file, index) => (
                   <motion.tr 
                     key={file.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="hover:bg-gray-300 transition-all duration-200 group hover:shadow-md"
+                    className="hover:bg-blue-50/50 transition-all duration-200 group hover:shadow-md"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-black group-hover:text-gray-800 transition-colors duration-200">
+                      <div className="text-sm font-medium text-slate-800 group-hover:text-slate-900 transition-colors duration-200">
                         {file.name}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black group-hover:text-gray-800 transition-colors duration-200">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 group-hover:text-slate-900 transition-colors duration-200">
                       {file.size}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -571,8 +571,8 @@ export default function View() {
                         onClick={() => toggleFileStatus(file.id)}
                         className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 ${
                           file.isActive
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:shadow-md'
-                            : 'bg-red-100 text-red-800 hover:bg-red-200 hover:shadow-md'
+                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 hover:shadow-md'
+                            : 'bg-rose-100 text-rose-800 hover:bg-rose-200 hover:shadow-md'
                         }`}
                       >
                         {file.isActive ? 'Active' : 'Inactive'}
@@ -582,7 +582,7 @@ export default function View() {
                       <div className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
                         file.isEncrypted
                           ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
+                          : 'bg-amber-100 text-amber-800'
                       }`}>
                         {file.isEncrypted ? (
                           <div className="flex items-center">
@@ -605,19 +605,19 @@ export default function View() {
                       <div className="flex space-x-4">
                         <button
                           onClick={() => handleViewFile(file)}
-                          className="text-black hover:text-gray-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                          className="text-blue-600 hover:text-blue-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
                         >
                           View
                         </button>
                         <button
                           onClick={() => handleDownloadFile(file)}
-                          className="text-black hover:text-gray-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                          className="text-indigo-600 hover:text-indigo-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
                         >
                           Download
                         </button>
                         <button
                           onClick={() => handleDeleteFile(file.id)}
-                          className="text-red-600 hover:text-red-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                          className="text-rose-600 hover:text-rose-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
                         >
                           Delete
                         </button>
@@ -636,13 +636,13 @@ export default function View() {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="text-center py-12"
             >
-              <p className="text-black text-lg mb-2">
+              <p className="text-slate-700 text-lg mb-2">
                 {files.length === 0 ? "No files uploaded yet" : "No files found matching your criteria"}
               </p>
               {files.length === 0 && (
                 <div className="mt-4">
                   <Link href="/upload">
-                    <button className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200">
+                    <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200">
                       Upload Your First File
                     </button>
                   </Link>
@@ -658,13 +658,13 @@ export default function View() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg"
+            className="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-lg"
           >
             <div className="flex justify-between items-start">
-              <p className="text-red-700 text-sm">{contentError}</p>
+              <p className="text-rose-700 text-sm">{contentError}</p>
               <button
                 onClick={() => setContentError('')}
-                className="text-red-500 hover:text-red-700 ml-2"
+                className="text-rose-500 hover:text-rose-700 ml-2"
               >
                 ×
               </button>
@@ -680,7 +680,7 @@ export default function View() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
             onClick={() => {
               setViewingFile(null);
               setFileContent(null);
@@ -695,11 +695,11 @@ export default function View() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-gray-200 bg-gray-50">
+              <div className="p-6 border-b border-blue-200 bg-blue-50/80 backdrop-blur-sm">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-lg font-semibold text-black">{viewingFile.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <h3 className="text-lg font-semibold text-slate-800">{viewingFile.name}</h3>
+                    <p className="text-sm text-slate-600 mt-1">
                       Blob ID: <a 
                         href={`https://walruscan.com/testnet/blob/${viewingFile.blobId}`}
                         target="_blank"
@@ -719,7 +719,7 @@ export default function View() {
                       setFileContent(null);
                       setContentError('');
                     }}
-                    className="text-gray-400 hover:text-gray-600 transition-all duration-200 transform hover:scale-110 active:scale-90"
+                    className="text-slate-400 hover:text-slate-600 transition-all duration-200 transform hover:scale-110 active:scale-90"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -732,21 +732,21 @@ export default function View() {
               <div className="p-6 overflow-y-auto max-h-[70vh] bg-white">
                 {isLoadingContent ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-2">Loading file content...</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="text-slate-600 mt-2">Loading file content...</p>
                   </div>
                 ) : fileContent ? (
                   <div>
                     {/* File Type Info */}
-                    <div className="mb-4 p-3 bg-gray-200 rounded-lg">
-                      <p className="text-sm text-black">
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-slate-700">
                         <strong>Type:</strong> {fileContent.fileType?.displayName || 'Unknown'} • 
                         <strong> Size:</strong> {Math.round(fileContent.bytes / 1024)} KB • 
                         <strong> Content-Type:</strong> {fileContent.contentType}
                         {fileContent.isDecrypted && (
                           <>
                             {' • '}
-                            <span className="inline-flex items-center text-green-700">
+                            <span className="inline-flex items-center text-emerald-700">
                               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
@@ -760,13 +760,13 @@ export default function View() {
                     {/* Render Content Based on Type */}
                     {fileContent.fileType?.type === 'csv' && fileContent.csvData ? (
                       <div>
-                        <h4 className="font-semibold mb-2 text-black">CSV Data ({fileContent.csvData.length} rows):</h4>
-                        <div className="overflow-x-auto max-h-96 border rounded-lg shadow-md">
+                        <h4 className="font-semibold mb-2 text-slate-800">CSV Data ({fileContent.csvData.length} rows):</h4>
+                        <div className="overflow-x-auto max-h-96 border border-blue-200 rounded-lg shadow-md">
                           <table className="min-w-full text-sm">
-                            <thead className="bg-gray-200">
+                            <thead className="bg-blue-100">
                               <tr>
                                 {Object.keys(fileContent.csvData[0] || {}).map((header) => (
-                                  <th key={header} className="px-3 py-2 text-left font-medium border-b text-black">
+                                  <th key={header} className="px-3 py-2 text-left font-medium border-b border-blue-200 text-slate-800">
                                     {header}
                                   </th>
                                 ))}
@@ -774,9 +774,9 @@ export default function View() {
                             </thead>
                             <tbody>
                               {fileContent.csvData.slice(0, 50).map((row, index) => (
-                                <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-blue-50'}>
                                   {Object.values(row).map((cell, cellIndex) => (
-                                    <td key={cellIndex} className="px-3 py-2 border-b text-black">
+                                    <td key={cellIndex} className="px-3 py-2 border-b border-blue-200 text-slate-700">
                                       {cell}
                                     </td>
                                   ))}
@@ -785,7 +785,7 @@ export default function View() {
                             </tbody>
                           </table>
                           {fileContent.csvData.length > 50 && (
-                            <p className="text-xs text-gray-600 p-2">
+                            <p className="text-xs text-slate-600 p-2">
                               Showing first 50 rows of {fileContent.csvData.length} total rows
                             </p>
                           )}
@@ -793,24 +793,24 @@ export default function View() {
                       </div>
                     ) : fileContent.fileType?.type === 'json' && fileContent.jsonData ? (
                       <div>
-                        <h4 className="font-semibold mb-2 text-black">JSON Data:</h4>
-                        <pre className="text-sm bg-gray-200 p-4 rounded-lg border overflow-auto max-h-96 shadow-md">
+                        <h4 className="font-semibold mb-2 text-slate-800">JSON Data:</h4>
+                        <pre className="text-sm bg-blue-50 p-4 rounded-lg border border-blue-200 overflow-auto max-h-96 shadow-md">
                           {JSON.stringify(fileContent.jsonData, null, 2)}
                         </pre>
                       </div>
                     ) : fileContent.isText ? (
                       <div>
-                        <h4 className="font-semibold mb-2 text-black">Text Content:</h4>
-                        <pre className="text-sm bg-gray-200 p-4 rounded-lg border overflow-auto max-h-96 whitespace-pre-wrap shadow-md">
+                        <h4 className="font-semibold mb-2 text-slate-800">Text Content:</h4>
+                        <pre className="text-sm bg-blue-50 p-4 rounded-lg border border-blue-200 overflow-auto max-h-96 whitespace-pre-wrap shadow-md">
                           {fileContent.content}
                         </pre>
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <p className="text-gray-600 mb-4">Binary file - cannot preview</p>
+                        <p className="text-slate-600 mb-4">Binary file - cannot preview</p>
                         <button
                           onClick={() => handleDownloadFile(viewingFile)}
-                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                         >
                           Download File
                         </button>
@@ -819,24 +819,24 @@ export default function View() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-gray-600">Failed to load file content</p>
+                    <p className="text-slate-600">Failed to load file content</p>
                   </div>
                 )}
               </div>
 
               {/* Modal Footer */}
               {fileContent && (
-                <div className="p-6 border-t border-gray-200 bg-gray-50">
+                <div className="p-6 border-t border-blue-200 bg-blue-50/80 backdrop-blur-sm">
                   <div className="flex justify-between items-center">
                     <button
                       onClick={() => navigator.clipboard.writeText(viewingFile.blobId)}
-                      className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                      className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                     >
                       Copy Blob ID
                     </button>
                     <button
                       onClick={() => handleDownloadFile(viewingFile)}
-                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                     >
                       Download File
                     </button>
@@ -855,7 +855,7 @@ export default function View() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
             onClick={cancelDeleteFile}
           >
             <motion.div
@@ -866,32 +866,32 @@ export default function View() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="p-6 border-b border-gray-200 bg-gray-50">
-                <h3 className="text-lg font-semibold text-black">Delete File</h3>
+              <div className="p-6 border-b border-blue-200 bg-blue-50/80 backdrop-blur-sm">
+                <h3 className="text-lg font-semibold text-slate-800">Delete File</h3>
               </div>
 
               {/* Modal Content */}
               <div className="p-6 bg-white">
-                <p className="text-gray-700 mb-4">
+                <p className="text-slate-700 mb-4">
                   Are you sure you want to delete <strong>{deleteConfirmFile.name}</strong> from your local list?
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-slate-600">
                   This won't delete it from Walrus storage.
                 </p>
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <div className="p-6 border-t border-blue-200 bg-blue-50/80 backdrop-blur-sm">
                 <div className="flex justify-end space-x-3">
                   <button
                     onClick={cancelDeleteFile}
-                    className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                    className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={confirmDeleteFile}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                    className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                   >
                     Delete
                   </button>

@@ -305,71 +305,80 @@ export default function Analyse() {
   };
 
   const getUserAvatar = () => (
-    <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md transform transition-all duration-200 hover:scale-110 hover:shadow-lg">
+    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md transform transition-all duration-200 hover:scale-110 hover:shadow-lg">
       U
     </div>
   );
 
   const getAIAvatar = () => (
-    <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md transform transition-all duration-200 hover:scale-110 hover:shadow-lg">
-      <svg className="w-4 h-4 transform transition-transform duration-200 hover:rotate-12" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V7H2V9H3V15H2V17H3V21C3 22.1 3.89 23 5 23H19C20.1 23 21 22.1 21 21V17H22V15H21V9H22V7H21ZM19 9V15H5V9H19ZM9 11V13H7V11H9ZM13 11V13H11V11H13ZM17 11V13H15V11H17Z"/>
-      </svg>
+    <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-md">
+      AI
     </div>
   );
 
   const TypingIndicator = () => (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="flex items-start space-x-3 mb-4"
-    >
-      {getAIAvatar()}
-      <div className="bg-gray-200 rounded-2xl rounded-bl-md px-4 py-3 transition-all duration-300 shadow-sm hover:shadow-md">
+    <div className="flex items-center space-x-1 p-3">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-md px-4 py-3 transition-all duration-300 shadow-sm hover:shadow-md">
         <div className="flex space-x-1">
-          <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 
   const MessageBubble = ({ message, isOwn }) => (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`flex items-start space-x-3 mb-4 ${isOwn ? 'flex-row-reverse space-x-reverse' : ''} group`}
-    >
-      {isOwn ? getUserAvatar() : getAIAvatar()}
-      <div className="flex flex-col max-w-xs lg:max-w-md">
-        <div className={`px-4 py-3 rounded-2xl transition-all duration-300 group-hover:shadow-lg group-hover:scale-[1.02] ${
-          isOwn
-            ? 'bg-gray-600 text-white rounded-br-md shadow-md hover:bg-gray-700'
-            : 'bg-gray-200 text-black rounded-bl-md shadow-sm hover:bg-gray-300'
-        }`}>
-          {message.sender === 'ai' && !isOwn ? (
-            <div className="react-markdown text-sm leading-relaxed">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkBreaks]}
-                rehypePlugins={[rehypeRaw]}
-                skipHtml={false}
-              >
-                {message.text}
-              </ReactMarkdown>
-            </div>
+    <div className={`flex items-start space-x-2 p-3 ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
+      <div className={`flex-shrink-0 ${isOwn ? 'order-2' : 'order-1'}`}>
+        {isOwn ? getUserAvatar() : getAIAvatar()}
+      </div>
+      <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl transition-all duration-300 ${
+        isOwn 
+          ? 'bg-blue-600 text-white rounded-br-md shadow-md hover:bg-blue-700' 
+          : 'bg-white/80 backdrop-blur-sm text-slate-900 rounded-bl-md shadow-sm hover:shadow-md border border-blue-200'
+      }`}>
+        <div className="whitespace-pre-wrap break-words">
+          {isOwn ? (
+            message.text
           ) : (
-            <p className="text-sm leading-relaxed">{message.text}</p>
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              rehypePlugins={[rehypeRaw]}
+              components={{
+                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                code: ({ node, inline, className, children, ...props }) => {
+                  const match = /language-(\w+)/.exec(className || '');
+                  return !inline ? (
+                    <pre className="bg-slate-100 p-2 rounded text-sm overflow-x-auto my-2">
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    </pre>
+                  ) : (
+                    <code className="bg-slate-100 px-1 py-0.5 rounded text-sm" {...props}>
+                      {children}
+                    </code>
+                  );
+                },
+                ul: ({ children }) => <ul className="list-disc list-inside mb-2">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal list-inside mb-2">{children}</ol>,
+                li: ({ children }) => <li className="mb-1">{children}</li>,
+                blockquote: ({ children }) => (
+                  <blockquote className="border-l-4 border-blue-300 pl-4 italic my-2">{children}</blockquote>
+                ),
+                h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-md font-semibold mb-2">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-sm font-medium mb-1">{children}</h3>,
+              }}
+            >
+              {message.text}
+            </ReactMarkdown>
           )}
         </div>
-        <div className={`flex items-center mt-1 ${isOwn ? 'justify-end' : 'justify-start'} opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
-          <span className="text-xs text-gray-600">
-            {formatTimestamp(message.timestamp)}
-          </span>
-        </div>
+        <span className="text-xs text-slate-600"></span>
       </div>
-    </motion.div>
+    </div>
   );
 
   // Animation variants
@@ -397,15 +406,15 @@ export default function Analyse() {
   };
 
   return (
-    <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
+    <div className="h-screen font-montserrat bg-gradient-to-br from-blue-50 to-indigo-100 text-slate-900 transition-colors duration-300 overflow-hidden flex flex-col">
       <style jsx>{`
         .react-markdown a {
-          color: #4fc3f7 !important;
+          color: #2563eb !important;
           text-decoration: underline;
           cursor: pointer;
         }
         .react-markdown a:hover {
-          color: #81d4fa !important;
+          color: #3b82f6 !important;
         }
       `}</style>
       {/* Navigation Bar */}
@@ -415,24 +424,24 @@ export default function Analyse() {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="relative flex justify-center pt-8 pb-4 px-8 flex-shrink-0"
       >
-        <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <div className="flex bg-white/80 backdrop-blur-sm rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl border border-blue-200">
           <Link href="/analyse">
-            <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
+            <div className="px-6 py-2 rounded-full bg-blue-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
               Analyse
             </div>
           </Link>
           <Link href="/upload">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Upload
             </div>
           </Link>
           <Link href="/view">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               View
             </div>
           </Link>
           <Link href="/subscribe">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Subscribe
             </div>
           </Link>
@@ -449,8 +458,8 @@ export default function Analyse() {
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
         className="px-8 py-2 flex-shrink-0"
       >
-        <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Analyse Your Data</h1>
-        <p className="text-center text-gray-600 mt-1">Chat with our AI to analyze and understand your data better</p>
+        <h1 className="text-3xl font-bold text-center text-slate-800 transform transition-all duration-300">Analyse Your Data</h1>
+        <p className="text-center text-slate-600 mt-1">Chat with our AI to analyze and understand your data better</p>
       </motion.div>
 
       {/* Main Layout */}
@@ -469,17 +478,17 @@ export default function Analyse() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -264 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="absolute left-0 top-0 bottom-0 w-64 bg-white flex flex-col transition-all duration-300 shadow-xl border-r-2 border-gray-300 z-20"
+              className="absolute left-0 top-0 bottom-0 w-64 bg-white/90 backdrop-blur-sm flex flex-col transition-all duration-300 shadow-xl border-r-2 border-blue-200 z-20"
             >
               {/* Sidebar Header with Close Button */}
-              <div className="flex items-center justify-between p-4 pb-2 border-b border-gray-200">
-                <h3 className="font-medium text-sm text-black">Chat History</h3>
+              <div className="flex items-center justify-between p-4 pb-2 border-b border-blue-200">
+                <h3 className="font-medium text-sm text-slate-800">Chat History</h3>
                 <button
                   onClick={toggleSidebar}
-                  className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center"
+                  className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center"
                   title="Hide Chat History"
                 >
-                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
@@ -491,8 +500,8 @@ export default function Analyse() {
                   <div className="space-y-2">
                     {chats.length === 0 ? (
                       <div className="text-center py-8">
-                        <p className="text-sm text-gray-500 mb-4">No chats yet</p>
-                        <p className="text-xs text-gray-400">Start a conversation to create your first chat</p>
+                        <p className="text-sm text-slate-500 mb-4">No chats yet</p>
+                        <p className="text-xs text-slate-400">Start a conversation to create your first chat</p>
                       </div>
                     ) : (
                       chats.map((chat, index) => (
@@ -502,15 +511,15 @@ export default function Analyse() {
                           onClick={() => handleChatSelect(chat)}
                           className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.01] hover:shadow-md active:scale-95 ${
                             activeChat?.id === chat.id
-                              ? 'bg-gray-600 text-white shadow-lg scale-[1.01]'
-                              : 'hover:bg-gray-300 text-black'
+                              ? 'bg-blue-600 text-white shadow-lg scale-[1.01]'
+                              : 'hover:bg-blue-100 text-slate-800'
                           }`}
                         >
                           <div className="flex justify-between items-center">
                             <span className="font-medium truncate flex-1 mr-2">{chat.name}</span>
                             {chat.messages.length > 0 && (
                               <span className={`text-xs opacity-75 px-2 py-1 rounded-full transition-all duration-200 flex-shrink-0 ${
-                                activeChat?.id === chat.id ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-400 hover:bg-gray-500'
+                                activeChat?.id === chat.id ? 'bg-white/20 hover:bg-white/30' : 'bg-blue-200 hover:bg-blue-300'
                               }`}>
                                 {chat.messages.length}
                               </span>
@@ -535,7 +544,7 @@ export default function Analyse() {
               >
                 <button
                   onClick={handleNewChat}
-                  className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-95 shadow-md hover:shadow-lg"
+                  className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-95 shadow-md hover:shadow-lg"
                 >
                   <svg className="w-4 h-4 transform transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -552,21 +561,21 @@ export default function Analyse() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 }}
-          className="flex-1 flex flex-col bg-white min-h-0 w-full"
+          className="flex-1 flex flex-col bg-white/30 backdrop-blur-sm min-h-0 w-full"
         >
           {/* Sidebar Toggle Button */}
           <div className="p-3 flex justify-start">
             <button
               onClick={toggleSidebar}
-              className="p-3 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center z-10"
+              className="p-3 rounded-2xl bg-white/80 backdrop-blur-sm hover:bg-blue-100 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center z-10 border border-blue-200"
               title={sidebarVisible ? "Hide Chat History" : "Show Chat History"}
             >
               {sidebarVisible ? (
-                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               )}
@@ -583,28 +592,28 @@ export default function Analyse() {
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="text-center py-8"
                 >
-                  <h3 className="text-lg font-medium mb-2 text-black mt-2">Start Your Analysis</h3>
-                  <p className="text-gray-600 mb-3">
+                  <h3 className="text-lg font-medium mb-2 text-slate-800 mt-2">Start Your Analysis</h3>
+                  <p className="text-slate-600 mb-3">
                     Ask me anything about your data and I'll help you discover insights.
                   </p>
-                  <div className="mb-4 p-3 bg-gray-100 rounded-lg">
-                    <p className="text-sm text-gray-700">
+                  <div className="mb-4 p-3 bg-blue-100/80 backdrop-blur-sm rounded-lg border border-blue-200">
+                    <p className="text-sm text-slate-800">
                       <strong>Active Files:</strong> {activeFiles.length} file{activeFiles.length !== 1 ? 's' : ''} ready for analysis
                     </p>
                     {activeFiles.length === 0 && (
-                      <p className="text-sm text-gray-600 mt-2">
+                      <p className="text-sm text-slate-600 mt-2">
                         No active files found. Upload files in the <Link href="/upload" className="text-blue-600 hover:underline">Upload</Link> section and mark them as active in the <Link href="/view" className="text-blue-600 hover:underline">View</Link> section.
                       </p>
                     )}
                     {activeFiles.length > 0 && (
                       <div className="mt-2">
-                        <p className="text-xs text-gray-600">Ready to analyze:</p>
-                        <ul className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-slate-600">Ready to analyze:</p>
+                        <ul className="text-xs text-slate-600 mt-1">
                           {activeFiles.slice(0, 3).map(file => (
                             <li key={file.id} className="truncate">• {file.name}</li>
                           ))}
                           {activeFiles.length > 3 && (
-                            <li className="text-gray-500">• ... and {activeFiles.length - 3} more</li>
+                            <li className="text-slate-500">• ... and {activeFiles.length - 3} more</li>
                           )}
                         </ul>
                       </div>
@@ -614,19 +623,19 @@ export default function Analyse() {
                     <div className="flex flex-wrap gap-2 justify-center">
                       <button 
                         onClick={() => handleSuggestionClick("Provide a summary of my data")}
-                        className="px-3 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                        className="px-3 py-2 bg-blue-100 text-slate-800 rounded-lg hover:bg-blue-200 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                       >
                         Summarize my data
                       </button>
                       <button 
                         onClick={() => handleSuggestionClick("What trends can you find in my data?")}
-                        className="px-3 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                        className="px-3 py-2 bg-blue-100 text-slate-800 rounded-lg hover:bg-blue-200 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                       >
                         Find trends
                       </button>
                       <button 
                         onClick={() => handleSuggestionClick("What insights can you provide from my data?")}
-                        className="px-3 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                        className="px-3 py-2 bg-blue-100 text-slate-800 rounded-lg hover:bg-blue-200 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                       >
                         Key insights
                       </button>
@@ -649,10 +658,10 @@ export default function Analyse() {
                       className="flex items-start space-x-3 mb-4"
                     >
                       {getAIAvatar()}
-                      <div className="bg-gray-200 rounded-2xl rounded-bl-md px-4 py-3 transition-all duration-300 shadow-sm">
+                      <div className="bg-blue-100 rounded-2xl rounded-bl-md px-4 py-3 transition-all duration-300 shadow-sm">
                         <div className="flex items-center space-x-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                          <span className="text-sm text-gray-700">Loading active files...</span>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          <span className="text-sm text-slate-700">Loading active files...</span>
                         </div>
                       </div>
                     </motion.div>
@@ -672,12 +681,12 @@ export default function Analyse() {
             className="p-6 pt-0 flex-shrink-0"
           >
             <div className="relative max-w-4xl mx-auto">
-              <div className="relative bg-gray-200 rounded-2xl transition-all duration-300 focus-within:border-gray-500 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md">
+              <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl transition-all duration-300 focus-within:border-blue-500 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md border border-blue-200">
                 <textarea
                   value={message}
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
-                  className="w-full h-12 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-gray-600 text-black transition-all duration-200 overflow-hidden"
+                  className="w-full h-12 p-4 pr-12 bg-transparent resize-none focus:outline-none placeholder-slate-500 text-slate-800 transition-all duration-200 overflow-hidden"
                   placeholder={activeFiles.length > 0 ? "Ask me anything about your active files..." : "Upload and activate files to start analysis..."}
                   rows="1"
                 />
@@ -685,7 +694,7 @@ export default function Analyse() {
                   <button 
                     onClick={handleSendMessage}
                     disabled={!message.trim() || activeFiles.length === 0}
-                    className="w-8 h-8 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
+                    className="w-8 h-8 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
                   >
                     <svg className="w-4 h-4 transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
@@ -693,7 +702,7 @@ export default function Analyse() {
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-gray-600 mt-2 text-center transition-opacity duration-200">
+              <p className="text-xs text-slate-600 mt-2 text-center transition-opacity duration-200">
                 {activeFiles.length > 0 
                   ? "Press Enter to send, Shift+Enter for new line" 
                   : "Upload and activate files to start analysis"}

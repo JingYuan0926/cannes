@@ -250,7 +250,7 @@ const Subscribe = () => {
   };
 
   return (
-    <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
+    <div className="h-screen font-montserrat bg-gradient-to-br from-blue-50 to-indigo-100 text-slate-900 transition-colors duration-300 overflow-hidden flex flex-col">
       {/* Navigation Bar */}
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
@@ -258,24 +258,24 @@ const Subscribe = () => {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="relative flex justify-center pt-8 pb-4 px-8 flex-shrink-0"
       >
-        <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <div className="flex bg-white/80 backdrop-blur-sm border border-blue-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-800 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Analyse
             </div>
           </Link>
           <Link href="/upload">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-800 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Upload
             </div>
           </Link>
           <Link href="/view">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-800 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               View
             </div>
           </Link>
           <Link href="/subscribe">
-            <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
+            <div className="px-6 py-2 rounded-full bg-blue-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
               Subscribe
             </div>
           </Link>
@@ -292,8 +292,8 @@ const Subscribe = () => {
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
         className="px-8 py-4 flex-shrink-0"
       >
-        <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Subscription Management</h1>
-        <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
+        <h1 className="text-3xl font-bold text-center text-slate-900 transform transition-all duration-300">Subscription Management</h1>
+        <p className="text-center text-slate-600 mt-2 transition-opacity duration-200">
           Manage your subscription and access premium features
         </p>
       </motion.div>
@@ -310,13 +310,13 @@ const Subscribe = () => {
           {!isConnected ? (
             <motion.div 
               variants={itemVariants}
-              className="text-center p-8 bg-gray-200 rounded-2xl border border-gray-300 shadow-lg"
+              className="text-center p-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-200 shadow-lg"
             >
-              <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-16 h-16 text-blue-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              <h3 className="text-xl font-semibold text-black mb-2">Wallet Connection Required</h3>
-              <p className="text-gray-600 text-lg">
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">Wallet Connection Required</h3>
+              <p className="text-slate-600 text-lg">
                 Please connect your wallet to manage your subscription
               </p>
             </motion.div>
@@ -327,23 +327,23 @@ const Subscribe = () => {
                 variants={itemVariants}
                 className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
               >
-                <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-lg hover:shadow-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-600 mb-1">Status</h3>
-                      <p className={`text-2xl font-bold ${isActive ? 'text-green-600' : 'text-red-600'}`}>
+                      <h3 className="text-sm font-medium text-slate-600 mb-1">Status</h3>
+                      <p className={`text-2xl font-bold ${isActive ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {isActive ? 'Active' : 'Inactive'}
                       </p>
                     </div>
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      isActive ? 'bg-green-100' : 'bg-red-100'
+                      isActive ? 'bg-emerald-100' : 'bg-rose-100'
                     }`}>
                       {isActive ? (
-                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       ) : (
-                        <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       )}
@@ -351,11 +351,11 @@ const Subscribe = () => {
                   </div>
                 </div>
                 
-                <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-lg hover:shadow-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-600 mb-1">Monthly Price</h3>
-                      <p className="text-2xl font-bold text-black">
+                      <h3 className="text-sm font-medium text-slate-600 mb-1">Monthly Price</h3>
+                      <p className="text-2xl font-bold text-slate-900">
                         0.01 TEST
                       </p>
                     </div>
@@ -367,11 +367,11 @@ const Subscribe = () => {
                   </div>
                 </div>
                 
-                <div className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-lg hover:shadow-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-600 mb-1">Remaining Days</h3>
-                      <p className="text-2xl font-bold text-black">
+                      <h3 className="text-sm font-medium text-slate-600 mb-1">Remaining Days</h3>
+                      <p className="text-2xl font-bold text-slate-900">
                         {remainingDays ? remainingDays.toString() : '0'}
                       </p>
                     </div>
@@ -388,17 +388,17 @@ const Subscribe = () => {
               {subscriptionData && subscriptionData.subscriptionDate > 0 && (
                 <motion.div 
                   variants={itemVariants}
-                  className="bg-gray-200 rounded-2xl p-6 border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg mb-8"
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 transition-all duration-300 shadow-lg hover:shadow-xl mb-8"
                 >
-                  <h3 className="text-lg font-semibold text-black mb-4">Subscription Details</h3>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Subscription Details</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-gray-300 p-4 rounded-lg">
-                      <span className="font-medium text-gray-600 block mb-2">Subscription Date</span>
-                      <span className="text-black">{formatDate(subscriptionData.subscriptionDate)}</span>
+                    <div className="bg-blue-50/80 backdrop-blur-sm p-4 rounded-lg border border-blue-100">
+                      <span className="font-medium text-slate-600 block mb-2">Subscription Date</span>
+                      <span className="text-slate-900">{formatDate(subscriptionData.subscriptionDate)}</span>
                     </div>
-                    <div className="bg-gray-300 p-4 rounded-lg">
-                      <span className="font-medium text-gray-600 block mb-2">Expiry Date</span>
-                      <span className="text-black">{formatDate(subscriptionData.expiryDate)}</span>
+                    <div className="bg-blue-50/80 backdrop-blur-sm p-4 rounded-lg border border-blue-100">
+                      <span className="font-medium text-slate-600 block mb-2">Expiry Date</span>
+                      <span className="text-slate-900">{formatDate(subscriptionData.expiryDate)}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -414,13 +414,13 @@ const Subscribe = () => {
                   disabled={loading || isSubscribeLoading}
                   className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
                     loading || isSubscribeLoading
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100'
-                      : 'bg-gray-600 text-white hover:bg-gray-700 hover:-translate-y-1'
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed scale-100'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 hover:-translate-y-1'
                   }`}
                 >
                   {loading || isSubscribeLoading ? (
                     <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
                       Processing...
                     </div>
                   ) : (
@@ -434,13 +434,13 @@ const Subscribe = () => {
                     disabled={loading || isCancelLoading}
                     className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
                       loading || isCancelLoading
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100'
-                        : 'bg-red-600 text-white hover:bg-red-700 hover:-translate-y-1'
+                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed scale-100'
+                        : 'bg-rose-600 text-white hover:bg-rose-700 hover:-translate-y-1'
                     }`}
                   >
                     {loading || isCancelLoading ? (
                       <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600 mr-2"></div>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-rose-600 mr-2"></div>
                         Processing...
                       </div>
                     ) : (

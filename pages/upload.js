@@ -151,7 +151,7 @@ export default function Upload() {
   };
 
   return (
-    <div className="h-screen font-montserrat bg-white text-gray-900 transition-colors duration-300 overflow-hidden flex flex-col">
+    <div className="h-screen font-montserrat bg-gradient-to-br from-blue-50 to-indigo-100 text-slate-900 transition-colors duration-300 overflow-hidden flex flex-col">
       {/* Navigation Bar */}
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
@@ -159,24 +159,24 @@ export default function Upload() {
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="relative flex justify-center pt-8 pb-4 px-8 flex-shrink-0"
       >
-        <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <div className="flex bg-white/80 backdrop-blur-sm rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl border border-blue-200">
           <Link href="/analyse">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Analyse
             </div>
           </Link>
           <Link href="/upload">
-            <div className="px-6 py-2 rounded-full bg-gray-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
+            <div className="px-6 py-2 rounded-full bg-blue-600 text-white font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95 shadow-md">
               Upload
             </div>
           </Link>
           <Link href="/view">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               View
             </div>
           </Link>
           <Link href="/subscribe">
-            <div className="px-6 py-2 rounded-full hover:bg-gray-300 text-black font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
+            <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
               Subscribe
             </div>
           </Link>
@@ -193,8 +193,8 @@ export default function Upload() {
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
         className="px-8 py-4 flex-shrink-0"
       >
-        <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Upload Your Data</h1>
-        <p className="text-center text-gray-600 mt-2 transition-opacity duration-200">
+        <h1 className="text-3xl font-bold text-center text-slate-800 transform transition-all duration-300">Upload Your Data</h1>
+        <p className="text-center text-slate-600 mt-2 transition-opacity duration-200">
           Upload your datasets to start analyzing and discovering insights
         </p>
       </motion.div>
@@ -213,10 +213,10 @@ export default function Upload() {
             variants={itemVariants}
             className={`border-2 rounded-2xl p-12 text-center transition-all duration-300 transform hover:scale-[1.02] ${
               selectedFiles.length > 0
-                ? 'border-solid border-green-500 bg-green-50 scale-[1.02] shadow-lg'
+                ? 'border-solid border-emerald-400 bg-emerald-50/80 backdrop-blur-sm scale-[1.02] shadow-lg'
                 : isDragging
-                ? 'border-dashed border-gray-500 bg-gray-200 scale-[1.05] shadow-2xl animate-pulse'
-                : 'border-dashed border-gray-300 hover:border-gray-400 bg-gray-200 shadow-md hover:shadow-xl'
+                ? 'border-dashed border-blue-500 bg-blue-100/80 backdrop-blur-sm scale-[1.05] shadow-2xl animate-pulse'
+                : 'border-dashed border-blue-300 hover:border-blue-400 bg-white/80 backdrop-blur-sm shadow-md hover:shadow-xl'
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -225,12 +225,12 @@ export default function Upload() {
             <div className="space-y-4">
               <div className="flex justify-center">
                 {selectedFiles.length > 0 ? (
-                  <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-12 h-12 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 ) : (
                   <svg
-                    className={`w-12 h-12 text-gray-600 transition-all duration-300 ${isDragging ? 'animate-bounce text-gray-700' : ''}`}
+                    className={`w-12 h-12 text-slate-600 transition-all duration-300 ${isDragging ? 'animate-bounce text-blue-700' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -252,19 +252,19 @@ export default function Upload() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <p className="text-lg font-medium mb-2 text-green-700">
+                    <p className="text-lg font-medium mb-2 text-emerald-700">
                       {selectedFiles.map(file => file.name).join(', ')}
                     </p>
-                    <p className="text-sm text-black">
+                    <p className="text-sm text-slate-700">
                       Ready to upload
                     </p>
                   </motion.div>
                 ) : (
                   <div>
-                    <p className="text-lg font-medium mb-2 text-black transition-all duration-200">
+                    <p className="text-lg font-medium mb-2 text-slate-800 transition-all duration-200">
                       Drop your files here
                     </p>
-                    <p className="text-black">
+                    <p className="text-slate-600">
                       or click to browse
                     </p>
                   </div>
@@ -283,7 +283,7 @@ export default function Upload() {
               {!selectedFiles.length && (
                 <label
                   htmlFor="fileInput"
-                  className="inline-block px-6 py-3 bg-gray-300 text-black rounded-lg font-medium cursor-pointer hover:bg-gray-400 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
+                  className="inline-block px-6 py-3 bg-blue-200 text-slate-800 rounded-lg font-medium cursor-pointer hover:bg-blue-300 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                 >
                   Select Files
                 </label>
@@ -298,7 +298,7 @@ export default function Upload() {
                 >
                   <label
                     htmlFor="fileInput"
-                    className="px-4 py-2 bg-gray-300 text-black rounded-lg font-medium cursor-pointer hover:bg-gray-400 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                    className="px-4 py-2 bg-blue-200 text-slate-800 rounded-lg font-medium cursor-pointer hover:bg-blue-300 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
                     Change Files
                   </label>
@@ -310,7 +310,7 @@ export default function Upload() {
                       setUploadError('');
                       setUploadProgress(0);
                     }}
-                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
+                    className="px-4 py-2 bg-rose-100 text-rose-700 rounded-lg font-medium hover:bg-rose-200 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
                     Remove All
                   </button>
@@ -325,21 +325,21 @@ export default function Upload() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-6 bg-gray-200 p-6 rounded-2xl border border-gray-300 transition-all duration-300 shadow-md hover:shadow-lg"
+              className="mt-6 bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-blue-200 transition-all duration-300 shadow-md hover:shadow-lg"
             >
-              <h3 className="font-semibold text-lg mb-4 text-black transform transition-all duration-200">File Details</h3>
+              <h3 className="font-semibold text-lg mb-4 text-slate-800 transform transition-all duration-200">File Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
-                  <p className="text-sm text-black">Name</p>
-                  <p className="font-medium text-black truncate">{selectedFiles[0].name}</p>
+                <div className="text-center p-4 bg-blue-100 rounded-lg transition-all duration-200">
+                  <p className="text-sm text-slate-700">Name</p>
+                  <p className="font-medium text-slate-800 truncate">{selectedFiles[0].name}</p>
                 </div>
-                <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
-                  <p className="text-sm text-black">Size</p>
-                  <p className="font-medium text-black">{formatFileSize(selectedFiles[0].size)}</p>
+                <div className="text-center p-4 bg-blue-100 rounded-lg transition-all duration-200">
+                  <p className="text-sm text-slate-700">Size</p>
+                  <p className="font-medium text-slate-800">{formatFileSize(selectedFiles[0].size)}</p>
                 </div>
-                <div className="text-center p-4 bg-gray-300 rounded-lg transition-all duration-200">
-                  <p className="text-sm text-black">Type</p>
-                  <p className="font-medium text-black truncate overflow-hidden whitespace-nowrap max-w-full" style={{display: 'block'}}>{selectedFiles[0].type || 'Unknown'}</p>
+                <div className="text-center p-4 bg-blue-100 rounded-lg transition-all duration-200">
+                  <p className="text-sm text-slate-700">Type</p>
+                  <p className="font-medium text-slate-800 truncate overflow-hidden whitespace-nowrap max-w-full" style={{display: 'block'}}>{selectedFiles[0].type || 'Unknown'}</p>
                 </div>
               </div>
             </motion.div>
@@ -351,18 +351,18 @@ export default function Upload() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
-              className="mt-6 bg-gray-200 p-6 rounded-2xl border border-gray-300 shadow-lg"
+              className="mt-6 bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-blue-200 shadow-lg"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-black">Uploading...</span>
-                <span className="text-sm text-black animate-pulse">{uploadProgress}%</span>
+                <span className="text-sm font-medium text-slate-800">Uploading...</span>
+                <span className="text-sm text-slate-700 animate-pulse">{uploadProgress}%</span>
               </div>
-              <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${uploadProgress}%` }}
                   transition={{ duration: 0.3 }}
-                  className="bg-gray-600 h-2 rounded-full animate-pulse"
+                  className="bg-blue-600 h-2 rounded-full animate-pulse"
                 ></motion.div>
               </div>
             </motion.div>
@@ -374,18 +374,18 @@ export default function Upload() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-6 bg-red-50 p-6 rounded-2xl border border-red-200 shadow-lg"
+              className="mt-6 bg-rose-50 p-6 rounded-2xl border border-rose-200 shadow-lg"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <svg className="w-6 h-6 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-rose-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="text-red-700 font-medium">{uploadError}</span>
+                  <span className="text-rose-700 font-medium">{uploadError}</span>
                 </div>
                 <button
                   onClick={() => setUploadError('')}
-                  className="text-red-500 hover:text-red-700 ml-2"
+                  className="text-rose-500 hover:text-rose-700 ml-2"
                 >
                   ×
                 </button>
@@ -399,14 +399,14 @@ export default function Upload() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="mt-6 bg-green-50 p-4 rounded-2xl border border-green-200 shadow-lg"
+              className="mt-6 bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-lg"
             >
               <div className="text-center">
                 <div className="flex items-center justify-center">
-                  <svg className="w-6 h-6 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-emerald-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="text-green-700 font-medium">Upload completed successfully!</span>
+                  <span className="text-emerald-700 font-medium">Upload completed successfully!</span>
                 </div>
               </div>
             </motion.div>
@@ -422,8 +422,8 @@ export default function Upload() {
               disabled={selectedFiles.length === 0 || isUploading}
               className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl ${
                 selectedFiles.length > 0 && !isUploading
-                  ? 'bg-gray-600 text-white hover:bg-gray-700 hover:-translate-y-1'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed scale-100'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 hover:-translate-y-1'
+                  : 'bg-blue-200 text-slate-500 cursor-not-allowed scale-100'
               }`}
             >
               {isUploading ? (
@@ -445,7 +445,7 @@ export default function Upload() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="mt-4 flex items-center justify-center text-sm text-gray-600"
+                className="mt-4 flex items-center justify-center text-sm text-slate-600"
               >
                 <svg className="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
