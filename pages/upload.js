@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { uploadFile } from "../utils/writeToWalrus";
+import WalletConnect from '../components/WalletConnect';
 
 export default function Upload() {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -141,7 +142,7 @@ export default function Upload() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="flex justify-center pt-8 pb-4 flex-shrink-0"
+        className="relative flex justify-center pt-8 pb-4 px-8 flex-shrink-0"
       >
         <div className="flex bg-gray-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
@@ -159,6 +160,9 @@ export default function Upload() {
               View
             </div>
           </Link>
+        </div>
+        <div className="absolute right-8 top-8">
+          <WalletConnect />
         </div>
       </motion.nav>
 
