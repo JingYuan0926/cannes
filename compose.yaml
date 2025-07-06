@@ -11,8 +11,8 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
     volumes:
-      - ./data:/app/data
-      - ./results:/app/results
+      - /storage/data:/app/data
+      - /storage/results:/app/results
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3030/"]
@@ -33,8 +33,8 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
     volumes:
-      - ./data:/app/data
-      - ./results:/app/results
+      - /storage/data:/app/data
+      - /storage/results:/app/results
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3031/"]
@@ -54,9 +54,10 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+      - MPLBACKEND=Agg
     volumes:
-      - ./data:/app/data
-      - ./results:/app/results
+      - /storage/data:/app/data
+      - /storage/results:/app/results
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3035/health"]
@@ -77,8 +78,8 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
     volumes:
-      - ./data:/app/data
-      - ./results:/app/results
+      - /storage/data:/app/data
+      - /storage/results:/app/results
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3040/health"]
@@ -86,7 +87,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-volumes:
-  data:
-  results: 
