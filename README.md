@@ -174,10 +174,10 @@ ETL ROFL: [rofl1qrczld5trq7psuan5p74uw60zh95rhawmg5df6ma](https://explorer.oasis
 Preprocessing ROFL: [rofl1qp7mks4jqk74snwtnnwdhspcex4gl97s5gqw3nqc](https://explorer.oasis.io/testnet/sapphire/rofl/app/rofl1qp7mks4jqk74snwtnnwdhspcex4gl97s5gqw3nqc?q=rofl1qp7mks4jqk74snwtnnwdhspcex4gl97s5gqw3nqc)
 
 ### Walrus 
-https://walruscan.com/testnet/blob/-GiYJQxw-QW2_XhGc0NFcB6OoKdxWUf8neI_fEVrn5U
+Storage Blob Id: [GiYJQxw-QW2_XhGc0NFcB6OoKdxWUf8neI_fEVrn5U](https://walruscan.com/testnet/blob/-GiYJQxw-QW2_XhGc0NFcB6OoKdxWUf8neI_fEVrn5U)
 
 ### Artificial Superintelligence Alliance
-https://agentverse.ai/agents/details/agent1qg869zt362lj4e60n5z6mvkmjmztnd2vu6k8ud3ee4fl4rrwea7ucqvhrqh/profile
+AI Agent: [agent1qg869zt362lj4e60n5z6mvkmjmztnd2vu6k8ud3ee4fl4rrwea7ucqvhrqh](https://agentverse.ai/agents/details/agent1qg869zt362lj4e60n5z6mvkmjmztnd2vu6k8ud3ee4fl4rrwea7ucqvhrqh/profile)
 
 ---
 
