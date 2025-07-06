@@ -453,7 +453,7 @@ export default function Analyse() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
-        className="flex flex-1 min-h-0"
+        className="flex flex-1 min-h-0 relative"
       >
         {/* Full Height Chat History Sidebar */}
         <AnimatePresence>
@@ -464,11 +464,24 @@ export default function Analyse() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -264 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="w-64 bg-white flex flex-col transition-all duration-300 shadow-lg h-full"
+              className="absolute left-0 top-0 bottom-0 w-64 bg-white flex flex-col transition-all duration-300 shadow-xl border-r-2 border-gray-300 z-20"
             >
+              {/* Sidebar Header with Close Button */}
+              <div className="flex items-center justify-between p-4 pb-2 border-b border-gray-200">
+                <h3 className="font-medium text-sm text-black">Chat History</h3>
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center"
+                  title="Hide Chat History"
+                >
+                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              </div>
+              
               {/* Chat History */}
               <div className="flex-1 min-h-0 flex flex-col">
-                <h3 className="font-medium text-sm p-4 pb-2 text-black">Chat History</h3>
                 <div className="flex-1 px-4 pb-4 overflow-y-auto">
                   <div className="space-y-2">
                     {chats.length === 0 ? (
@@ -534,13 +547,13 @@ export default function Analyse() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 }}
-          className="flex-1 flex flex-col bg-white min-h-0"
+          className="flex-1 flex flex-col bg-white min-h-0 w-full"
         >
           {/* Sidebar Toggle Button */}
           <div className="p-4 flex justify-start">
             <button
               onClick={toggleSidebar}
-              className="p-3 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center"
+              className="p-3 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center z-10"
               title={sidebarVisible ? "Hide Chat History" : "Show Chat History"}
             >
               {sidebarVisible ? (
