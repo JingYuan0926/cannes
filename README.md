@@ -203,7 +203,7 @@ We are committed to continuously improving our platform and expanding its capabi
 
 - **Yeoh Choon Xiang**  
   - *Role*: Frontend Developer & UI/UX Design 
-  - [LinkedIn](https://www.linkedin.com/in/choon-xiang-yeoh/)| [Twitter](https://x.com/choonxiangg)
+  - [LinkedIn](https://www.linkedin.com/in/choon-xiang-yeoh/) | [Twitter](https://x.com/choonxiangg)
 
 - **Choong Zhao Zheng**  
   - *Role*: Frontend Developer & UI/UX Design
@@ -211,5 +211,5 @@ We are committed to continuously improving our platform and expanding its capabi
 
 - **Yee Lee Ren (Johnny)**  
   - *Role*: Frontend Developer & UI/UX Design
-  - [LinkedIn](https://www.linkedin.com/in/ee-mun-leong-700a23316/)| [Twitter](https://x.com/14jren)
+  - [LinkedIn](https://www.linkedin.com/in/ee-mun-leong-700a23316/) | [Twitter](https://x.com/14jren)
 
