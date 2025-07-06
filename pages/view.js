@@ -209,29 +209,26 @@ export default function View() {
 
   // Load analysis results from Walrus
   const loadAnalysisResultsFromWalrus = async (report) => {
-    if (!report.analysisResultsBlobId) {
-      // Fallback for old reports that have results stored locally
-      return report.analysisResults || null;
+    if (!report.analysisResultsBlobId || typeof report.analysisResultsBlobId !== 'string' || !report.analysisResultsBlobId.trim()) {
+      setContentError('No valid analysis results Blob ID found for this report. The analysis may not have completed or was not saved correctly.');
+      return null;
     }
 
     setLoadingAnalysisResults(true);
     try {
       console.log(`Loading analysis results from Walrus: ${report.analysisResultsBlobId}`);
-      
-      // Read the analysis results from Walrus
-      const response = await fetch(`https://publisher-devnet.walrus.space/v1/${report.analysisResultsBlobId}`);
+      const url = `https://publisher-devnet.walrus.space/v1/${report.analysisResultsBlobId}`;
+      const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`Failed to fetch analysis results: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to fetch analysis results from Walrus. Status: ${response.status} ${response.statusText}. URL: ${url}`);
       }
-      
       const analysisResultsJson = await response.text();
       const analysisResults = JSON.parse(analysisResultsJson);
-      
       console.log('Analysis results loaded successfully from Walrus');
       return analysisResults;
     } catch (error) {
       console.error('Failed to load analysis results from Walrus:', error);
-      setContentError(`Failed to load analysis results: ${error.message}`);
+      setContentError(`Failed to load analysis results from Walrus.\n${error.message}\nPlease check your network connection, ensure the Walrus publisher is online, and that the analysis report is valid.`);
       return null;
     } finally {
       setLoadingAnalysisResults(false);
@@ -516,7 +513,7 @@ export default function View() {
         >
           <div className="p-6 border-b border-gray-300 bg-gray-300">
             <h2 className="text-xl font-semibold text-black flex items-center gap-2">
-              📁 Uploaded Files
+              Uploaded Files
               <span className="text-sm font-normal text-gray-600">({filteredFiles.length} files)</span>
             </h2>
           </div>
@@ -632,7 +629,7 @@ export default function View() {
         >
           <div className="p-6 border-b border-gray-300 bg-gray-300">
             <h2 className="text-xl font-semibold text-black flex items-center gap-2">
-              📊 Analysis Reports
+              Analysis Reports
               <span className="text-sm font-normal text-gray-600">({filteredReports.length} reports)</span>
             </h2>
           </div>
