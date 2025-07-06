@@ -3,9 +3,7 @@
 
 An AI-powered data analysis platform that processes data within a Trusted Execution Environment (TEE), providing intelligent insights through conversational AI while maintaining complete data privacy and confidentiality. No more data leaks, no more privacy concerns, just secure, powerful analysis that keeps your data safe.
 
-For a comprehensive guide on setup and deployment, please refer to this [README Guide](https://github.com/JingYuan0926/cannes/blob/main/README.md).
-
-We've deployed a live demonstration of **(NAME)** at [http://localhost:3000/chat](http://localhost:3000/chat).
+We've deployed a live demonstration of **(SEInsight)** at [here](https://f81f-83-144-23-155.ngrok-free.app/).
 
 ---
 
