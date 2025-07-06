@@ -166,11 +166,17 @@ Here's a brief overview of important directories in our repository:
 - **`/smartcontract`**
    - Smart contract on the Oasis Sapphire testnet
  
-- **`/analysis`**
+- **`/analysis/tee_signing.py`**
   - Keygen + App Identifier + Attestation
  
 - **`/eda`**
   - Secret stored in ROFL
+ 
+- **`/etl`**
+  - Extract, tranform and load csv into JSON
+ 
+- **`/preprocessing`**
+  - Data preprocessing steps
  
 - **`pages/api/walrus`**
   - Read and write on walrus
