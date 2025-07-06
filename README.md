@@ -1,7 +1,7 @@
-# AI Data Analyst (Name) 👇
+# SEInsight👇
 **An AI Agent Data Analyst build in TEE(Trusted Execution Environment)**
 
-An AI-powered data analysis platform that processes data within a Trusted Execution Environment (TEE), providing intelligent insights through conversational AI while maintaining complete data privacy and confidentiality. No more data leaks, no more privacy concerns — just secure, powerful analysis that keeps your data safe.
+An AI-powered data analysis platform that processes data within a Trusted Execution Environment (TEE), providing intelligent insights through conversational AI while maintaining complete data privacy and confidentiality. No more data leaks, no more privacy concerns, just secure, powerful analysis that keeps your data safe.
 
 For a comprehensive guide on setup and deployment, please refer to this [README Guide](https://github.com/JingYuan0926/cannes/blob/main/README.md).
 
@@ -55,7 +55,7 @@ Our AI Data Analyst Chatbot addresses these challenges by implementing a secure,
 
 **4. Conversational Interface:** Maintains context throughout the session, allowing users to ask follow-up questions and explore insights naturally.
 
-**5. Enterprise-Grade AI:** Powered by GPT-4, providing sophisticated analysis capabilities while maintaining the security and privacy of sensitive documents.
+**5. Enterprise-Grade AI:** Powered by OpenAI, providing sophisticated analysis capabilities while maintaining the security and privacy of sensitive documents.
 
 **6. Source Citations:** Includes reputable sources with clickable hyperlinks, providing transparency and credibility to AI-generated insights.
 
@@ -181,7 +181,7 @@ We are committed to continuously improving our platform and expanding its capabi
 ### Stage 1
 - **Better Machine Learning Model Performance**
 - **Mass Support of Machine Learning Algorithm**
-- **TEE LLM for Complete Confidential**
+- **TEE GPU LLM for Complete Confidential for better LLM**
 
 - ### Before vs After Report System 🔁
 - **Impact Tracking**: Monitor the effectiveness of AI recommendations over time
