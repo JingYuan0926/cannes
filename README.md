@@ -158,16 +158,15 @@ Here's a brief overview of important directories in our repository:
 
 ## How We Are Different 🌟
 
-Unlike traditional document analysis tools, our platform focuses on **conversational AI and privacy-first architecture** from the **user's perspective**. We're not just processing documents; we're creating an intelligent, secure, and accessible analysis experience. Here's how our **AI Data Analyst Chatbot** stands out:
+Unlike traditional document analysis tools, our platform focuses on **conversational AI and privacy-first architecture** from the **user's perspective**. We're not just processing documents; we're creating an intelligent, secure, and accessible analysis experience. Here's how our **AI Agent Data Analyst** stands out:
 
-| **Feature**                          | **Traditional Document Analysis**                                     | **AI Data Analyst Chatbot**                                                                 |
+| **Feature**                          | **Traditional  Analysis Bot**                                     | **AI Agent Data Analyst**                                                                 |
 |--------------------------------------|-----------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| **Privacy & Security**               | Often requires uploading to third-party servers with limited privacy guarantees | **Privacy-first architecture** with secure encrypted data processing and automatic cleanup |
+| **Privacy & Security**               | Often requires uploading to third-party servers with limited privacy guarantees | **TEE-based architecture** with secure encrypted data processing and automatic cleanup |
 | **Conversational Interface**         | Typically one-off analysis with no follow-up capability | **Maintains conversation context** allowing natural follow-up questions and deeper exploration |
 | **Encrypted Data Processing**        | Often limited to specific file formats | **Seamless encrypted data processing** with complete security |
 | **Source Citations**                 | Rarely includes source attribution | **Reputable sources with clickable hyperlinks** for transparency and credibility |
 | **Response Formatting**              | Plain text or basic formatting | **Rich HTML formatting** with proper styling and structure |
-| **Session Management**               | No conversation continuity | **UUID-based session tracking** for secure, isolated conversations |
 | **Accessibility**                    | Often requires technical expertise | **User-friendly interface** accessible to non-technical users |
 | **Cost Effectiveness**               | Expensive enterprise solutions | **Affordable AI analysis** powered by OpenAI's GPT-4 |
 
@@ -179,169 +178,38 @@ Unlike traditional document analysis tools, our platform focuses on **conversati
 
 We are committed to continuously improving our platform and expanding its capabilities. Here are some exciting future plans:
 
-### Enhanced Document Support
-- **CSV Processing**: Add support for spreadsheet analysis and data visualization
-- **Image Analysis**: Integrate OCR capabilities for image-based documents
-- **Multi-Language Support**: Expand language processing capabilities
-
 ### Advanced AI Features
 - **Custom Prompts**: Allow users to create and save custom analysis prompts
-- **Batch Processing**: Enable analysis of multiple documents simultaneously
 - **Export Capabilities**: Add functionality to export analysis results and insights
 
-### Security Enhancements
-- **End-to-End Encryption**: Implement additional encryption layers for enhanced security
-- **Audit Logging**: Add comprehensive logging for compliance and transparency
-- **Access Controls**: Implement role-based access controls for enterprise users
-
-### Integration Capabilities
-- **API Access**: Provide REST API for third-party integrations
-- **Webhook Support**: Enable real-time notifications and integrations
-- **Cloud Storage**: Add support for direct integration with cloud storage providers
+### Before vs After Report System 🔁
+- **Impact Tracking**: Monitor the effectiveness of AI recommendations over time
+- **Visual Comparisons**: Generate before/after charts and metrics showing measurable improvements
+- **ROI Measurement**: Demonstrate concrete value and return on investment from following AI advice
+- **Decision Optimization**: Help users understand which recommendations yield the best results
+- **Progress Visualization**: Show cumulative improvements and trends in decision-making effectiveness
 
 ---
 
 ## Team 👥
 
+- **Derek Liew Qi Jian**  
+  - *Role*: Project Lead, AI & TEE Integration
+  - [LinkedIn](https://www.linkedin.com/in/derek2403/) | [Twitter](https://x.com/derek2403)
+
 - **Phen Jing Yuan**  
   - *Role*: Project Lead, AI & Backend Integration
   - [LinkedIn](https://www.linkedin.com/in/jing-yuan-phen-b42266295/) | [Twitter](https://x.com/ilovedahmo)
 
----
+- **Yeoh Choon Xiang**  
+  - *Role*: Frontend Developer & UI/UX Design 
+  - [LinkedIn](https://www.linkedin.com/in/choon-xiang-yeoh/)| [Twitter](https://x.com/choonxiangg)
 
-## Getting Started 🚀
+- **Choong Zhao Zheng**  
+  - *Role*: Frontend Developer & UI/UX Design
+  - [LinkedIn](https://www.linkedin.com/in/choong-zhao-zheng-business-information-systems/)
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- OpenAI API key
+- **Yee Lee Ren (Johnny)**  
+  - *Role*: Frontend Developer & UI/UX Design
+  - [LinkedIn](https://www.linkedin.com/in/ee-mun-leong-700a23316/)| [Twitter](https://x.com/14jren)
 
-### Installation Steps
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/JingYuan0926/cannes.git
-   cd cannes
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   # Add your OpenAI API key to .env.local
-   OPENAI_API_KEY=your_openai_api_key_here
-   ```
-
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-The app will be accessible at [http://localhost:3000/chat](http://localhost:3000/chat).
-
----
-
-## Usage Guide 📖
-
-### **Getting Started**
-1. Navigate to `http://localhost:3000/chat`
-2. Upload PDF or DOCX files (optional)
-3. Ask questions about your data
-4. Receive AI-powered insights
-
-### **File Upload**
-- **Supported Formats**: PDF, DOCX
-- **File Size Limit**: 5MB per file
-- **Processing**: Files are automatically parsed and analyzed
-
-### **Conversation Flow**
-1. **Upload Phase**: Upload encrypted data to establish context
-2. **Analysis Phase**: Ask questions about your data
-3. **Follow-up**: Continue the conversation with additional queries
-
-### **Response Types**
-- **Concise Mode**: Default short, actionable insights
-- **Detailed Mode**: Comprehensive analysis when requested
-- **Source Citations**: Includes reputable sources with links
-
----
-
-## API Endpoints 🔧
-
-### **POST /api/chatbot**
-Handles both file uploads and chat conversations.
-
-**File Upload:**
-```javascript
-const formData = new FormData();
-formData.append('files', file);
-formData.append('prompt', 'Analyze this document');
-
-const response = await fetch('/api/chatbot', {
-  method: 'POST',
-  body: formData
-});
-```
-
-**Chat Conversation:**
-```javascript
-const response = await fetch('/api/chatbot', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    prompt: 'What are the key trends?',
-    sampleDataReady: true,
-    conversation: [...],
-    sessionId: 'uuid'
-  })
-});
-```
-
----
-
-## Security Features 🔒
-
-- **File Validation**: Type and size checking
-- **Temporary Storage**: Files deleted after processing
-- **Session Isolation**: UUID-based session management
-- **Error Handling**: Graceful error responses
-- **Input Sanitization**: Safe handling of user inputs
-
----
-
-## Contributing 🤝
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## License 📄
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Acknowledgments 🙏
-
-- **OpenAI** for providing the GPT-4 API
-- **Next.js** for the excellent React framework
-- **ReactMarkdown** for rich text rendering
-- **PDF-Parse & Mammoth** for document processing
-
----
-
-## Support 📞
-
-For support, create an issue in this repository or contact the development team.
-
----
-
-**Built with ❤️ using Next.js and OpenAI**
