@@ -78,11 +78,13 @@ In short, our platform enables users to upload encrypted data, ask questions in 
    - Users receive confirmation that their data is ready for analysis
 
 3. **Conversational Analysis**
-   - Users ask questions about the data in natural language
-   - The AI provides concise, actionable insights (2-4 sentences by default)
-   - Follow-up questions maintain context from previous interactions
-   - Users can view adaptive insight cards that display relevant information based on their needs
-   - A summary of all insight cards is provided for comprehensive overview
+   - The AI accesses the database inside the Trusted Execution Environment (TEE) and performs analysis using major machine learning libraries like **matplotlib, pandas, sklearn**, etc.
+   - The AI automatically determines the most optimal analysis strategy based on the user’s data.
+   - The flow of analysis will follow a structured process: **ETL (Extract, Transform, Load) → Preprocessing → Exploratory Data Analysis (EDA) → Machine Learning Analysis → Reporting**.
+   - The AI generates insights based on this flow and provides concise, actionable findings (2-4 sentences by default).
+   - Follow-up questions maintain context from previous interactions, ensuring continuous, relevant responses.
+   - Users can view adaptive insight cards that display relevant information tailored to their needs.
+   - A summary of all insight cards is provided for a comprehensive overview of the analysis.
 
 4. **Three Types of Analysis**
    - **Descriptive Analysis**: Understand what happened in the past with detailed data summaries and trends
@@ -113,7 +115,7 @@ The current architecture consists of a Next.js frontend, OpenAI API integration,
 - **File Upload**: Users upload PDF or DOCX files through the secure interface
 - **Document Processing**: Files are stored using Walrus
 - **Session Management**: UUID-based session tracking maintains conversation context
-- **AI Analysis**: GPT-4o Mini processes document content and user queries
+- **AI Analysis**: GPT-4o Mini processes csv input and perform analysis using machine learning library tools
 - **Response Generation**: Formatted responses with source citations and insight cards are returned to users
 
 ### Direct Chat Flow (Without File Upload - Green Line)
@@ -163,6 +165,12 @@ Here's a brief overview of important directories in our repository:
 ---
 
 ## Sponsor Integration & Technical Contributions
+
+# Oasis
+Analysis ROFL: rofl1qquxmr7y0ranr3man30020pwewdhan2udynt65k0
+EDA ROFL: rofl1qry08thamh4tedc36j5t3y3kawcll79dw5ysacfw
+ETL ROFL: rofl1qrczld5trq7psuan5p74uw60zh95rhawmg5df6ma
+Preprocessing ROFL: rofl1qp7mks4jqk74snwtnnwdhspcex4gl97s5gqw3nqc
 
 # Walrus 
 https://walruscan.com/testnet/blob/-GiYJQxw-QW2_XhGc0NFcB6OoKdxWUf8neI_fEVrn5U
