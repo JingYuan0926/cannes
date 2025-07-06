@@ -639,6 +639,29 @@ export default function AnalyzePage() {
             </motion.div>
           )}
 
+          {/* Debug Logs Section */}
+          {logs.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="debug-logs-card"
+            >
+              <h2>🔍 Debug Logs</h2>
+              <div className="logs-container">
+                {logs.map((log, index) => (
+                  <div key={index} className={`log-entry ${
+                    log.includes('Error') ? 'log-error' : 
+                    log.includes('Success') ? 'log-success' : 
+                    log.includes('===') ? 'log-info' : 'log-default'
+                  }`}>
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* Results Section */}
           {results && (
             <motion.div 
