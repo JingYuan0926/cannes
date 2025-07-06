@@ -178,16 +178,21 @@ Unlike traditional document analysis tools, our platform focuses on **conversati
 
 We are committed to continuously improving our platform and expanding its capabilities. Here are some exciting future plans:
 
-### Advanced AI Features
-- **Custom Prompts**: Allow users to create and save custom analysis prompts
-- **Export Capabilities**: Add functionality to export analysis results and insights
+### Stage 1
+- **Better Machine Learning Model Performance**
+- **Mass Support of Machine Learning Algorithm**
+- **TEE LLM for Complete Confidential**
 
-### Before vs After Report System 🔁
+- ### Before vs After Report System 🔁
 - **Impact Tracking**: Monitor the effectiveness of AI recommendations over time
 - **Visual Comparisons**: Generate before/after charts and metrics showing measurable improvements
 - **ROI Measurement**: Demonstrate concrete value and return on investment from following AI advice
 - **Decision Optimization**: Help users understand which recommendations yield the best results
 - **Progress Visualization**: Show cumulative improvements and trends in decision-making effectiveness
+  
+### Stage 2
+- **Access Control for Different Management Level**
+- **Go Live on MainNet**
 
 ---
 
