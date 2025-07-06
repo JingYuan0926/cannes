@@ -447,10 +447,10 @@ export default function Analyse() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
-        className="px-8 py-4 flex-shrink-0"
+        className="px-8 py-2 flex-shrink-0"
       >
         <h1 className="text-3xl font-bold text-center text-black transform transition-all duration-300">Analyse Your Data</h1>
-        <p className="text-center text-gray-600 mt-2">Chat with our AI to analyze and understand your data better</p>
+        <p className="text-center text-gray-600 mt-1">Chat with our AI to analyze and understand your data better</p>
       </motion.div>
 
       {/* Main Layout */}
@@ -555,7 +555,7 @@ export default function Analyse() {
           className="flex-1 flex flex-col bg-white min-h-0 w-full"
         >
           {/* Sidebar Toggle Button */}
-          <div className="p-4 flex justify-start">
+          <div className="p-3 flex justify-start">
             <button
               onClick={toggleSidebar}
               className="p-3 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center z-10"
@@ -574,20 +574,20 @@ export default function Analyse() {
           </div>
           
           {/* Chat Area */}
-          <div className="flex-1 p-8 overflow-y-auto min-h-0">
+          <div className="flex-1 p-6 overflow-y-auto min-h-0">
             <div className="max-w-4xl mx-auto">
               {!activeChat || activeChat.messages.length === 0 ? (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="text-center py-12"
+                  className="text-center py-8"
                 >
-                  <h3 className="text-lg font-medium mb-2 text-black mt-4">Start Your Analysis</h3>
-                  <p className="text-gray-600 mb-4">
+                  <h3 className="text-lg font-medium mb-2 text-black mt-2">Start Your Analysis</h3>
+                  <p className="text-gray-600 mb-3">
                     Ask me anything about your data and I'll help you discover insights.
                   </p>
-                  <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+                  <div className="mb-4 p-3 bg-gray-100 rounded-lg">
                     <p className="text-sm text-gray-700">
                       <strong>Active Files:</strong> {activeFiles.length} file{activeFiles.length !== 1 ? 's' : ''} ready for analysis
                     </p>
@@ -611,22 +611,22 @@ export default function Analyse() {
                     )}
                   </div>
                   {activeFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-3 justify-center">
+                    <div className="flex flex-wrap gap-2 justify-center">
                       <button 
                         onClick={() => handleSuggestionClick("Provide a summary of my data")}
-                        className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                        className="px-3 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                       >
                         Summarize my data
                       </button>
                       <button 
                         onClick={() => handleSuggestionClick("What trends can you find in my data?")}
-                        className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                        className="px-3 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                       >
                         Find trends
                       </button>
                       <button 
                         onClick={() => handleSuggestionClick("What insights can you provide from my data?")}
-                        className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
+                        className="px-3 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-all duration-200 text-sm hover:shadow-lg transform hover:scale-105 active:scale-95 hover:-translate-y-1"
                       >
                         Key insights
                       </button>
@@ -669,7 +669,7 @@ export default function Analyse() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: "easeOut", delay: 0.4 }}
-            className="p-8 pt-0 flex-shrink-0"
+            className="p-6 pt-0 flex-shrink-0"
           >
             <div className="relative max-w-4xl mx-auto">
               <div className="relative bg-gray-200 rounded-2xl transition-all duration-300 focus-within:border-gray-500 focus-within:shadow-xl focus-within:scale-[1.01] shadow-md">
