@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -9,22 +9,19 @@ import { readContentWithType } from "../utils/readFromWalrus";
 import WalletConnect from '../components/WalletConnect';
 
 export default function Analyse() {
-  const [chats, setChats] = useState([
-    { id: 1, name: "Chat 1", messages: [] },
-    { id: 2, name: "Chat 2", messages: [] },
-    { id: 3, name: "Chat 3", messages: [] },
-  ]);
-  const [activeChat, setActiveChat] = useState(chats[0]);
+  const [chats, setChats] = useState([]);
+  const [activeChat, setActiveChat] = useState(null);
   const [message, setMessage] = useState("");
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [activeFiles, setActiveFiles] = useState([]);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeChat.messages, isAiTyping]);
+  }, [activeChat?.messages, isAiTyping]);
 
   // Load active files from localStorage
   useEffect(() => {
@@ -62,13 +59,13 @@ export default function Analyse() {
   };
 
   const handleNewChat = () => {
-    const newChat = {
-      id: chats.length + 1,
-      name: `Chat ${chats.length + 1}`,
-      messages: [],
-    };
-    setChats([newChat, ...chats]);
-    setActiveChat(newChat);
+    // Don't create chat immediately - just clear active chat
+    // Chat will be created when user sends first message
+    setActiveChat(null);
+  };
+
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
   };
 
   const loadActiveFilesContent = async () => {
@@ -146,15 +143,31 @@ export default function Analyse() {
         timestamp: new Date(),
       };
       
-      const updatedChat = {
-        ...activeChat,
-        messages: [...activeChat.messages, newMessage]
-      };
+      const isNewChat = !activeChat;
+      let currentMessages = activeChat ? activeChat.messages : [];
       
-      setChats(chats.map(chat => 
-        chat.id === activeChat.id ? updatedChat : chat
-      ));
-      setActiveChat(updatedChat);
+      // Create temporary state for displaying the user message (don't add to chat list yet)
+      const tempMessages = [...currentMessages, newMessage];
+      
+      if (activeChat) {
+        // Update existing chat
+        const updatedChat = {
+          ...activeChat,
+          messages: tempMessages
+        };
+        setChats(chats.map(chat => 
+          chat.id === activeChat.id ? updatedChat : chat
+        ));
+        setActiveChat(updatedChat);
+      } else {
+        // For new conversation, create temporary display state (not in sidebar yet)
+        setActiveChat({
+          id: Date.now(),
+          name: "",
+          messages: tempMessages
+        });
+      }
+      
       setIsAiTyping(true);
       
       try {
@@ -164,11 +177,12 @@ export default function Analyse() {
           promptLength: messageText.length,
           filesContentLength: filesContent.length,
           sampleDataReady: filesContent.length > 0,
-          conversationLength: [...updatedChat.messages, newMessage].length
+          conversationLength: tempMessages.length,
+          isNewChat: isNewChat
         });
         
         // Prepare conversation for API
-        const conversation = [...updatedChat.messages, newMessage];
+        const conversation = tempMessages;
         
         const res = await fetch('/api/chatbot', {
           method: 'POST',
@@ -179,7 +193,8 @@ export default function Analyse() {
             prompt: messageText,
             sampleDataReady: filesContent.length > 0,
             conversation: conversation,
-            filesContent: filesContent // Send files content directly
+            filesContent: filesContent,
+            generateChatName: isNewChat // Request chat name generation for new chats
           }),
         });
         
@@ -193,15 +208,28 @@ export default function Analyse() {
           timestamp: new Date(),
         };
         
-        const updatedChatWithAI = {
-          ...updatedChat,
-          messages: [...updatedChat.messages, aiResponse]
-        };
+        const finalMessages = [...tempMessages, aiResponse];
         
-        setChats(chats.map(chat => 
-          chat.id === activeChat.id ? updatedChatWithAI : chat
-        ));
-        setActiveChat(updatedChatWithAI);
+        if (isNewChat) {
+          // Create the chat ONLY after AI responds with name
+          const newChat = {
+            id: Date.now(),
+            name: result.chatName || `Chat about ${messageText.substring(0, 30)}...`,
+            messages: finalMessages
+          };
+          setChats([newChat, ...chats]);
+          setActiveChat(newChat);
+        } else {
+          // Update existing chat
+          const updatedChat = {
+            ...activeChat,
+            messages: finalMessages
+          };
+          setChats(chats.map(chat => 
+            chat.id === activeChat.id ? updatedChat : chat
+          ));
+          setActiveChat(updatedChat);
+        }
         
       } catch (error) {
         console.error('Error sending message:', error);
@@ -212,22 +240,33 @@ export default function Analyse() {
           timestamp: new Date(),
         };
         
-        const updatedChatWithError = {
-          ...updatedChat,
-          messages: [...updatedChat.messages, errorResponse]
-        };
+        const finalMessages = [...tempMessages, errorResponse];
         
-        setChats(chats.map(chat => 
-          chat.id === activeChat.id ? updatedChatWithError : chat
-        ));
-        setActiveChat(updatedChatWithError);
+        if (isNewChat) {
+          // Create chat even on error for new chats
+          const newChat = {
+            id: Date.now(),
+            name: `Error - ${messageText.substring(0, 30)}...`,
+            messages: finalMessages
+          };
+          setChats([newChat, ...chats]);
+          setActiveChat(newChat);
+        } else {
+          // Update existing chat
+          const updatedChat = {
+            ...activeChat,
+            messages: finalMessages
+          };
+          setChats(chats.map(chat => 
+            chat.id === activeChat.id ? updatedChat : chat
+          ));
+          setActiveChat(updatedChat);
+        }
       } finally {
         setIsAiTyping(false);
       }
     }
   };
-
-
 
   const handleSendMessage = () => {
     sendMessage(message);
@@ -416,64 +455,79 @@ export default function Analyse() {
         transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
         className="flex flex-1 min-h-0"
       >
-        {/* Left Sidebar */}
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="w-64 bg-white flex flex-col transition-all duration-300 shadow-lg"
-        >
-          {/* Chat History */}
-          <div className="flex-1 p-4 min-h-0 overflow-hidden">
-            <h3 className="font-medium text-sm mb-4 text-black">Chat History</h3>
-            <div className="space-y-2">
-              {chats.map((chat, index) => (
-                <motion.div
-                  key={chat.id}
-                  variants={itemVariants}
-                  onClick={() => handleChatSelect(chat)}
-                  className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.01] hover:shadow-md active:scale-95 ${
-                    activeChat.id === chat.id
-                      ? 'bg-gray-600 text-white shadow-lg scale-[1.01]'
-                      : 'hover:bg-gray-300 text-black'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium truncate flex-1 mr-2">{chat.name}</span>
-                    {chat.messages.length > 0 && (
-                      <span className={`text-xs opacity-75 px-2 py-1 rounded-full transition-all duration-200 flex-shrink-0 ${
-                        activeChat.id === chat.id ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-400 hover:bg-gray-500'
-                      }`}>
-                        {chat.messages.length}
-                      </span>
+        {/* Full Height Chat History Sidebar */}
+        <AnimatePresence>
+          {sidebarVisible && (
+            <motion.div 
+              variants={containerVariants}
+              initial={{ opacity: 0, x: -264 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -264 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="w-64 bg-white flex flex-col transition-all duration-300 shadow-lg h-full"
+            >
+              {/* Chat History */}
+              <div className="flex-1 min-h-0 flex flex-col">
+                <h3 className="font-medium text-sm p-4 pb-2 text-black">Chat History</h3>
+                <div className="flex-1 px-4 pb-4 overflow-y-auto">
+                  <div className="space-y-2">
+                    {chats.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-gray-500 mb-4">No chats yet</p>
+                        <p className="text-xs text-gray-400">Start a conversation to create your first chat</p>
+                      </div>
+                    ) : (
+                      chats.map((chat, index) => (
+                        <motion.div
+                          key={chat.id}
+                          variants={itemVariants}
+                          onClick={() => handleChatSelect(chat)}
+                          className={`p-3 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.01] hover:shadow-md active:scale-95 ${
+                            activeChat?.id === chat.id
+                              ? 'bg-gray-600 text-white shadow-lg scale-[1.01]'
+                              : 'hover:bg-gray-300 text-black'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium truncate flex-1 mr-2">{chat.name}</span>
+                            {chat.messages.length > 0 && (
+                              <span className={`text-xs opacity-75 px-2 py-1 rounded-full transition-all duration-200 flex-shrink-0 ${
+                                activeChat?.id === chat.id ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-400 hover:bg-gray-500'
+                              }`}>
+                                {chat.messages.length}
+                              </span>
+                            )}
+                          </div>
+                          {chat.messages.length > 0 && (
+                            <p className="text-xs opacity-75 mt-1 truncate">
+                              {chat.messages[chat.messages.length - 1].text}
+                            </p>
+                          )}
+                        </motion.div>
+                      ))
                     )}
                   </div>
-                  {chat.messages.length > 0 && (
-                    <p className="text-xs opacity-75 mt-1 truncate">
-                      {chat.messages[chat.messages.length - 1].text}
-                    </p>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </div>
-          
-          {/* New Chat Button */}
-          <motion.div 
-            variants={itemVariants}
-            className="p-4 flex-shrink-0"
-          >
-            <button
-              onClick={handleNewChat}
-              className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-95 shadow-md hover:shadow-lg"
-            >
-              <svg className="w-4 h-4 transform transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              New Chat
-            </button>
-          </motion.div>
-        </motion.div>
+                </div>
+              </div>
+              
+              {/* New Chat Button */}
+              <motion.div 
+                variants={itemVariants}
+                className="p-4 flex-shrink-0"
+              >
+                <button
+                  onClick={handleNewChat}
+                  className="w-full py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-all duration-200 flex items-center justify-center gap-2 transform hover:scale-[1.01] active:scale-95 shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-4 h-4 transform transition-transform duration-200 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  New Chat
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Content */}
         <motion.main 
@@ -482,26 +536,35 @@ export default function Analyse() {
           transition={{ duration: 0.4, ease: "easeOut", delay: 0.3 }}
           className="flex-1 flex flex-col bg-white min-h-0"
         >
-          {/* Chat Name Header */}
-          <div className="p-4 bg-white transition-all duration-300 flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-black">{activeChat.name}</h2>
-              </div>
-            </div>
+          {/* Sidebar Toggle Button */}
+          <div className="p-4 flex justify-start">
+            <button
+              onClick={toggleSidebar}
+              className="p-3 rounded-2xl bg-gray-200 hover:bg-gray-300 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center justify-center"
+              title={sidebarVisible ? "Hide Chat History" : "Show Chat History"}
+            >
+              {sidebarVisible ? (
+                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              )}
+            </button>
           </div>
           
           {/* Chat Area */}
           <div className="flex-1 p-8 overflow-y-auto min-h-0">
             <div className="max-w-4xl mx-auto">
-              {activeChat.messages.length === 0 ? (
+              {!activeChat || activeChat.messages.length === 0 ? (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="text-center py-12"
                 >
-
                   <h3 className="text-lg font-medium mb-2 text-black mt-4">Start Your Analysis</h3>
                   <p className="text-gray-600 mb-4">
                     Ask me anything about your data and I'll help you discover insights.
@@ -554,7 +617,7 @@ export default function Analyse() {
                 </motion.div>
               ) : (
                 <div>
-                  {activeChat.messages.map((msg) => (
+                  {activeChat?.messages.map((msg) => (
                     <MessageBubble 
                       key={msg.id} 
                       message={msg} 
@@ -606,7 +669,7 @@ export default function Analyse() {
                     disabled={!message.trim() || activeFiles.length === 0}
                     className="w-8 h-8 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center transform hover:scale-110 active:scale-90 disabled:hover:scale-100 shadow-md hover:shadow-lg"
                   >
-                    <svg className="w-4 h-4Removed  transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 transform transition-transform duration-200 hover:translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
                     </svg>
                   </button>
