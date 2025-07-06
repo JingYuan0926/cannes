@@ -98,23 +98,29 @@ In short, our platform enables users to upload encrypted data, ask questions in 
 
 ## System Architecture High-Level Overview 🏗️
 
-![Architecture](https://github.com/JingYuan0926/cannes/blob/main/public/next.svg?raw=true)
+![Architecture](https://github.com/JingYuan0926/cannes/blob/main/public/Architecture.svg?raw=true)
 
 The current architecture consists of a Next.js frontend, OpenAI API integration, and secure document processing pipeline. This setup provides two clear user pathways:
 
-### Document Analysis Flow (With File Upload - Blue Line)
+![Architecture](https://github.com/JingYuan0926/cannes/blob/main/public/Architecture.svg?raw=true)
+
+![UserFlow](https://github.com/JingYuan0926/cannes/blob/main/public/UserFlow.svg?raw=true)
+
+
+
+### Document Analysis Flow 
 
 - **File Upload**: Users upload PDF or DOCX files through the secure interface
-- **Document Processing**: Files are parsed using pdf-parse and mammoth libraries
+- **Document Processing**: Files are stored using Walrus
 - **Session Management**: UUID-based session tracking maintains conversation context
-- **AI Analysis**: GPT-4 processes document content and user queries
+- **AI Analysis**: GPT-4o Mini processes document content and user queries
 - **Response Generation**: Formatted responses with source citations and insight cards are returned to users
 
 ### Direct Chat Flow (Without File Upload - Green Line)
 
 - **User Input**: Users ask questions directly without uploading encrypted data
 - **Context Management**: Conversation history is maintained for coherent responses
-- **AI Processing**: GPT-4 analyzes queries and provides intelligent insights
+- **AI Processing**: GPT-40 Mini analyzes queries and provides intelligent insights
 - **Response Delivery**: Formatted responses with relevant source citations and insight cards
 
 This dual-flow system architecture ensures flexibility, security, and user-friendly interaction while maintaining data privacy and providing enterprise-grade analysis capabilities.
@@ -181,7 +187,7 @@ We are committed to continuously improving our platform and expanding its capabi
 ### Stage 1
 - **Better Machine Learning Model Performance**
 - **Mass Support of Machine Learning Algorithm**
-- **TEE GPU LLM for Complete Confidential for better LLM**
+- **GPU TEE for Better LLM Performance**
 
 - ### Before vs After Report System 🔁
 - **Impact Tracking**: Monitor the effectiveness of AI recommendations over time
