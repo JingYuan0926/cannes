@@ -110,19 +110,18 @@ The current architecture consists of a Next.js frontend, OpenAI API integration,
 
 
 
-### Document Analysis Flow 
+### Document Analysis Flow (File Upload)
 
 - **File Upload**: Users upload PDF or DOCX files through the secure interface
 - **Document Processing**: Files are stored using Walrus
-- **Session Management**: UUID-based session tracking maintains conversation context
 - **AI Analysis**: GPT-4o Mini processes csv input and perform analysis using machine learning library tools
 - **Response Generation**: Formatted responses with source citations and insight cards are returned to users
 
-### Direct Chat Flow (Without File Upload - Green Line)
+### Direct Chat Flow (Without File Upload)
 
 - **User Input**: Users ask questions directly without uploading encrypted data
 - **Context Management**: Conversation history is maintained for coherent responses
-- **AI Processing**: GPT-40 Mini analyzes queries and provides intelligent insights
+- **AI Processing**: GPT-4o Mini analyzes queries and provides intelligent insights
 - **Response Delivery**: Formatted responses with relevant source citations and insight cards
 
 This dual-flow system architecture ensures flexibility, security, and user-friendly interaction while maintaining data privacy and providing enterprise-grade analysis capabilities.
@@ -134,13 +133,12 @@ This dual-flow system architecture ensures flexibility, security, and user-frien
 - **Next.js 15.3.5** – Front-end React framework with API routes
 - **OpenAI API** – GPT-4 integration for intelligent analysis
 - **ReactMarkdown** – Rich text rendering with HTML support
-- **Multer** – File upload handling and processing
-- **PDF-Parse** – PDF document text extraction
-- **Mammoth** – DOCX document processing
-- **UUID** – Session management and tracking
 - **Tailwind CSS** – UI styling and responsive design
-- **Rehype-Raw** – HTML rendering for source citations
-- **Remark Plugins** – Markdown formatting and processing
+- **Oasis** - TEE and smart contract integration
+- **Rainbow Kit** - Connect wallet component
+- **Walrus** - Decentralized storage for user's files
+- **Artificial Superintelligence Alliance** - AI agent framework for creating and deploying agents to a marketplace
+
 
 ---
 
