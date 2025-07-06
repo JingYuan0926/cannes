@@ -439,7 +439,7 @@ export default function View() {
         <div className="flex bg-white/80 backdrop-blur-sm rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl border border-blue-200">
           <Link href="/analyse">
             <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
-              Analyse
+              Chat
             </div>
           </Link>
           <Link href="/upload">

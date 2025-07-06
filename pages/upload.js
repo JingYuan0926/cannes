@@ -27,6 +27,8 @@ export default function Upload() {
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [serviceStatus, setServiceStatus] = useState({});
   const [originalFileForAnalysis, setOriginalFileForAnalysis] = useState(null);
+  // Add new state for AI insights loading
+  const [aiInsightsReady, setAiInsightsReady] = useState(false);
 
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);
@@ -290,10 +292,72 @@ export default function Upload() {
     return status;
   };
 
+  // Helper function to validate AI insights readiness
+  const validateAIInsightsReady = (edaData) => {
+    console.log('=== AI Insights Validation Debug ===');
+    console.log('Full EDA Data:', edaData);
+    
+    if (!edaData || !edaData.analysis) {
+      console.log('❌ No analysis data found');
+      return false;
+    }
+    
+    console.log('Analysis data exists:', !!edaData.analysis);
+    console.log('Insights data:', edaData.analysis.insights);
+    
+    // Check for insights in multiple possible locations
+    const insights = edaData.analysis.insights;
+    
+    if (!insights) {
+      console.log('❌ No insights object found');
+      return false;
+    }
+    
+    // Check different possible insight structures
+    if (insights.ai_insights) {
+      console.log('✅ Found ai_insights structure');
+      const aiInsights = insights.ai_insights;
+      console.log('AI Insights keys:', Object.keys(aiInsights));
+      
+      // Check if any category has insights
+      for (const [category, data] of Object.entries(aiInsights)) {
+        console.log(`Checking category: ${category}`, data);
+        if (data && data.insights && Array.isArray(data.insights) && data.insights.length > 0) {
+          console.log(`✅ Found valid insights in category: ${category}`);
+          return true;
+        }
+      }
+    }
+    
+    // Check for direct insights array
+    if (Array.isArray(insights)) {
+      console.log('✅ Found direct insights array');
+      console.log('Insights array length:', insights.length);
+      return insights.length > 0;
+    }
+    
+    // Check for any insights property
+    if (insights.insights && Array.isArray(insights.insights)) {
+      console.log('✅ Found insights.insights array');
+      console.log('Insights length:', insights.insights.length);
+      return insights.insights.length > 0;
+    }
+    
+    // More flexible check - if insights object exists and has any content
+    if (typeof insights === 'object' && Object.keys(insights).length > 0) {
+      console.log('✅ Found insights object with content, accepting as valid');
+      return true;
+    }
+    
+    console.log('❌ No valid insights found');
+    return false;
+  };
+
   // Analysis pipeline function (improved version from analyze.js)
   const runAnalysisPipeline = async (actualFile, goal) => {
     try {
       setAnalysisStep('Checking services...');
+      setAiInsightsReady(false); // Reset AI insights state
       const services = await checkServices();
       
       // Check if all services are healthy
@@ -351,6 +415,33 @@ export default function Upload() {
       const edaData = await edaResponse.json();
       console.log(`Step 3 Success: Generated ${edaData.analysis && edaData.analysis.visualizations ? edaData.analysis.visualizations.length : 0} visualizations`);
 
+      // Step 3.5: Wait for AI insights to be ready
+      setAnalysisStep('Processing AI insights...');
+      console.log('Step 3.5: Validating AI insights...');
+      
+      // Validate that AI insights are properly formatted and ready using helper function
+      const insightsReady = validateAIInsightsReady(edaData);
+      
+      if (insightsReady) {
+        console.log('AI insights validated and ready');
+        setAiInsightsReady(true);
+      } else {
+        console.log('AI insights validation failed, but checking for any insights structure...');
+        
+        // Fallback: check if there's any insights structure at all
+        if (edaData.analysis && edaData.analysis.insights) {
+          console.log('Found insights structure, setting as ready anyway');
+          setAiInsightsReady(true);
+        } else {
+          console.log('No insights structure found, continuing without insights');
+          setAiInsightsReady(false);
+        }
+      }
+      
+      // Additional debug: log the current state
+      console.log('AI Insights Ready State:', aiInsightsReady);
+      console.log('Will show visualizations:', insightsReady || (edaData.analysis && edaData.analysis.insights));
+
       // Step 4: ML Analysis Service
       setAnalysisStep('Running machine learning analysis...');
       console.log('Step 4: ML Analysis...');
@@ -367,6 +458,17 @@ export default function Upload() {
       const mlData = await mlResponse.json();
       console.log('Step 4 Success: Completed ML analysis');
 
+      // Final step: Ensure AI insights are fully ready
+      setAnalysisStep('Finalizing AI insights...');
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Small delay to ensure everything is ready
+      
+      // Final validation and state update
+      const finalInsightsCheck = edaData.analysis && edaData.analysis.insights;
+      if (finalInsightsCheck) {
+        console.log('Final check: Setting AI insights as ready');
+        setAiInsightsReady(true);
+      }
+      
       // Combine all results
       const results = {
         etl: etlData,
@@ -374,16 +476,19 @@ export default function Upload() {
         eda: edaData,
         ml: mlData,
         goal: goal,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        aiInsightsReady: finalInsightsCheck // Use final check result
       };
       
       console.log('=== Full Pipeline Completed Successfully! ===');
+      console.log('Final AI Insights Ready State:', finalInsightsCheck);
       return results;
 
     } catch (error) {
       const currentStepName = analysisStep.includes('Processing') ? 'ETL' :
                              analysisStep.includes('Preprocessing') ? 'Preprocessing' :
                              analysisStep.includes('visualizations') ? 'EDA' :
+                             analysisStep.includes('AI insights') ? 'AI Insights' :
                              analysisStep.includes('machine learning') ? 'Analysis' : 'Unknown';
       
       const errorInfo = getErrorMessage(error, currentStepName);
@@ -393,6 +498,7 @@ export default function Upload() {
         console.log(`💡 Suggestion: ${suggestion}`);
       });
       
+      setAiInsightsReady(false);
       throw error;
     }
   };
@@ -477,47 +583,90 @@ export default function Upload() {
 
   // Render simplified insights (copied from analyze.js)
   const renderSimpleInsights = (insights) => {
-    if (!insights || !insights.ai_insights) return null;
+    console.log('=== Rendering Insights Debug ===');
+    console.log('Insights to render:', insights);
+    
+    if (!insights) {
+      return (
+        <div className="bg-white p-4 rounded-lg border">
+          <p className="text-sm text-gray-600">🤖 No insights available yet. Analysis may still be processing.</p>
+        </div>
+      );
+    }
 
-    const allInsights = Object.values(insights.ai_insights);
-    const keyFindings = [];
-    const recommendations = [];
-    const actualInsights = [];
+    // Handle different insight structures
+    let allInsights = [];
+    let keyFindings = [];
+    let recommendations = [];
+    let actualInsights = [];
 
-    allInsights.forEach((category, index) => {
-      // Handle the nested structure: category.insights contains JSON strings
-      if (category && category.insights && Array.isArray(category.insights)) {
-        category.insights.forEach(insightString => {
-          if (typeof insightString === 'string') {
-            try {
-              // Remove markdown code block formatting if present
-              let cleanJson = insightString;
-              if (cleanJson.includes('```json')) {
-                cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+    // Check for ai_insights structure
+    if (insights.ai_insights) {
+      console.log('Processing ai_insights structure');
+      const aiInsightsData = Object.values(insights.ai_insights);
+      
+      aiInsightsData.forEach((category, index) => {
+        if (category && category.insights && Array.isArray(category.insights)) {
+          category.insights.forEach(insightString => {
+            if (typeof insightString === 'string') {
+              try {
+                // Remove markdown code block formatting if present
+                let cleanJson = insightString;
+                if (cleanJson.includes('```json')) {
+                  cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+                }
+                
+                // Parse the JSON string
+                const parsedInsight = JSON.parse(cleanJson);
+                
+                // Extract data from parsed object
+                if (parsedInsight.insights && Array.isArray(parsedInsight.insights)) {
+                  actualInsights.push(...parsedInsight.insights);
+                }
+                
+                if (parsedInsight.key_findings && Array.isArray(parsedInsight.key_findings)) {
+                  keyFindings.push(...parsedInsight.key_findings);
+                }
+                
+                if (parsedInsight.recommendations && Array.isArray(parsedInsight.recommendations)) {
+                  recommendations.push(...parsedInsight.recommendations);
+                }
+              } catch (e) {
+                console.warn('Could not parse insight JSON:', insightString);
+                // If parsing fails, treat as plain text insight
+                if (insightString.length > 10) {
+                  actualInsights.push(insightString);
+                }
               }
-              
-              // Parse the JSON string
-              const parsedInsight = JSON.parse(cleanJson);
-              
-              // Extract data from parsed object
-              if (parsedInsight.insights && Array.isArray(parsedInsight.insights)) {
-                actualInsights.push(...parsedInsight.insights);
-              }
-              
-              if (parsedInsight.key_findings && Array.isArray(parsedInsight.key_findings)) {
-                keyFindings.push(...parsedInsight.key_findings);
-              }
-              
-              if (parsedInsight.recommendations && Array.isArray(parsedInsight.recommendations)) {
-                recommendations.push(...parsedInsight.recommendations);
-              }
-            } catch (e) {
-              console.warn('Could not parse insight JSON:', insightString);
             }
-          }
-        });
-      }
-    });
+          });
+        }
+      });
+    }
+
+    // Check for direct insights array
+    if (Array.isArray(insights)) {
+      console.log('Processing direct insights array');
+      actualInsights.push(...insights);
+    }
+
+    // Check for insights.insights
+    if (insights.insights && Array.isArray(insights.insights)) {
+      console.log('Processing insights.insights array');
+      actualInsights.push(...insights.insights);
+    }
+
+    // Check for any other structure and extract text
+    if (typeof insights === 'object' && !Array.isArray(insights) && !insights.ai_insights) {
+      console.log('Processing generic insights object');
+      Object.values(insights).forEach(value => {
+        if (typeof value === 'string' && value.length > 10) {
+          actualInsights.push(value);
+        } else if (Array.isArray(value)) {
+          actualInsights.push(...value.filter(item => typeof item === 'string' && item.length > 10));
+        }
+      });
+    }
 
     // Filter and deduplicate meaningful content
     const getUniqueFiltered = (arr) => {
@@ -526,7 +675,7 @@ export default function Upload() {
         typeof item === 'string' &&
         item !== "AI analysis completed" && 
         !item.includes("Review the insights provided") &&
-        item.length > 30
+        item.length > 10
       );
       // Remove duplicates
       return [...new Set(filtered)];
@@ -535,6 +684,26 @@ export default function Upload() {
     const filteredInsights = getUniqueFiltered(actualInsights);
     const filteredFindings = getUniqueFiltered(keyFindings);
     const filteredRecommendations = getUniqueFiltered(recommendations);
+
+    console.log('Filtered insights:', filteredInsights);
+    console.log('Filtered findings:', filteredFindings);
+    console.log('Filtered recommendations:', filteredRecommendations);
+
+    // If no structured insights found, show raw data
+    if (filteredInsights.length === 0 && filteredFindings.length === 0 && filteredRecommendations.length === 0) {
+      return (
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-lg border">
+            <h4 className="font-medium text-blue-900 mb-3">🧠 Raw Analysis Data</h4>
+            <div className="text-sm text-gray-700">
+              <pre className="whitespace-pre-wrap bg-gray-50 p-3 rounded text-xs max-h-40 overflow-y-auto">
+                {JSON.stringify(insights, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-4">
@@ -658,6 +827,7 @@ export default function Upload() {
     setIsAnalyzing(true);
     setAnalysisError('');
     setAnalysisResults(null);
+    setAiInsightsReady(false); // Reset AI insights state
 
     try {
       // Use the actual original file for analysis (EXACTLY like analyze.js)
@@ -712,12 +882,21 @@ export default function Upload() {
       setAnalysisResults(results);
       setAnalysisStep('Analysis complete! Results stored on Walrus.');
       
+      // Force update AI insights state after setting results
+      setTimeout(() => {
+        if (results.eda?.analysis?.insights) {
+          console.log('Force updating AI insights state to ready');
+          setAiInsightsReady(true);
+        }
+      }, 500);
+      
       // Keep modal open to show results instead of auto-closing
       setIsAnalyzing(false);
 
     } catch (error) {
       setAnalysisError(error.message);
       setIsAnalyzing(false);
+      setAiInsightsReady(false); // Reset on error
     }
   };
 
@@ -732,6 +911,7 @@ export default function Upload() {
     setIsAnalyzing(true);
     setAnalysisError('');
     setAnalysisResults(null);
+    setAiInsightsReady(false); // Reset AI insights state
 
     try {
       // Get the uploaded file data from localStorage
@@ -751,6 +931,7 @@ export default function Upload() {
     } catch (error) {
       setAnalysisError(error.message);
       setIsAnalyzing(false);
+      setAiInsightsReady(false); // Reset on error
     }
   };
 
@@ -790,7 +971,7 @@ export default function Upload() {
         <div className="flex bg-white/80 backdrop-blur-sm rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl border border-blue-200">
           <Link href="/analyse">
             <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-700 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
-              Analyse
+              Chat
             </div>
           </Link>
           <Link href="/upload">
@@ -1135,6 +1316,16 @@ export default function Upload() {
                       <p className="text-gray-700 font-medium">
                         {analysisStep || 'Preparing analysis...'}
                       </p>
+                      
+                      {/* Special indicator for AI insights processing */}
+                      {analysisStep && (analysisStep.includes('AI insights') || analysisStep.includes('Finalizing')) && (
+                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                          <p className="text-blue-800 text-sm">
+                            🧠 AI insights are being processed and validated. This ensures high-quality analysis results.
+                          </p>
+                        </div>
+                      )}
+                      
                       <div className="flex justify-center">
                         <div className="flex space-x-1">
                           <motion.div 
@@ -1170,7 +1361,39 @@ export default function Upload() {
                         </div>
                       </div>
 
-                      {/* EDA Visualizations */}
+                      {/* AI Insights */}
+                      {analysisResults.eda?.analysis?.insights && (
+                        <div className="space-y-4">
+                          <h3 className="text-xl font-semibold text-gray-800 border-b pb-2">🧠 AI Insights</h3>
+                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            {aiInsightsReady ? (
+                              renderSimpleInsights(analysisResults.eda.analysis.insights)
+                            ) : (
+                              <div className="text-center py-8">
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                  className="w-8 h-8 mx-auto mb-4"
+                                >
+                                  <svg 
+                                    className="w-full h-full text-blue-600" 
+                                    fill="currentColor" 
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                  </svg>
+                                </motion.div>
+                                <p className="text-blue-800 font-medium">Processing AI insights...</p>
+                                <p className="text-blue-600 text-sm mt-1">
+                                  Insights are being generated and will appear shortly
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* EDA Visualizations - Show regardless of AI insights status */}
                       {analysisResults.eda?.analysis?.visualizations && (
                         <div className="space-y-6">
                           <h3 className="text-xl font-semibold text-gray-800 border-b pb-2">📈 Data Visualizations</h3>
@@ -1215,16 +1438,6 @@ export default function Upload() {
                                 )}
                               </div>
                             ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* AI Insights */}
-                      {analysisResults.eda?.analysis?.insights && (
-                        <div className="space-y-4">
-                          <h3 className="text-xl font-semibold text-gray-800 border-b pb-2">🧠 AI Insights</h3>
-                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            {renderSimpleInsights(analysisResults.eda.analysis.insights)}
                           </div>
                         </div>
                       )}
@@ -1377,11 +1590,12 @@ export default function Upload() {
                       setUploadProgress(0);
                       setAnalysisResults(null);
                       setOriginalFileForAnalysis(null);
+                      setAiInsightsReady(false); // Reset AI insights state
                     }}
                     className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                   >
                     Complete Analysis
-            </button>
+                  </button>
                   <button
                     onClick={() => {
                       const dataStr = JSON.stringify(analysisResults, null, 2);

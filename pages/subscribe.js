@@ -3,6 +3,7 @@ import { useAccount, useWriteContract, useReadContract, useWaitForTransactionRec
 import { parseEther, formatEther } from 'viem';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import WalletConnect from '../components/WalletConnect';
 
 // Contract ABI (simplified for the functions we need)
@@ -61,6 +62,7 @@ const CONTRACT_ADDRESS = "0x863Ec8506C15D056F43d9BBA811ccB819c3DDFE9";
 
 const Subscribe = () => {
   const { address, isConnected } = useAccount();
+  const router = useRouter();
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -121,8 +123,13 @@ const Subscribe = () => {
       refetchIsActive();
       refetchSubscription();
       refetchRemainingDays();
+      
+      // Redirect to upload page after 0.5 seconds
+      setTimeout(() => {
+        router.push('/upload');
+      }, 500);
     }
-  }, [isSubscribeSuccess, subscribeHash, refetchIsActive, refetchSubscription, refetchRemainingDays]);
+  }, [isSubscribeSuccess, subscribeHash, refetchIsActive, refetchSubscription, refetchRemainingDays, router]);
 
   useEffect(() => {
     if (isCancelSuccess && cancelHash) {
@@ -261,7 +268,7 @@ const Subscribe = () => {
         <div className="flex bg-white/80 backdrop-blur-sm border border-blue-200 rounded-full p-1 transition-all duration-300 shadow-lg hover:shadow-xl">
           <Link href="/analyse">
             <div className="px-6 py-2 rounded-full hover:bg-blue-100 text-slate-800 font-medium text-sm transition-all duration-300 cursor-pointer transform hover:scale-105 active:scale-95">
-              Analyse
+              Chat
             </div>
           </Link>
           <Link href="/upload">
