@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { readFW, readContentWithType, parseCSV, detectFileType, downloadFile } from "../utils/readFromWalrus";
+import { getUserEncryptionKey, decryptData, base64ToUint8Array, base64ToArrayBuffer } from "../utils/encryption";
 import WalletConnect from '../components/WalletConnect';
 
 export default function View() {
@@ -102,18 +103,88 @@ export default function View() {
       // Use enhanced read function with content type detection
       const result = await readContentWithType(file.blobId);
       
-      // Detect file type and add additional metadata
-      let fileType = detectFileType(result.content, result.contentType, result.blobId);
+      let contentData = { ...result };
       
-      const contentData = {
-        ...result,
-        fileType,
-      };
+      // Check if file is encrypted and decrypt if needed
+      if (file.isEncrypted && file.encryptionIV) {
+        try {
+          // Get user's encryption key
+          const encryptionKey = await getUserEncryptionKey();
+          
+          // Convert IV from base64 to Uint8Array
+          const iv = base64ToUint8Array(file.encryptionIV);
+          
+          // Convert encrypted content to ArrayBuffer
+          let encryptedBuffer;
+          if (result.isBinary) {
+            // Content is already base64 encoded for binary files
+            encryptedBuffer = base64ToArrayBuffer(result.content);
+          } else {
+            // For text content, convert to ArrayBuffer
+            encryptedBuffer = new TextEncoder().encode(result.content);
+          }
+          
+          // Decrypt the content
+          const decryptedBuffer = await decryptData(encryptedBuffer, iv, encryptionKey);
+          
+          // Create a blob from decrypted data to determine its type
+          const decryptedBlob = new Blob([decryptedBuffer]);
+          
+          // Use original file metadata for type detection
+          const originalMetadata = file.encryptionMetadata || {};
+          const originalType = originalMetadata.originalType || file.type;
+          
+          // Detect if decrypted content is text or binary
+          const isTextType = originalType && (
+            originalType.startsWith('text/') || 
+            originalType.includes('json') || 
+            originalType.includes('xml') || 
+            originalType.includes('csv')
+          );
+          
+          if (isTextType) {
+            // Convert decrypted buffer to text
+            const decryptedText = new TextDecoder().decode(decryptedBuffer);
+            contentData = {
+              ...contentData,
+              content: decryptedText,
+              contentType: originalType,
+              isText: true,
+              isBinary: false,
+              length: decryptedText.length,
+              bytes: decryptedBuffer.byteLength,
+              isDecrypted: true,
+            };
+          } else {
+            // Keep as binary, convert to base64
+            const decryptedBase64 = btoa(String.fromCharCode(...new Uint8Array(decryptedBuffer)));
+            contentData = {
+              ...contentData,
+              content: decryptedBase64,
+              contentType: originalType,
+              isText: false,
+              isBinary: true,
+              length: decryptedBuffer.byteLength,
+              bytes: decryptedBuffer.byteLength,
+              isDecrypted: true,
+            };
+          }
+        } catch (decryptError) {
+          console.error('Decryption failed:', decryptError);
+          setContentError(`Failed to decrypt file: ${decryptError.message}`);
+          return;
+        }
+      }
+      
+      // Detect file type and add additional metadata
+      let fileType = detectFileType(contentData.content, contentData.contentType, result.blobId);
+      
+      contentData.fileType = fileType;
 
       // Parse CSV data if it's a CSV file
-      if (fileType.type === 'csv' && result.isText) {
+      if (fileType.type === 'csv' && contentData.isText) {
         try {
-          contentData.csvData = parseCSV(result.content);
+          contentData.csvData = parseCSV(contentData.content);
         } catch (csvError) {
           console.warn('Failed to parse CSV:', csvError);
           contentData.csvData = null;
@@ -121,9 +192,9 @@ export default function View() {
       }
 
       // Try to parse JSON if it's JSON content
-      if (fileType.type === 'json' && result.isText) {
+      if (fileType.type === 'json' && contentData.isText) {
         try {
-          contentData.jsonData = JSON.parse(result.content);
+          contentData.jsonData = JSON.parse(contentData.content);
         } catch (jsonError) {
           console.warn('Failed to parse JSON:', jsonError);
           contentData.jsonData = null;
@@ -170,7 +241,49 @@ export default function View() {
     }
 
     try {
-      await downloadFile(file.blobId, file.name);
+      // If file is encrypted, we need to decrypt it first
+      if (file.isEncrypted && file.encryptionIV) {
+        // Read the encrypted content
+        const result = await readContentWithType(file.blobId);
+        
+        // Get user's encryption key
+        const encryptionKey = await getUserEncryptionKey();
+        
+        // Convert IV from base64 to Uint8Array
+        const iv = base64ToUint8Array(file.encryptionIV);
+        
+        // Convert encrypted content to ArrayBuffer
+        let encryptedBuffer;
+        if (result.isBinary) {
+          encryptedBuffer = base64ToArrayBuffer(result.content);
+        } else {
+          encryptedBuffer = new TextEncoder().encode(result.content);
+        }
+        
+        // Decrypt the content
+        const decryptedBuffer = await decryptData(encryptedBuffer, iv, encryptionKey);
+        
+        // Create blob and download
+        const originalMetadata = file.encryptionMetadata || {};
+        const originalType = originalMetadata.originalType || file.type;
+        const originalName = originalMetadata.originalName || file.name;
+        
+        const blob = new Blob([decryptedBuffer], { type: originalType });
+        const url = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = originalName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        console.log(`Decrypted file downloaded: ${originalName}`);
+      } else {
+        // Use regular download for non-encrypted files
+        await downloadFile(file.blobId, file.name);
+      }
     } catch (error) {
       setContentError(`Failed to download file: ${error.message}`);
     }
@@ -425,6 +538,7 @@ export default function View() {
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Size</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-24">Modified</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-20">Security</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-black uppercase tracking-wider hover:text-gray-800 transition-colors duration-200 w-32">Actions</th>
                 </tr>
               </thead>
@@ -464,8 +578,37 @@ export default function View() {
                         {file.isActive ? 'Active' : 'Inactive'}
                       </button>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className={`inline-flex px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                        file.isEncrypted
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {file.isEncrypted ? (
+                          <div className="flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Encrypted
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                            </svg>
+                            Plain
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-4">
+                        <button
+                          onClick={() => handleViewFile(file)}
+                          className="text-black hover:text-gray-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                        >
+                          View
+                        </button>
                         <button
                           onClick={() => handleDownloadFile(file)}
                           className="text-black hover:text-gray-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
@@ -557,7 +700,17 @@ export default function View() {
                   <div>
                     <h3 className="text-lg font-semibold text-black">{viewingFile.name}</h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      Blob ID: {viewingFile.blobId}
+                      Blob ID: <a 
+                        href={`https://walruscan.com/testnet/blob/${viewingFile.blobId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline text-blue-600 hover:text-blue-800 transition-colors duration-200 inline-flex items-center gap-1"
+                      >
+                        {viewingFile.blobId}
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
                     </p>
                   </div>
                   <button
@@ -590,6 +743,17 @@ export default function View() {
                         <strong>Type:</strong> {fileContent.fileType?.displayName || 'Unknown'} • 
                         <strong> Size:</strong> {Math.round(fileContent.bytes / 1024)} KB • 
                         <strong> Content-Type:</strong> {fileContent.contentType}
+                        {fileContent.isDecrypted && (
+                          <>
+                            {' • '}
+                            <span className="inline-flex items-center text-green-700">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <strong>Decrypted</strong>
+                            </span>
+                          </>
+                        )}
                       </p>
                     </div>
 

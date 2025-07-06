@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { uploadFile } from "../utils/writeToWalrus";
+import { getUserEncryptionKey, createEncryptedFile, uint8ArrayToBase64 } from "../utils/encryption";
 import WalletConnect from '../components/WalletConnect';
 
 export default function Upload() {
@@ -56,6 +57,9 @@ export default function Upload() {
     setUploadedBlobId(null);
     let completed = 0;
     try {
+      // Get user's encryption key
+      const encryptionKey = await getUserEncryptionKey();
+      
       for (const file of selectedFiles) {
         // Simulate upload progress for UI feedback
         const progressInterval = setInterval(() => {
@@ -67,24 +71,35 @@ export default function Upload() {
             return prev + 15;
           });
         }, 100);
-        // Upload file to Walrus
-        const result = await uploadFile(file, {
+        
+        // Encrypt the file before upload
+        const { encryptedFile, iv, metadata } = await createEncryptedFile(file, encryptionKey);
+        
+        // Upload encrypted file to Walrus
+        const result = await uploadFile(encryptedFile, {
           epochs: 1,
           deletable: true
         });
+        
         clearInterval(progressInterval);
         setUploadProgress(100);
-        // Store file metadata in localStorage for view.js
+        
+        // Store file metadata in localStorage for view.js (including encryption info)
         const fileMetadata = {
           id: Date.now() + Math.random(),
-          name: file.name,
-          size: formatFileSize(file.size),
-          type: file.type || 'Unknown',
+          name: file.name, // Store original name
+          size: formatFileSize(file.size), // Store original size
+          type: file.type || 'Unknown', // Store original type
           blobId: result.blobId,
           timestamp: new Date().toISOString(),
           isActive: true,
-          originalSize: file.size
+          originalSize: file.size,
+          // Encryption metadata
+          isEncrypted: true,
+          encryptionIV: uint8ArrayToBase64(iv), // Store IV as base64
+          encryptionMetadata: metadata, // Store original file metadata
         };
+        
         const existingFiles = JSON.parse(localStorage.getItem('walrusFiles') || '[]');
         const updatedFiles = [fileMetadata, ...existingFiles];
         localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
@@ -423,6 +438,21 @@ export default function Upload() {
                 'Upload Files'
               )}
             </button>
+            
+            {/* Encryption Notice */}
+            {selectedFiles.length > 0 && !isUploading && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="mt-4 flex items-center justify-center text-sm text-gray-600"
+              >
+                <svg className="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span>Your files will be encrypted before upload for security</span>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </motion.main>
