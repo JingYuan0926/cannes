@@ -1,5 +1,7 @@
 # SEInsight👇
 **An AI Agent Data Analyst build in TEE(Trusted Execution Environment)**
+![MainPage](https://github.com/JingYuan0926/cannes/blob/main/public/MainPage.svg?raw=true)
+
 
 An AI-powered data analysis platform that processes data within a Trusted Execution Environment (TEE), providing intelligent insights through conversational AI while maintaining complete data privacy and confidentiality. No more data leaks, no more privacy concerns, just secure, powerful analysis that keeps your data safe.
 
