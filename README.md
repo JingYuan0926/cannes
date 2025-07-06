@@ -98,6 +98,27 @@ In short, our platform enables users to upload encrypted data, ask questions in 
 
 ---
 
+
+## Setup
+
+1. **Clone and navigate to the project:**
+   ```bash
+   git clone https://github.com/JingYuan0926/cannes
+   cd cannes
+   ```
+
+2. **Install Dependencies**
+    ```bash
+    npm install
+    ```
+
+3. **Run All Services**
+    ```bash
+    npm run dev
+    ```
+
+---
+
 ## System Architecture High-Level Overview 🏗️
 
 
