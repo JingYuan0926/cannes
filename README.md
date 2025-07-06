@@ -171,6 +171,9 @@ Here's a brief overview of important directories in our repository:
  
 - **`/eda`**
   - Secret stored in ROFL
+ 
+- **`pages/api/walrus`**
+  - Read and write on walrus
 
 ---
 
