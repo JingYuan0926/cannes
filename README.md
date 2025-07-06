@@ -166,7 +166,7 @@ Here's a brief overview of important directories in our repository:
 
 ## Sponsor Integration & Technical Contributions
 
-# Oasis
+### Oasis
 Analysis ROFL: [rofl1qquxmr7y0ranr3man30020pwewdhan2udynt65k0](https://explorer.oasis.io/testnet/sapphire/rofl/app/rofl1qquxmr7y0ranr3man30020pwewdhan2udynt65k0?q=rofl1qquxmr7y0ranr3man30020pwewdhan2udynt65k0)
 
 EDA ROFL: [rofl1qry08thamh4tedc36j5t3y3kawcll79dw5ysacfw](https://explorer.oasis.io/testnet/sapphire/rofl/app/rofl1qry08thamh4tedc36j5t3y3kawcll79dw5ysacfw?q=rofl1qry08thamh4tedc36j5t3y3kawcll79dw5ysacfw)
@@ -175,10 +175,10 @@ ETL ROFL: [rofl1qrczld5trq7psuan5p74uw60zh95rhawmg5df6ma](https://explorer.oasis
 
 Preprocessing ROFL: [rofl1qp7mks4jqk74snwtnnwdhspcex4gl97s5gqw3nqc](https://explorer.oasis.io/testnet/sapphire/rofl/app/rofl1qp7mks4jqk74snwtnnwdhspcex4gl97s5gqw3nqc?q=rofl1qp7mks4jqk74snwtnnwdhspcex4gl97s5gqw3nqc)
 
-# Walrus 
+### Walrus 
 https://walruscan.com/testnet/blob/-GiYJQxw-QW2_XhGc0NFcB6OoKdxWUf8neI_fEVrn5U
 
-# Artificial Superintelligence Alliance
+### Artificial Superintelligence Alliance
 https://agentverse.ai/agents/details/agent1qg869zt362lj4e60n5z6mvkmjmztnd2vu6k8ud3ee4fl4rrwea7ucqvhrqh/profile
 
 ---
