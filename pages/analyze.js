@@ -14,6 +14,15 @@ export default function AnalyzePage() {
   const [error, setError] = useState(null);
   const [serviceStatus, setServiceStatus] = useState({});
   const [currentStep, setCurrentStep] = useState('');
+  const [logs, setLogs] = useState([]);
+
+  // Add logging function
+  const log = (message, type = 'info') => {
+    const timestamp = new Date().toLocaleTimeString();
+    const newLog = `[${timestamp}] ${message}`;
+    setLogs(prev => [...prev, newLog]);
+    console.log(newLog);
+  };
 
   // Check service health
   const checkServices = async () => {
@@ -27,7 +36,10 @@ export default function AnalyzePage() {
     const status = {};
     for (const [name, url] of Object.entries(services)) {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          method: 'GET',
+          timeout: 5000
+        });
         const data = await response.json();
         status[name] = { healthy: true, status: data.status };
       } catch (err) {
@@ -37,6 +49,32 @@ export default function AnalyzePage() {
     setServiceStatus(status);
   };
 
+  // Improved fetch with timeout and better error handling
+  const fetchWithTimeout = async (url, options = {}, timeout = 30000) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out');
+      }
+      throw error;
+    }
+  };
+
   // Handle file upload and analysis
   const handleAnalyze = async () => {
     if (!file) return;
@@ -44,8 +82,11 @@ export default function AnalyzePage() {
     setLoading(true);
     setError(null);
     setResults(null);
+    setLogs([]);
 
     try {
+      log('=== Starting AI Data Analysis Pipeline ===', 'info');
+      
       // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', file);
@@ -53,76 +94,63 @@ export default function AnalyzePage() {
 
       // Step 1: ETL Service (File Upload)
       setCurrentStep('Processing data...');
-      console.log('Starting ETL...');
+      log('Step 1: ETL Processing...', 'info');
       
-      const etlResponse = await fetch('http://localhost:3030/analyze', {
+      const etlResponse = await fetchWithTimeout('http://localhost:3030/analyze', {
         method: 'POST',
         body: formData
-      });
-      
-      if (!etlResponse.ok) {
-        throw new Error('ETL processing failed');
-      }
+      }, 30000);
       
       const etlData = await etlResponse.json();
-      console.log('ETL Result:', etlData);
+      log(`ETL Success: Data processed with ${etlData.processed_data ? etlData.processed_data.length : 'unknown'} rows`, 'success');
 
       // Step 2: Preprocessing Service
       setCurrentStep('Preprocessing data...');
-      console.log('Starting Preprocessing...');
-      const preprocessResponse = await fetch('http://localhost:3031/preprocess', {
+      log('Step 2: Preprocessing...', 'info');
+      
+      const preprocessResponse = await fetchWithTimeout('http://localhost:3031/preprocess', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: etlData.processed_data || etlData.data,
           goal: prompt || 'machine learning preparation'
         })
-      });
-
-      if (!preprocessResponse.ok) {
-        throw new Error('Preprocessing failed');
-      }
+      }, 30000);
 
       const preprocessData = await preprocessResponse.json();
-      console.log('Preprocessing Result:', preprocessData);
+      log(`Step 2 Success: Preprocessed ${preprocessData.processed_shape ? preprocessData.processed_shape[0] : 'unknown'} rows`, 'success');
 
       // Step 3: EDA Service
       setCurrentStep('Generating visualizations...');
-      console.log('Starting EDA...');
-      const edaResponse = await fetch('http://localhost:3035/analyze', {
+      log('Step 3: EDA Analysis...', 'info');
+      
+      const edaResponse = await fetchWithTimeout('http://localhost:3035/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: preprocessData.processed_data || preprocessData.data,
           prompt: prompt || 'Comprehensive data analysis'
         })
-      });
-
-      if (!edaResponse.ok) {
-        throw new Error('EDA analysis failed');
-      }
+      }, 45000); // Longer timeout for EDA
 
       const edaData = await edaResponse.json();
-      console.log('EDA Result:', edaData);
+      log(`Step 3 Success: Generated ${edaData.analysis && edaData.analysis.visualizations ? edaData.analysis.visualizations.length : 0} visualizations`, 'success');
 
       // Step 4: ML Analysis Service
       setCurrentStep('Running machine learning analysis...');
-      console.log('Starting ML Analysis...');
-      const mlResponse = await fetch('http://localhost:3040/analyze', {
+      log('Step 4: ML Analysis...', 'info');
+      
+      const mlResponse = await fetchWithTimeout('http://localhost:3040/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: preprocessData.processed_data || preprocessData.data,
           goal: prompt || 'comprehensive analysis'
         })
-      });
-
-      if (!mlResponse.ok) {
-        throw new Error('ML analysis failed');
-      }
+      }, 60000); // Longer timeout for ML
 
       const mlData = await mlResponse.json();
-      console.log('ML Result:', mlData);
+      log('Step 4 Success: Completed ML analysis', 'success');
 
       // Combine all results
       setResults({
@@ -131,10 +159,14 @@ export default function AnalyzePage() {
         eda: edaData,
         ml: mlData
       });
+      
       setCurrentStep('Analysis complete!');
+      log('=== Full Pipeline Completed Successfully! ===', 'success');
 
     } catch (err) {
-      setError(err.message);
+      const errorMsg = err.message || 'Unknown error occurred';
+      setError(errorMsg);
+      log(`Pipeline Error: ${errorMsg}`, 'error');
       setCurrentStep('');
     } finally {
       setLoading(false);
