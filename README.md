@@ -1,6 +1,6 @@
 # SEInsight👇
 **An AI Agent Data Analyst build in TEE(Trusted Execution Environment)**
-![MainPage](https://github.com/JingYuan0926/cannes/blob/main/public/MainPage.svg?raw=true)
+![MainPage](https://github.com/JingYuan0926/cannes/blob/main/public/MainPage.png?raw=true)
 
 
 An AI-powered data analysis platform that processes data within a Trusted Execution Environment (TEE), providing intelligent insights through conversational AI while maintaining complete data privacy and confidentiality. No more data leaks, no more privacy concerns, just secure, powerful analysis that keeps your data safe.
@@ -102,9 +102,10 @@ In short, our platform enables users to upload encrypted data, ask questions in 
 
 The current architecture consists of a Next.js frontend, OpenAI API integration, and secure document processing pipeline. This setup provides two clear user pathways:
 
-![Architecture](https://github.com/JingYuan0926/cannes/blob/main/public/Architecture.svg?raw=true)
+![MainPage](https://github.com/JingYuan0926/cannes/blob/main/public/Architecture.png?raw=true)
 
-![UserFlow](https://github.com/JingYuan0926/cannes/blob/main/public/UserFlow.svg?raw=true)
+
+![UserFlow](https://github.com/JingYuan0926/cannes/blob/main/public/UserFlow.png?raw=true)
 
 
 
