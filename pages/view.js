@@ -17,6 +17,7 @@ export default function View() {
   const [contentError, setContentError] = useState('');
   const [deleteConfirmFile, setDeleteConfirmFile] = useState(null);
   const [deleteConfirmReport, setDeleteConfirmReport] = useState(null);
+  const [loadingAnalysisResults, setLoadingAnalysisResults] = useState(false);
   const dropdownRef = useRef(null);
 
   const filterOptions = [
@@ -195,6 +196,37 @@ export default function View() {
 
   const cancelDeleteReport = () => {
     setDeleteConfirmReport(null);
+  };
+
+  // Load analysis results from Walrus
+  const loadAnalysisResultsFromWalrus = async (report) => {
+    if (!report.analysisResultsBlobId) {
+      // Fallback for old reports that have results stored locally
+      return report.analysisResults || null;
+    }
+
+    setLoadingAnalysisResults(true);
+    try {
+      console.log(`Loading analysis results from Walrus: ${report.analysisResultsBlobId}`);
+      
+      // Read the analysis results from Walrus
+      const response = await fetch(`https://publisher-devnet.walrus.space/v1/${report.analysisResultsBlobId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analysis results: ${response.status} ${response.statusText}`);
+      }
+      
+      const analysisResultsJson = await response.text();
+      const analysisResults = JSON.parse(analysisResultsJson);
+      
+      console.log('Analysis results loaded successfully from Walrus');
+      return analysisResults;
+    } catch (error) {
+      console.error('Failed to load analysis results from Walrus:', error);
+      setContentError(`Failed to load analysis results: ${error.message}`);
+      return null;
+    } finally {
+      setLoadingAnalysisResults(false);
+    }
   };
 
   const handleDownloadFile = async (file) => {
@@ -627,21 +659,26 @@ export default function View() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col space-y-1">
-                        {report.analysisResults && (
+                        {report.status === 'completed' && (
                           <>
                             <div className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${report.analysisResults.etl ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
                               <span className="text-xs text-gray-600">ETL</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${report.analysisResults.eda ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
                               <span className="text-xs text-gray-600">EDA</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${report.analysisResults.ml ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                              <div className="w-2 h-2 rounded-full bg-green-500"></div>
                               <span className="text-xs text-gray-600">ML</span>
                             </div>
                           </>
+                        )}
+                        {report.resultSize && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Results: {report.resultSize}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -661,27 +698,36 @@ export default function View() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => {
-                            // Create a mock file object for viewing
-                            const mockFile = {
-                              id: report.id,
-                              name: report.fileName,
-                              blobId: report.fileBlobId,
-                              hasAnalysis: true,
-                              analysisGoal: report.analysisGoal,
-                              analysisResults: report.analysisResults,
-                              lastAnalyzed: report.timestamp
-                            };
-                            handleViewFile(mockFile);
+                          onClick={async () => {
+                            // Load analysis results from Walrus
+                            const analysisResults = await loadAnalysisResultsFromWalrus(report);
+                            
+                            if (analysisResults) {
+                              // Create a mock file object for viewing
+                              const mockFile = {
+                                id: report.id,
+                                name: report.fileName,
+                                blobId: report.fileBlobId,
+                                hasAnalysis: true,
+                                analysisGoal: report.analysisGoal,
+                                analysisResults: analysisResults,
+                                lastAnalyzed: report.timestamp
+                              };
+                              handleViewFile(mockFile);
+                            }
                           }}
-                          className="text-blue-600 hover:text-blue-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                          disabled={loadingAnalysisResults}
+                          className="text-blue-600 hover:text-blue-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          View Report
+                          {loadingAnalysisResults ? 'Loading...' : 'View Report'}
                         </button>
                         <button
-                          onClick={() => {
-                            if (report.analysisResults) {
-                              const dataStr = JSON.stringify(report.analysisResults, null, 2);
+                          onClick={async () => {
+                            // Load analysis results from Walrus for export
+                            const analysisResults = await loadAnalysisResultsFromWalrus(report);
+                            
+                            if (analysisResults) {
+                              const dataStr = JSON.stringify(analysisResults, null, 2);
                               const dataBlob = new Blob([dataStr], {type: 'application/json'});
                               const url = URL.createObjectURL(dataBlob);
                               const link = document.createElement('a');
@@ -691,9 +737,10 @@ export default function View() {
                               URL.revokeObjectURL(url);
                             }
                           }}
-                          className="text-green-600 hover:text-green-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95"
+                          disabled={loadingAnalysisResults}
+                          className="text-green-600 hover:text-green-800 transition-all duration-200 font-medium transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Export
+                          {loadingAnalysisResults ? 'Loading...' : 'Export'}
                         </button>
                         <button
                           onClick={() => handleDeleteReport(report.id)}

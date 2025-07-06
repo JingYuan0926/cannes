@@ -25,6 +25,7 @@ export default function Upload() {
   const [analysisError, setAnalysisError] = useState('');
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [serviceStatus, setServiceStatus] = useState({});
+  const [originalFileForAnalysis, setOriginalFileForAnalysis] = useState(null);
 
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);
@@ -34,6 +35,7 @@ export default function Upload() {
       setUploadedBlobId(null);
       setUploadError('');
       setUploadProgress(0);
+      setOriginalFileForAnalysis(null); // Clear previous file
     }
   };
 
@@ -57,6 +59,7 @@ export default function Upload() {
       setUploadedBlobId(null);
       setUploadError('');
       setUploadProgress(0);
+      setOriginalFileForAnalysis(null); // Clear previous file
     }
   };
 
@@ -124,6 +127,128 @@ export default function Upload() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Improved fetch with timeout and better error handling (from analyze.js)
+  const fetchWithTimeout = async (url, options = {}, timeout = 30000) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timed out');
+      }
+      throw error;
+    }
+  };
+
+  // Check individual service health
+  const checkServiceHealth = async (serviceName, url) => {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        timeout: 5000
+      });
+      const data = await response.json();
+      return { healthy: true, status: data.status };
+    } catch (err) {
+      return { healthy: false, error: err.message };
+    }
+  };
+
+  // Retry mechanism for failed requests (from analyze.js)
+  const fetchWithRetry = async (url, options = {}, timeout = 30000, maxRetries = 2) => {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+      try {
+        if (attempt > 1) {
+          console.log(`Retry attempt ${attempt - 1}/${maxRetries} for ${url}`);
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+        }
+        
+        return await fetchWithTimeout(url, options, timeout);
+      } catch (error) {
+        lastError = error;
+        console.log(`Attempt ${attempt} failed: ${error.message}`);
+        
+        // If connection was reset or empty response, check service health
+        if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_RESET') || error.message.includes('ERR_EMPTY_RESPONSE')) {
+          console.log(`Connection issue detected, checking service health...`);
+          const serviceUrl = url.replace(/\/[^\/]*$/, ''); // Remove endpoint path
+          const healthCheck = await checkServiceHealth('service', serviceUrl);
+          
+          if (!healthCheck.healthy) {
+            console.log(`Service appears to be down: ${healthCheck.error}`);
+            // Add longer wait for service recovery
+            if (attempt < maxRetries + 1) {
+              console.log(`Waiting 5 seconds for service recovery...`);
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+          }
+        }
+        
+        if (attempt === maxRetries + 1) {
+          throw lastError;
+        }
+      }
+    }
+    
+    throw lastError;
+  };
+
+  // Get helpful error message and recovery suggestions (from analyze.js)
+  const getErrorMessage = (error, step) => {
+    const baseMessage = error.message || 'Unknown error occurred';
+    
+    if (baseMessage.includes('Failed to fetch') || baseMessage.includes('ERR_CONNECTION_RESET') || baseMessage.includes('ERR_EMPTY_RESPONSE')) {
+      return {
+        message: `${step} service connection failed`,
+        details: `The ${step.toLowerCase()} service appears to be temporarily unavailable. This can happen when processing large datasets.`,
+        suggestions: [
+          'Try with a smaller dataset first',
+          'Wait a moment and try again',
+          'Check if all Docker services are running',
+          'Consider restarting the services if the problem persists'
+        ]
+      };
+    }
+    
+    if (baseMessage.includes('timeout') || baseMessage.includes('Request timed out')) {
+      return {
+        message: `${step} service timed out`,
+        details: `The ${step.toLowerCase()} service is taking too long to process your data.`,
+        suggestions: [
+          'Try with a smaller dataset',
+          'The service may be processing a large dataset - please wait',
+          'Consider increasing timeout settings'
+        ]
+      };
+    }
+    
+    return {
+      message: `${step} failed: ${baseMessage}`,
+      details: 'An unexpected error occurred during processing.',
+      suggestions: [
+        'Try again with the same data',
+        'Check the debug logs for more details',
+        'Verify your data format is correct'
+      ]
+    };
+  };
+
   // Check service health
   const checkServices = async () => {
     const services = {
@@ -136,7 +261,10 @@ export default function Upload() {
     const status = {};
     for (const [name, url] of Object.entries(services)) {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          method: 'GET',
+          timeout: 5000
+        });
         const data = await response.json();
         status[name] = { healthy: true, status: data.status };
       } catch (err) {
@@ -147,8 +275,8 @@ export default function Upload() {
     return status;
   };
 
-  // Analysis pipeline function
-  const runAnalysisPipeline = async (fileData, goal) => {
+  // Analysis pipeline function (improved version from analyze.js)
+  const runAnalysisPipeline = async (actualFile, goal) => {
     try {
       setAnalysisStep('Checking services...');
       const services = await checkServices();
@@ -159,81 +287,73 @@ export default function Upload() {
         throw new Error(`Services not available: ${unhealthyServices.map(([name]) => name).join(', ')}`);
       }
 
-      // Create FormData for file upload to analysis pipeline
+      // Create FormData for file upload (EXACTLY like analyze.js)
       const formData = new FormData();
-      // We need to reconstruct the file from the stored data
-      // For now, we'll use the JSON data approach since we have the file content
-      
-      // Step 1: ETL Service
+      formData.append('file', actualFile);
+      formData.append('goal', goal || 'data analysis');
+
+      // Step 1: ETL Service (File Upload - EXACTLY like analyze.js)
       setAnalysisStep('Processing data...');
-      const etlResponse = await fetch('http://localhost:3030/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          data: fileData.analysisData || [],
-          goal: goal || 'data analysis'
-        })
-      });
+      console.log('Step 1: ETL Processing...');
       
-      if (!etlResponse.ok) {
-        throw new Error('ETL processing failed');
-      }
+      const etlResponse = await fetchWithRetry('http://localhost:3030/analyze', {
+        method: 'POST',
+        body: formData  // Use FormData with actual file like analyze.js
+      }, 30000);
       
       const etlData = await etlResponse.json();
+      console.log(`ETL Success: Data processed with ${etlData.processed_data ? etlData.processed_data.length : 'unknown'} rows`);
 
       // Step 2: Preprocessing Service
       setAnalysisStep('Preprocessing data...');
-      const preprocessResponse = await fetch('http://localhost:3031/preprocess', {
+      console.log('Step 2: Preprocessing...');
+      
+      const preprocessResponse = await fetchWithRetry('http://localhost:3031/preprocess', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: etlData.processed_data || etlData.data,
           goal: goal || 'machine learning preparation'
         })
-      });
-
-      if (!preprocessResponse.ok) {
-        throw new Error('Preprocessing failed');
-      }
+      }, 30000);
 
       const preprocessData = await preprocessResponse.json();
+      console.log(`Step 2 Success: Preprocessed ${preprocessData.processed_shape ? preprocessData.processed_shape[0] : 'unknown'} rows`);
 
       // Step 3: EDA Service
       setAnalysisStep('Generating visualizations...');
-      const edaResponse = await fetch('http://localhost:3035/analyze', {
+      console.log('Step 3: EDA Analysis...');
+      
+      const edaResponse = await fetchWithRetry('http://localhost:3035/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: preprocessData.processed_data || preprocessData.data,
           prompt: goal || 'Comprehensive data analysis'
         })
-      });
-
-      if (!edaResponse.ok) {
-        throw new Error('EDA analysis failed');
-      }
+      }, 45000); // Longer timeout for EDA
 
       const edaData = await edaResponse.json();
+      console.log(`Step 3 Success: Generated ${edaData.analysis && edaData.analysis.visualizations ? edaData.analysis.visualizations.length : 0} visualizations`);
 
       // Step 4: ML Analysis Service
       setAnalysisStep('Running machine learning analysis...');
-      const mlResponse = await fetch('http://localhost:3040/analyze', {
+      console.log('Step 4: ML Analysis...');
+      
+      const mlResponse = await fetchWithRetry('http://localhost:3040/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: preprocessData.processed_data || preprocessData.data,
           goal: goal || 'comprehensive analysis'
         })
-      });
-
-      if (!mlResponse.ok) {
-        throw new Error('ML analysis failed');
-      }
+      }, 60000); // Longer timeout for ML
 
       const mlData = await mlResponse.json();
+      console.log('Step 4 Success: Completed ML analysis');
 
       // Combine all results
-      return {
+      const results = {
         etl: etlData,
         preprocessing: preprocessData,
         eda: edaData,
@@ -241,9 +361,23 @@ export default function Upload() {
         goal: goal,
         timestamp: new Date().toISOString()
       };
+      
+      console.log('=== Full Pipeline Completed Successfully! ===');
+      return results;
 
     } catch (error) {
-      console.error('Analysis pipeline error:', error);
+      const currentStepName = analysisStep.includes('Processing') ? 'ETL' :
+                             analysisStep.includes('Preprocessing') ? 'Preprocessing' :
+                             analysisStep.includes('visualizations') ? 'EDA' :
+                             analysisStep.includes('machine learning') ? 'Analysis' : 'Unknown';
+      
+      const errorInfo = getErrorMessage(error, currentStepName);
+      console.error(`Pipeline Error: ${errorInfo.message}`);
+      console.error(`Details: ${errorInfo.details}`);
+      errorInfo.suggestions.forEach(suggestion => {
+        console.log(`💡 Suggestion: ${suggestion}`);
+      });
+      
       throw error;
     }
   };
@@ -261,6 +395,9 @@ export default function Upload() {
     
     let completed = 0;
     let lastFileMetadata = null;
+    
+    // Store the original file for analysis
+    setOriginalFileForAnalysis(selectedFiles[0]);
     
     try {
       // First upload the file
@@ -312,7 +449,7 @@ export default function Upload() {
       
       // Now start the analysis with the file data
       if (lastFileMetadata) {
-        await handleAnalyzeDataWithFile(lastFileMetadata);
+        await handleAnalyzeDataWithFile(lastFileMetadata, selectedFiles[0]);
       }
       
     } catch (error) {
@@ -323,8 +460,180 @@ export default function Upload() {
     }
   };
 
+  // Render simplified insights (copied from analyze.js)
+  const renderSimpleInsights = (insights) => {
+    if (!insights || !insights.ai_insights) return null;
+
+    const allInsights = Object.values(insights.ai_insights);
+    const keyFindings = [];
+    const recommendations = [];
+    const actualInsights = [];
+
+    allInsights.forEach((category, index) => {
+      // Handle the nested structure: category.insights contains JSON strings
+      if (category && category.insights && Array.isArray(category.insights)) {
+        category.insights.forEach(insightString => {
+          if (typeof insightString === 'string') {
+            try {
+              // Remove markdown code block formatting if present
+              let cleanJson = insightString;
+              if (cleanJson.includes('```json')) {
+                cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
+              }
+              
+              // Parse the JSON string
+              const parsedInsight = JSON.parse(cleanJson);
+              
+              // Extract data from parsed object
+              if (parsedInsight.insights && Array.isArray(parsedInsight.insights)) {
+                actualInsights.push(...parsedInsight.insights);
+              }
+              
+              if (parsedInsight.key_findings && Array.isArray(parsedInsight.key_findings)) {
+                keyFindings.push(...parsedInsight.key_findings);
+              }
+              
+              if (parsedInsight.recommendations && Array.isArray(parsedInsight.recommendations)) {
+                recommendations.push(...parsedInsight.recommendations);
+              }
+            } catch (e) {
+              console.warn('Could not parse insight JSON:', insightString);
+            }
+          }
+        });
+      }
+    });
+
+    // Filter and deduplicate meaningful content
+    const getUniqueFiltered = (arr) => {
+      const filtered = arr.filter(item => 
+        item && 
+        typeof item === 'string' &&
+        item !== "AI analysis completed" && 
+        !item.includes("Review the insights provided") &&
+        item.length > 30
+      );
+      // Remove duplicates
+      return [...new Set(filtered)];
+    };
+
+    const filteredInsights = getUniqueFiltered(actualInsights);
+    const filteredFindings = getUniqueFiltered(keyFindings);
+    const filteredRecommendations = getUniqueFiltered(recommendations);
+
+    return (
+      <div className="space-y-4">
+        {filteredInsights.length > 0 && (
+          <div className="bg-white p-4 rounded-lg border">
+            <h4 className="font-medium text-blue-900 mb-3">🧠 AI Insights</h4>
+            <ul className="list-disc list-inside text-sm text-gray-700 space-y-2">
+              {filteredInsights.slice(0, 8).map((insight, idx) => (
+                <li key={idx}>{insight}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {filteredFindings.length > 0 && (
+          <div className="bg-white p-4 rounded-lg border">
+            <h4 className="font-medium text-blue-900 mb-3">🔍 Key Findings</h4>
+            <ul className="list-disc list-inside text-sm text-gray-700 space-y-2">
+              {filteredFindings.slice(0, 6).map((finding, idx) => (
+                <li key={idx}>{finding}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        {filteredRecommendations.length > 0 && (
+          <div className="bg-white p-4 rounded-lg border">
+            <h4 className="font-medium text-blue-900 mb-3">💡 Recommendations</h4>
+            <ul className="list-disc list-inside text-sm text-gray-700 space-y-2">
+              {filteredRecommendations.slice(0, 6).map((rec, idx) => (
+                <li key={idx}>{rec}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {filteredInsights.length === 0 && filteredFindings.length === 0 && filteredRecommendations.length === 0 && (
+          <div className="bg-white p-4 rounded-lg border">
+            <p className="text-sm text-gray-600">🤖 Analysis in progress - detailed insights will appear here once processing is complete.</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render TEE attestation information (copied from analyze.js)
+  const renderTEEAttestation = (mlData) => {
+    if (!mlData || !mlData.results || !mlData.results.tee_attestation) return null;
+
+    const attestation = mlData.results.tee_attestation;
+    
+    return (
+      <div className="bg-green-50 p-4 rounded-lg border border-green-200 mb-6">
+        <h4 className="font-medium text-green-900 mb-3 flex items-center gap-2">
+          🔐 TEE Attestation
+          {attestation.tee_attested ? (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Verified</span>
+          ) : (
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Unavailable</span>
+          )}
+        </h4>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            {attestation.tee_attested ? (
+              <div className="flex items-start gap-3 text-green-700">
+                <span className="text-xl">✅</span>
+                <div>
+                  <strong className="block mb-1">TEE Verified</strong>
+                  <p className="text-sm">This analysis was executed and signed in a Trusted Execution Environment</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 text-yellow-700">
+                <span className="text-xl">⚠️</span>
+                <div>
+                  <strong className="block mb-1">TEE Unavailable</strong>
+                  <p className="text-sm">Analysis completed but TEE attestation failed: {attestation.error}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {attestation.tee_attested && (
+            <div className="space-y-2">
+              <div className="bg-white p-3 rounded border">
+                <div className="grid grid-cols-1 gap-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">ROFL App ID:</span>
+                    <code className="bg-gray-100 px-1 rounded text-gray-800">{attestation.rofl_app_id}</code>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">Results Hash:</span>
+                    <code className="bg-gray-100 px-1 rounded text-gray-800">{attestation.results_hash?.substring(0, 16)}...</code>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">Algorithm:</span>
+                    <span className="text-gray-800">{attestation.signature_algorithm}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium text-gray-600">Timestamp:</span>
+                    <span className="text-gray-800">{new Date(attestation.timestamp).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Handle analysis with file data passed directly
-  const handleAnalyzeDataWithFile = async (fileMetadata) => {
+  const handleAnalyzeDataWithFile = async (fileMetadata, originalFile) => {
     if (!analysisGoal.trim()) {
       setAnalysisError('Please enter an analysis goal');
       return;
@@ -336,25 +645,31 @@ export default function Upload() {
     setAnalysisResults(null);
 
     try {
-      // For demo purposes, we'll create sample data if no analysis data exists
-      // In a real implementation, you'd read the actual file content from Walrus
-      const analysisData = fileMetadata.analysisData || [
-        { name: 'Sample Data', value: 100, category: 'A' },
-        { name: 'Demo Entry', value: 200, category: 'B' }
-      ];
-
-      const results = await runAnalysisPipeline({ analysisData }, analysisGoal);
+      // Use the actual original file for analysis (EXACTLY like analyze.js)
+      const results = await runAnalysisPipeline(originalFile, analysisGoal);
       
-      // Store analysis results with the file
+      // Store analysis results on Walrus (to avoid browser storage limits)
+      console.log('Storing analysis results on Walrus...');
+      const analysisBlob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+      const analysisFile = new File([analysisBlob], `analysis-${fileMetadata.name}-${Date.now()}.json`, { type: 'application/json' });
+      
+      const analysisUploadResult = await uploadFile(analysisFile, {
+        epochs: 1,
+        deletable: true
+      });
+
+      console.log(`Analysis results stored on Walrus with ID: ${analysisUploadResult.blobId}`);
+
+      // Store analysis metadata with the file (but not full results to save space)
       const updatedFile = {
         ...fileMetadata,
-        analysisResults: results,
         analysisGoal: analysisGoal,
         hasAnalysis: true,
-        lastAnalyzed: new Date().toISOString()
+        lastAnalyzed: new Date().toISOString(),
+        analysisResultsBlobId: analysisUploadResult.blobId // Reference to Walrus-stored results
       };
 
-      // Update localStorage with analysis results
+      // Update localStorage with analysis metadata only
       const storedFiles = JSON.parse(localStorage.getItem('walrusFiles') || '[]');
       const updatedFiles = storedFiles.map(file => 
         file.blobId === fileMetadata.blobId ? updatedFile : file
@@ -362,15 +677,16 @@ export default function Upload() {
 
       localStorage.setItem('walrusFiles', JSON.stringify(updatedFiles));
       
-      // Also store analysis report separately
+      // Store only metadata in localStorage (much smaller)
       const analysisReport = {
         id: Date.now() + Math.random(),
         fileName: fileMetadata.name,
         fileBlobId: fileMetadata.blobId,
         analysisGoal: analysisGoal,
-        analysisResults: results,
+        analysisResultsBlobId: analysisUploadResult.blobId, // Reference to Walrus-stored results
         timestamp: new Date().toISOString(),
-        status: 'completed'
+        status: 'completed',
+        resultSize: Math.round(analysisBlob.size / 1024) + ' KB' // Show size for reference
       };
 
       const existingReports = JSON.parse(localStorage.getItem('analysisReports') || '[]');
@@ -378,7 +694,7 @@ export default function Upload() {
       localStorage.setItem('analysisReports', JSON.stringify(updatedReports));
       
       setAnalysisResults(results);
-      setAnalysisStep('Analysis complete!');
+      setAnalysisStep('Analysis complete! Results stored on Walrus.');
       
       // Keep modal open to show results instead of auto-closing
       setIsAnalyzing(false);
@@ -410,7 +726,11 @@ export default function Upload() {
         throw new Error('Uploaded file not found');
       }
 
-      await handleAnalyzeDataWithFile(uploadedFile);
+      if (!originalFileForAnalysis) {
+        throw new Error('Original file not available for re-analysis');
+      }
+
+      await handleAnalyzeDataWithFile(uploadedFile, originalFileForAnalysis);
 
     } catch (error) {
       setAnalysisError(error.message);
@@ -601,6 +921,7 @@ export default function Upload() {
                       setUploadedBlobId(null);
                       setUploadError('');
                       setUploadProgress(0);
+                      setOriginalFileForAnalysis(null);
                     }}
                     className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-all duration-200 text-sm transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
                   >
@@ -662,7 +983,7 @@ export default function Upload() {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       Uploading...
-                    </div>
+                </div>
                   ) : isAnalyzing ? (
                     <div className="flex items-center justify-center gap-2">
                       <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -670,7 +991,7 @@ export default function Upload() {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       Analyzing...
-                    </div>
+                </div>
                   ) : (
                     'Upload & Analyze Data'
                   )}
@@ -747,11 +1068,11 @@ export default function Upload() {
           )}
         </div>
       </motion.main>
-
+          
       {/* Analysis Loading Modal */}
       <AnimatePresence>
         {showAnalysisModal && (
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -883,65 +1204,11 @@ export default function Upload() {
                       )}
 
                       {/* AI Insights */}
-                      {(analysisResults.eda?.analysis?.insights || analysisResults.eda?.insights) && (
+                      {analysisResults.eda?.analysis?.insights && (
                         <div className="space-y-4">
                           <h3 className="text-xl font-semibold text-gray-800 border-b pb-2">🧠 AI Insights</h3>
                           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <div className="space-y-3">
-                              {(() => {
-                                const insights = analysisResults.eda?.analysis?.insights || analysisResults.eda?.insights;
-                                
-                                // Handle different insight structures
-                                if (insights?.ai_insights) {
-                                  return Object.values(insights.ai_insights).map((category, idx) => (
-                                    <div key={idx} className="bg-white p-3 rounded border">
-                                      <h4 className="font-medium text-blue-900 mb-2">Key Findings #{idx + 1}</h4>
-                                      {category.insights && Array.isArray(category.insights) && (
-                                        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                                          {category.insights.slice(0, 3).map((insight, insightIdx) => (
-                                            <li key={insightIdx}>{typeof insight === 'string' ? insight : JSON.stringify(insight)}</li>
-                                          ))}
-                                        </ul>
-                                      )}
-                                    </div>
-                                  ));
-                                } else if (insights?.insights && Array.isArray(insights.insights)) {
-                                  return (
-                                    <div className="bg-white p-3 rounded border">
-                                      <h4 className="font-medium text-blue-900 mb-2">Key Findings</h4>
-                                      <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                                        {insights.insights.slice(0, 5).map((insight, insightIdx) => (
-                                          <li key={insightIdx}>{typeof insight === 'string' ? insight : JSON.stringify(insight)}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  );
-                                } else if (typeof insights === 'object' && insights !== null) {
-                                  return Object.entries(insights).map(([key, value], idx) => (
-                                    <div key={idx} className="bg-white p-3 rounded border">
-                                      <h4 className="font-medium text-blue-900 mb-2">{key.replace(/_/g, ' ').toUpperCase()}</h4>
-                                      <div className="text-sm text-gray-700">
-                                        {Array.isArray(value) ? (
-                                          <ul className="list-disc list-inside space-y-1">
-                                            {value.slice(0, 3).map((item, itemIdx) => (
-                                              <li key={itemIdx}>{typeof item === 'string' ? item : JSON.stringify(item)}</li>
-                                            ))}
-                                          </ul>
-                                        ) : (
-                                          <p>{typeof value === 'string' ? value : JSON.stringify(value)}</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ));
-                                }
-                                
-                                return (
-                                  <div className="bg-white p-3 rounded border">
-                                    <p className="text-sm text-gray-600">AI insights are being generated...</p>
-                                  </div>
-                                );
-                              })()}
-                            </div>
+                            {renderSimpleInsights(analysisResults.eda.analysis.insights)}
                           </div>
                         </div>
                       )}
@@ -952,36 +1219,7 @@ export default function Upload() {
                           <h3 className="text-xl font-semibold text-gray-800 border-b pb-2">🤖 Machine Learning Analysis</h3>
                           
                           {/* TEE Attestation */}
-                          {(analysisResults.ml?.results?.tee_attestation || analysisResults.ml?.tee_attestation) && (
-                            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                              <h4 className="font-medium text-green-900 mb-2 flex items-center gap-2">
-                                🔐 TEE Attestation
-                                {(() => {
-                                  const teeAttestation = analysisResults.ml?.results?.tee_attestation || analysisResults.ml?.tee_attestation;
-                                  const isAttested = teeAttestation?.tee_attested || teeAttestation?.attested || teeAttestation?.verified;
-                                  
-                                  return isAttested ? (
-                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Verified</span>
-                                  ) : (
-                                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Unavailable</span>
-                                  );
-                                })()}
-                              </h4>
-                              <p className="text-sm text-green-700">
-                                {(() => {
-                                  const teeAttestation = analysisResults.ml?.results?.tee_attestation || analysisResults.ml?.tee_attestation;
-                                  const isAttested = teeAttestation?.tee_attested || teeAttestation?.attested || teeAttestation?.verified;
-                                  
-                                  if (isAttested) {
-                                    return "Analysis executed and signed in a Trusted Execution Environment";
-                                  } else {
-                                    const error = teeAttestation?.error || teeAttestation?.message || "TEE service not available";
-                                    return `TEE attestation failed: ${error}`;
-                                  }
-                                })()}
-                              </p>
-                            </div>
-                          )}
+                          {renderTEEAttestation(analysisResults.ml)}
 
                           {/* ML Analysis Results */}
                           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -1079,7 +1317,7 @@ export default function Upload() {
                       <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
                         <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                  </svg>
                       </div>
                     </div>
                     
@@ -1122,6 +1360,7 @@ export default function Upload() {
                       setAnalysisGoal('');
                       setUploadProgress(0);
                       setAnalysisResults(null);
+                      setOriginalFileForAnalysis(null);
                     }}
                     className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
                   >
